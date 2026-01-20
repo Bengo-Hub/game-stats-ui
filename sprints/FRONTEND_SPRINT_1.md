@@ -21,24 +21,24 @@
 ### Week 1: Project Setup & Design System
 
 #### Day 1-2: Project Initialization
-- [ ] Initialize Next.js 15 project:
+- [x] Initialize Next.js 15 project:
   ```bash
   npx create-next-app@latest game-stats-ui --typescript --tailwind --app
   ```
-- [ ] Install dependencies:
+- [x] Install dependencies:
   - shadcn/ui
   - Zustand
   - React Hook Form + Zod
   - next-pwa
   - Tremor (for charts later)
-- [ ] Configure folder structure:
+- [x] Configure folder structure:
   ```
   app/
   ├── (auth)/
   ├── (dashboard)/
   ├── api/
   components/
- ├── ui/
+  ├── ui/
   ├── features/
   ├── layout/
   lib/
@@ -47,7 +47,7 @@
 - [ ] Set up environment variables
 - [ ] Configure TypeScript strict mode
 
-**Deliverable**: Configured Next.js project
+**Deliverable**: Configured Next.js project (Initialized)
 
 ---
 
