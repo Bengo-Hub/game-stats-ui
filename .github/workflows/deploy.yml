@@ -1,0 +1,110 @@
+name: Build and Deploy Game Stats UI
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install DevOps Tools
+        uses: Bengo-Hub/mosuon-devops-k8s/.github/actions/install-devops-tools@main
+
+      - name: Set deployment variables
+        run: |
+          echo "DEPLOY=true" >> $GITHUB_ENV
+          echo "NAMESPACE=mosuon" >> $GITHUB_ENV
+          echo "ENV_SECRET_NAME=game-stats-ui-secrets" >> $GITHUB_ENV
+          echo "REGISTRY_SERVER=docker.io" >> $GITHUB_ENV
+          echo "REGISTRY_NAMESPACE=codevertex" >> $GITHUB_ENV
+          echo "VALUES_FILE_PATH=apps/game-stats-ui/values.yaml" >> $GITHUB_ENV
+          echo "APP_NAME=game-stats-ui" >> $GITHUB_ENV
+          echo "DEVOPS_REPO=Bengo-Hub/mosuon-devops-k8s" >> $GITHUB_ENV
+
+      - name: Debug available secrets
+        run: |
+          echo "Checking which tokens are available..."
+          [[ -n "${{ secrets.GH_PAT }}" ]] && echo "✅ GH_PAT is set" || echo "❌ GH_PAT not found"
+          [[ -n "${{ secrets.GIT_SECRET }}" ]] && echo "✅ GIT_SECRET is set" || echo "❌ GIT_SECRET not found"
+          [[ -n "${{ secrets.GIT_TOKEN }}" ]] && echo "✅ GIT_TOKEN is set" || echo "❌ GIT_TOKEN not found"
+          [[ -n "${{ secrets.GITHUB_TOKEN }}" ]] && echo "✅ GITHUB_TOKEN is set (default)" || echo "❌ GITHUB_TOKEN not found"
+          echo "Note: GH_PAT or GIT_SECRET required for cross-repo push to mosuon-devops-k8s"
+
+      - name: Run production deployment
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GIT_SECRET: ${{ secrets.GIT_SECRET }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          GITHUB_SHA: ${{ github.sha }}
+          DEPLOY: true
+          NAMESPACE: mosuon
+          ENV_SECRET_NAME: game-stats-ui-secrets
+          REGISTRY_SERVER: docker.io
+          REGISTRY_NAMESPACE: codevertex
+          VALUES_FILE_PATH: apps/game-stats-ui/values.yaml
+          APP_NAME: game-stats-ui
+          DEVOPS_REPO: Bengo-Hub/mosuon-devops-k8s
+          GIT_USER: ${{ secrets.GIT_USER || 'Game Stats Bot' }}
+          GIT_EMAIL: ${{ secrets.GIT_EMAIL || 'dev@ultimatestats.co.ke' }}
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Tag and push :latest
+        if: success()
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_SERVER: docker.io
+          REGISTRY_NAMESPACE: codevertex
+        run: |
+          set -e
+          IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/game-stats-ui"
+          SHORT_SHA=${GITHUB_SHA::8}
+          echo "Tagging ${IMAGE_REPO}:${SHORT_SHA} as :latest"
+          echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_SERVER" -u "$REGISTRY_USERNAME" --password-stdin
+          docker pull "${IMAGE_REPO}:${SHORT_SHA}" || true
+          docker tag "${IMAGE_REPO}:${SHORT_SHA}" "${IMAGE_REPO}:latest"
+          docker push "${IMAGE_REPO}:latest"
+
+      - name: Check ArgoCD Application status
+        if: success()
+        env:
+          KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG }}
+          NS: mosuon
+          APP_NAME: game-stats-ui
+        run: |
+          if [ -z "${KUBE_CONFIG_B64}" ]; then
+            echo "⏭️ Skipping ArgoCD check - no KUBE_CONFIG available"
+            exit 0
+          fi
+
+          echo "::group::ArgoCD Application Status"
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG_B64" | base64 -d > ~/.kube/config
+
+          if kubectl get application ${APP_NAME} -n argocd >/dev/null 2>&1; then
+            echo "✓ ArgoCD Application '${APP_NAME}' found"
+            kubectl patch application ${APP_NAME} -n argocd --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}' || true
+            SYNC_STATUS=$(kubectl get application ${APP_NAME} -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+            HEALTH_STATUS=$(kubectl get application ${APP_NAME} -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+            echo "Current Status - Sync: ${SYNC_STATUS}, Health: ${HEALTH_STATUS}"
+          else
+            echo "⚠️ ArgoCD Application '${APP_NAME}' not found"
+          fi
+          echo "::endgroup::"

@@ -1,0 +1,41 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="emptyGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="emptyGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Calendar base -->
+  <rect x="40" y="50" width="120" height="100" rx="12" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.2" stroke-width="2"/>
+
+  <!-- Calendar header -->
+  <rect x="40" y="50" width="120" height="25" rx="12" fill="url(#emptyGrad1)" opacity="0.3"/>
+  <rect x="40" y="63" width="120" height="12" fill="url(#emptyGrad1)" opacity="0.3"/>
+
+  <!-- Calendar rings -->
+  <rect x="65" y="42" width="8" height="16" rx="2" fill="currentColor" fill-opacity="0.3"/>
+  <rect x="127" y="42" width="8" height="16" rx="2" fill="currentColor" fill-opacity="0.3"/>
+
+  <!-- Calendar dots (representing empty days) -->
+  <circle cx="65" cy="95" r="6" fill="currentColor" fill-opacity="0.1"/>
+  <circle cx="100" cy="95" r="6" fill="currentColor" fill-opacity="0.1"/>
+  <circle cx="135" cy="95" r="6" fill="currentColor" fill-opacity="0.1"/>
+  <circle cx="65" cy="125" r="6" fill="currentColor" fill-opacity="0.1"/>
+  <circle cx="100" cy="125" r="6" fill="currentColor" fill-opacity="0.1"/>
+  <circle cx="135" cy="125" r="6" fill="currentColor" fill-opacity="0.1"/>
+
+  <!-- Question mark -->
+  <g transform="translate(140, 35)">
+    <circle cx="20" cy="20" r="18" fill="url(#emptyGrad2)" opacity="0.9"/>
+    <text x="20" y="27" text-anchor="middle" fill="white" font-size="20" font-weight="bold">?</text>
+  </g>
+
+  <!-- Decorative stars -->
+  <path d="M30 40 L32 35 L34 40 L39 42 L34 44 L32 49 L30 44 L25 42 Z" fill="url(#emptyGrad1)" opacity="0.5"/>
+  <path d="M165 120 L167 115 L169 120 L174 122 L169 124 L167 129 L165 124 L160 122 Z" fill="url(#emptyGrad2)" opacity="0.5"/>
+</svg>

@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: game-stats-ui-secrets
+  namespace: mosuon
+type: Opaque
+stringData:
+  # API Configuration
+  NEXT_PUBLIC_API_URL: "https://api.ultimatestats.co.ke"
+  NEXT_PUBLIC_WS_URL: "wss://ultimatestats.co.ke"
+  
+  # Metabase Integration
+  NEXT_PUBLIC_METABASE_URL: "https://analytics.ultimatestats.co.ke"
+  
+  # Feature Flags
+  NEXT_PUBLIC_ENABLE_PWA: "true"
+  NEXT_PUBLIC_OFFLINE_MODE: "true"
+  NEXT_PUBLIC_ENABLE_ANALYTICS: "true"
+  NEXT_PUBLIC_ENABLE_NOTIFICATIONS: "true"
+  
+  # Application Configuration
+  NODE_ENV: "development"
+  PORT: "3000"
+  
+  # Analytics
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: ""
+  
+  # Error Tracking
+  NEXT_PUBLIC_SENTRY_DSN: ""
+  
+---
+# Development ConfigMap for non-sensitive config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-stats-ui-config
+  namespace: mosuon
+data:
+  # App Metadata
+  NEXT_PUBLIC_APP_NAME: "Game Stats"
+  NEXT_PUBLIC_APP_VERSION: "0.1.0"
+  
+  # UI Theme
+  NEXT_PUBLIC_DEFAULT_THEME: "dark"
+  
+  # Pagination
+  NEXT_PUBLIC_DEFAULT_PAGE_SIZE: "20"
+  NEXT_PUBLIC_MAX_PAGE_SIZE: "100"
+  
+  # Cache
+  NEXT_PUBLIC_CACHE_TTL: "300"
+  
+  # WebSocket
+  NEXT_PUBLIC_WS_RECONNECT_INTERVAL: "5000"
+  NEXT_PUBLIC_WS_MAX_RETRIES: "5"

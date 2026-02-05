@@ -1,0 +1,43 @@
+<svg width="1440" height="600" viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="glowGradient" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="gridPattern" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background gradient -->
+  <rect width="1440" height="600" fill="url(#heroGradient)"/>
+
+  <!-- Grid pattern overlay -->
+  <rect width="1440" height="600" fill="url(#gridPattern)"/>
+
+  <!-- Floating circles -->
+  <circle cx="200" cy="100" r="80" fill="url(#glowGradient)" opacity="0.5">
+    <animate attributeName="cy" values="100;120;100" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="1200" cy="500" r="100" fill="url(#glowGradient)" opacity="0.3">
+    <animate attributeName="cy" values="500;480;500" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="700" cy="300" r="60" fill="url(#glowGradient)" opacity="0.4">
+    <animate attributeName="cy" values="300;320;300" dur="3s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Decorative lines -->
+  <path d="M 0 400 Q 360 350 720 400 T 1440 400" stroke="url(#glowGradient)" stroke-width="2" fill="none" opacity="0.3">
+    <animate attributeName="d" values="M 0 400 Q 360 350 720 400 T 1440 400;M 0 400 Q 360 450 720 400 T 1440 400;M 0 400 Q 360 350 720 400 T 1440 400" dur="6s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Trophy icon in center -->
+  <g transform="translate(670, 250)" opacity="0.1">
+    <path d="M50 0 L50 10 L65 10 C75 10 85 20 85 35 C85 50 75 60 60 60 L60 75 L75 90 L25 90 L40 75 L40 60 C25 60 15 50 15 35 C15 20 25 10 35 10 L50 10" fill="currentColor" stroke="currentColor" stroke-width="2"/>
+  </g>
+</svg>

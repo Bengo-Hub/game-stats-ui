@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:0.05"/>
+    </linearGradient>
+    <linearGradient id="barGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="barGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#F97316"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#34D399"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background shapes -->
+  <ellipse cx="200" cy="280" rx="180" ry="40" fill="url(#bgGrad)"/>
+  <circle cx="50" cy="50" r="30" fill="#6366F1" opacity="0.1"/>
+  <circle cx="350" cy="80" r="20" fill="#F59E0B" opacity="0.1"/>
+
+  <!-- Dashboard/Chart illustration -->
+  <g transform="translate(80, 60)">
+    <!-- Monitor frame -->
+    <rect x="0" y="0" width="240" height="160" rx="12" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+    <rect x="0" y="0" width="240" height="24" rx="12" fill="#F3F4F6"/>
+    <rect x="0" y="12" width="240" height="12" fill="#F3F4F6"/>
+
+    <!-- Window controls -->
+    <circle cx="16" cy="12" r="4" fill="#EF4444"/>
+    <circle cx="32" cy="12" r="4" fill="#F59E0B"/>
+    <circle cx="48" cy="12" r="4" fill="#10B981"/>
+
+    <!-- Chart bars -->
+    <rect x="25" y="110" width="25" height="30" rx="4" fill="url(#barGrad1)"/>
+    <rect x="60" y="80" width="25" height="60" rx="4" fill="url(#barGrad2)"/>
+    <rect x="95" y="95" width="25" height="45" rx="4" fill="url(#barGrad1)"/>
+    <rect x="130" y="60" width="25" height="80" rx="4" fill="url(#barGrad1)"/>
+    <rect x="165" y="85" width="25" height="55" rx="4" fill="url(#barGrad2)"/>
+    <rect x="200" y="100" width="25" height="40" rx="4" fill="url(#barGrad1)"/>
+
+    <!-- Trend line -->
+    <path d="M35 105 Q80 70 120 85 T175 55 T215 75" fill="none" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Data points -->
+    <circle cx="35" cy="105" r="4" fill="#10B981"/>
+    <circle cx="120" cy="85" r="4" fill="#10B981"/>
+    <circle cx="175" cy="55" r="4" fill="#10B981"/>
+    <circle cx="215" cy="75" r="4" fill="#10B981"/>
+  </g>
+
+  <!-- Floating elements -->
+  <g transform="translate(320, 100)">
+    <rect width="60" height="40" rx="6" fill="white" stroke="#E5E7EB"/>
+    <text x="10" y="18" fill="#6366F1" font-size="10" font-weight="600">+24%</text>
+    <rect x="10" y="24" width="40" height="6" rx="2" fill="#E5E7EB"/>
+    <rect x="10" y="24" width="28" height="6" rx="2" fill="#10B981"/>
+  </g>
+
+  <g transform="translate(20, 140)">
+    <rect width="50" height="50" rx="8" fill="white" stroke="#E5E7EB"/>
+    <circle cx="25" cy="20" r="10" fill="url(#barGrad1)" opacity="0.3"/>
+    <path d="M20 20 L25 15 L30 20" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round"/>
+    <text x="10" y="38" fill="#374151" font-size="8" font-weight="500">Goals</text>
+  </g>
+
+  <!-- Trophy icon -->
+  <g transform="translate(340, 200)">
+    <path d="M25 10 L25 5 L35 5 L35 10 L40 10 L40 20 C40 25 35 28 30 28 C25 28 20 25 20 20 L20 10 Z" fill="url(#barGrad2)"/>
+    <rect x="27" y="28" width="6" height="8" fill="url(#barGrad2)"/>
+    <rect x="22" y="36" width="16" height="4" rx="2" fill="url(#barGrad2)"/>
+  </g>
+
+  <!-- Decorative dots -->
+  <circle cx="30" cy="80" r="3" fill="#6366F1" opacity="0.3"/>
+  <circle cx="370" cy="150" r="4" fill="#F59E0B" opacity="0.3"/>
+  <circle cx="60" cy="250" r="5" fill="#10B981" opacity="0.2"/>
+</svg>

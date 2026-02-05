@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 250" fill="none">
+  <defs>
+    <linearGradient id="emptyPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+    <linearGradient id="emptyGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#F97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background shape -->
+  <ellipse cx="150" cy="220" rx="100" ry="25" fill="url(#emptyPrimary)" opacity="0.1"/>
+
+  <!-- Clipboard/document -->
+  <g transform="translate(85, 40)">
+    <rect width="130" height="160" rx="10" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+    <rect x="40" y="-8" width="50" height="16" rx="8" fill="url(#emptyPrimary)"/>
+
+    <!-- Empty lines -->
+    <rect x="20" y="30" width="90" height="10" rx="5" fill="#F3F4F6"/>
+    <rect x="20" y="50" width="70" height="10" rx="5" fill="#F3F4F6"/>
+    <rect x="20" y="70" width="80" height="10" rx="5" fill="#F3F4F6"/>
+
+    <!-- Empty chart placeholder -->
+    <rect x="20" y="95" width="90" height="45" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-dasharray="4"/>
+
+    <!-- Plus icon in chart area -->
+    <path d="M65 110 L65 125 M57.5 117.5 L72.5 117.5" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Floating elements -->
+  <g transform="translate(30, 80)">
+    <circle r="20" fill="white" stroke="#E5E7EB"/>
+    <path d="M-5 0 L5 0 M0 -5 L0 5" stroke="url(#emptyPrimary)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(260, 100)">
+    <rect x="-15" y="-15" width="30" height="30" rx="6" fill="white" stroke="#E5E7EB"/>
+    <circle r="8" fill="url(#emptyGold)" opacity="0.3"/>
+    <path d="M-3 0 L0 3 L5 -4" fill="none" stroke="url(#emptyGold)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Decorative dots -->
+  <circle cx="50" cy="180" r="4" fill="url(#emptyPrimary)" opacity="0.3"/>
+  <circle cx="250" cy="60" r="3" fill="url(#emptyGold)" opacity="0.4"/>
+  <circle cx="150" cy="30" r="2" fill="url(#emptyPrimary)" opacity="0.2"/>
+</svg>

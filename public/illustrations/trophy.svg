@@ -1,0 +1,54 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="trophyGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="trophyShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="trophyGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Glow effect -->
+  <ellipse cx="60" cy="100" rx="30" ry="8" fill="#fbbf24" opacity="0.2"/>
+
+  <!-- Base -->
+  <rect x="40" y="95" width="40" height="10" rx="2" fill="url(#trophyGold)"/>
+  <rect x="45" y="90" width="30" height="8" rx="2" fill="url(#trophyGold)"/>
+
+  <!-- Stem -->
+  <rect x="52" y="65" width="16" height="28" rx="2" fill="url(#trophyGold)"/>
+
+  <!-- Cup body -->
+  <path d="M35 25 C35 15 45 10 60 10 C75 10 85 15 85 25 L85 45 C85 60 75 70 60 70 C45 70 35 60 35 45 Z" fill="url(#trophyGold)" filter="url(#trophyGlow)"/>
+
+  <!-- Cup shine -->
+  <path d="M42 25 C42 18 50 14 60 14 C63 14 66 15 68 16 C65 14 55 16 48 22 C44 26 42 32 42 38 L42 25 Z" fill="url(#trophyShine)" opacity="0.6"/>
+
+  <!-- Left handle -->
+  <path d="M35 25 C30 25 22 30 22 42 C22 52 28 58 35 58 L35 50 C32 50 28 46 28 42 C28 36 32 32 35 32 Z" fill="url(#trophyGold)"/>
+
+  <!-- Right handle -->
+  <path d="M85 25 C90 25 98 30 98 42 C98 52 92 58 85 58 L85 50 C88 50 92 46 92 42 C92 36 88 32 85 32 Z" fill="url(#trophyGold)"/>
+
+  <!-- Star on cup -->
+  <path d="M60 28 L63 38 L73 38 L65 44 L68 54 L60 48 L52 54 L55 44 L47 38 L57 38 Z" fill="#fef3c7" opacity="0.8"/>
+
+  <!-- Sparkles -->
+  <circle cx="25" cy="20" r="2" fill="#fbbf24" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="95" cy="15" r="1.5" fill="#fbbf24" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="15" cy="50" r="1" fill="#fbbf24" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

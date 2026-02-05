@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" fill="none">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="50%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#F97316"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#34D399"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background circles -->
+  <circle cx="400" cy="100" r="150" fill="url(#primaryGrad)" opacity="0.08"/>
+  <circle cx="100" cy="350" r="120" fill="url(#goldGrad)" opacity="0.06"/>
+  <circle cx="450" cy="350" r="80" fill="url(#greenGrad)" opacity="0.05"/>
+
+  <!-- Person with tablet/stats -->
+  <g transform="translate(150, 80)" filter="url(#shadow)">
+    <!-- Body -->
+    <ellipse cx="100" cy="280" rx="60" ry="15" fill="#E5E7EB"/>
+
+    <!-- Legs -->
+    <path d="M70 240 L60 270 L75 275" fill="none" stroke="#374151" stroke-width="8" stroke-linecap="round"/>
+    <path d="M130 240 L140 270 L125 275" fill="none" stroke="#374151" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Torso -->
+    <rect x="60" y="150" width="80" height="100" rx="20" fill="url(#primaryGrad)"/>
+
+    <!-- Arms -->
+    <path d="M60 170 L30 200 L40 230" fill="none" stroke="url(#primaryGrad)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M140 170 L170 200 L180 180" fill="none" stroke="url(#primaryGrad)" stroke-width="10" stroke-linecap="round"/>
+
+    <!-- Head -->
+    <circle cx="100" cy="120" r="35" fill="#FCD9BD"/>
+
+    <!-- Hair -->
+    <ellipse cx="100" cy="95" rx="30" ry="20" fill="#374151"/>
+
+    <!-- Face -->
+    <circle cx="88" cy="118" r="4" fill="#374151"/>
+    <circle cx="112" cy="118" r="4" fill="#374151"/>
+    <path d="M92 130 Q100 138 108 130" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Tablet/Phone in hand -->
+    <g transform="translate(160, 160)">
+      <rect width="50" height="70" rx="6" fill="#1F2937" filter="url(#shadow)"/>
+      <rect x="3" y="8" width="44" height="54" rx="2" fill="white"/>
+
+      <!-- Mini chart on screen -->
+      <rect x="8" y="14" width="8" height="20" rx="2" fill="url(#primaryGrad)"/>
+      <rect x="20" y="8" width="8" height="26" rx="2" fill="url(#goldGrad)"/>
+      <rect x="32" y="18" width="8" height="16" rx="2" fill="url(#greenGrad)"/>
+
+      <!-- Line graph -->
+      <path d="M8 42 L18 38 L28 44 L38 36" fill="none" stroke="url(#primaryGrad)" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Floating stats cards -->
+  <g transform="translate(50, 150)" filter="url(#shadow)">
+    <rect width="80" height="60" rx="8" fill="white"/>
+    <text x="12" y="22" fill="#6366F1" font-size="12" font-weight="600">Goals</text>
+    <text x="12" y="45" fill="#1F2937" font-size="18" font-weight="700">247</text>
+    <path d="M55 35 L60 30 L65 35" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+    <text x="55" y="48" fill="#10B981" font-size="10">+12%</text>
+  </g>
+
+  <g transform="translate(380, 200)" filter="url(#shadow)">
+    <rect width="90" height="70" rx="8" fill="white"/>
+    <text x="12" y="22" fill="#F59E0B" font-size="12" font-weight="600">Spirit</text>
+    <text x="12" y="50" fill="#1F2937" font-size="20" font-weight="700">9.4</text>
+    <circle cx="70" cy="40" r="15" fill="none" stroke="url(#goldGrad)" stroke-width="3"/>
+    <path d="M70 30 L70 40 L78 40" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Trophy -->
+  <g transform="translate(420, 80)">
+    <path d="M30 20 L30 10 L50 10 L50 20 L60 20 L60 40 C60 55 50 65 40 65 C30 65 20 55 20 40 L20 20 Z" fill="url(#goldGrad)"/>
+    <rect x="35" y="65" width="10" height="12" fill="url(#goldGrad)"/>
+    <rect x="28" y="77" width="24" height="6" rx="3" fill="url(#goldGrad)"/>
+    <ellipse cx="40" cy="35" rx="8" ry="10" fill="white" opacity="0.3"/>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="30" cy="100" r="5" fill="url(#primaryGrad)" opacity="0.4"/>
+  <circle cx="480" cy="280" r="6" fill="url(#goldGrad)" opacity="0.4"/>
+  <circle cx="250" cy="380" r="4" fill="url(#greenGrad)" opacity="0.3"/>
+
+  <!-- Sparkles -->
+  <g fill="url(#goldGrad)">
+    <path d="M60 60 L62 55 L64 60 L69 62 L64 64 L62 69 L60 64 L55 62 Z"/>
+    <path d="M440 150 L441 147 L442 150 L445 151 L442 152 L441 155 L440 152 L437 151 Z" opacity="0.6"/>
+  </g>
+</svg>
