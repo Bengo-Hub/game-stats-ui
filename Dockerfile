@@ -9,10 +9,10 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Copy package files and pnpm config
+COPY package.json pnpm-lock.yaml* .npmrc ./
 
-# Install dependencies
+# Install dependencies (honour .npmrc settings like shamefully-hoist)
 RUN pnpm install --frozen-lockfile --shamefully-hoist || pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
