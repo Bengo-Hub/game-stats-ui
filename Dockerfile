@@ -35,6 +35,11 @@ ENV NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL}
 
 RUN pnpm build
 
+# Ensure expected output directories exist to make later COPY steps idempotent
+# Some Next builds may not produce a `standalone` or `static` folder depending
+# on which pages are prerendered; create them to avoid Docker COPY failures.
+RUN mkdir -p .next/static .next/standalone || true
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
