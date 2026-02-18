@@ -22,10 +22,10 @@ jobs:
           # Map required secrets to detect empty values (gh secret list can't check values)
           _REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           _REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-          _REGISTRY_EMAIL: ${{ secrets.REGISTRY_EMAIL }}
           _KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         run: |
-          REQUIRED_SECRETS="REGISTRY_USERNAME REGISTRY_PASSWORD REGISTRY_EMAIL KUBE_CONFIG"
+          # Only request the secrets actually used by the UI deployment pipeline
+          REQUIRED_SECRETS="REGISTRY_USERNAME REGISTRY_PASSWORD KUBE_CONFIG"
 
           # Step 1: Delete any secrets that exist but have empty values.
           # gh secret list reports empty-value secrets as "existing", so the
