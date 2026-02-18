@@ -50,9 +50,14 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Use Next.js standalone output
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Install pnpm so `pnpm start` is available in the final image
+RUN npm install -g pnpm
+
+# Fallback-friendly copy: prefer standalone output, otherwise copy full .next and node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./ || true
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static || true
 
 USER nextjs
 
@@ -61,4 +66,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Start using the standard Next.js start script. If the standalone server.js exists this will
+# still work because Next will prefer the built standalone files; otherwise `next start` will
+# serve from the copied .next directory.
+CMD ["pnpm", "start"]
