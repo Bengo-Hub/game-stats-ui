@@ -13,7 +13,9 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml* .npmrc ./
 
 # Install dependencies (honour .npmrc settings like shamefully-hoist)
-RUN pnpm install --frozen-lockfile --shamefully-hoist || pnpm install --frozen-lockfile
+# Try frozen lockfile first for deterministic builds; if that fails (missing
+# hoisted packages), fall back to a non-frozen install to allow resolution.
+RUN pnpm install --frozen-lockfile --shamefully-hoist || pnpm install --shamefully-hoist
 
 # Rebuild the source code only when needed
 FROM base AS builder
