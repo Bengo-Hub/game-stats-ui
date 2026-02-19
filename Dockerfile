@@ -52,17 +52,17 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
+RUN mkdir -p .next .next/static
 RUN chown nextjs:nodejs .next
 
 # Install pnpm so `pnpm start` is available in the final image
 RUN npm install -g pnpm
 
 # Fallback-friendly copy: prefer standalone output, otherwise copy full .next and node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./ || true
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static || true
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
