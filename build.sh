@@ -64,6 +64,10 @@ else
 fi
 
 
+# Frontend environment defaults (include /api/v1 prefix for production)
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org/api/v1"}
+NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"wss://ultistatsapi.ultichange.org"}
+NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
 
 info "Service: ${APP_NAME}"
 info "Namespace: ${NAMESPACE}"
@@ -105,9 +109,9 @@ info "Installing dependencies and building frontend..."
 pnpm install
 # Ensure types are ignored if needed for production build stability
 # pnpm build
-NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
-NEXT_PUBLIC_WS_URL="$NEXT_PUBLIC_WS_URL" \
-NEXT_PUBLIC_ANALYTICS_URL="$NEXT_PUBLIC_ANALYTICS_URL" \
+NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
+NEXT_PUBLIC_WS_URL="${NEXT_PUBLIC_WS_URL}" \
+NEXT_PUBLIC_ANALYTICS_URL="${NEXT_PUBLIC_ANALYTICS_URL}" \
 pnpm build
 success "Frontend build complete"
 
