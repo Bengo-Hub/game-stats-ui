@@ -172,30 +172,14 @@ fi
 # =============================================================================
 # UPDATE HELM VALUES (using centralized script)
 # =============================================================================
-if [[ -f "${DEVOPS_DIR}/scripts/helm/update-values.sh" ]]; then
+if [[ -f "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" ]]; then
   info "Updating Helm values in devops repo..."
-  chmod +x "${DEVOPS_DIR}/scripts/helm/update-values.sh"
+  chmod +x "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh"
   
-  # Source and call the function
-  source "${DEVOPS_DIR}/scripts/helm/update-values.sh" 2>/dev/null || true
-  
-  if declare -f update_helm_values >/dev/null 2>&1; then
-    update_helm_values "$APP_NAME" "$GIT_COMMIT_ID" "$IMAGE_REPO"
-    success "Helm values updated - ArgoCD will auto-sync"
-  else
-    # Direct script execution as fallback
-    APP_NAME="$APP_NAME" \
-    IMAGE_TAG="$GIT_COMMIT_ID" \
-    IMAGE_REPO="$IMAGE_REPO" \
-    DEVOPS_REPO="$DEVOPS_REPO" \
-    DEVOPS_DIR="$DEVOPS_DIR" \
-    VALUES_FILE_PATH="$VALUES_FILE_PATH" \
-    GIT_EMAIL="$GIT_EMAIL" \
-    GIT_USER="$GIT_USER" \
-    bash "${DEVOPS_DIR}/scripts/helm/update-values.sh" --app "$APP_NAME" --tag "$GIT_COMMIT_ID" --repo "$IMAGE_REPO" || warn "Helm values update failed"
-  fi
+  # Delegate solely to the centralized updater tool
+  "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" "$APP_NAME" "$GIT_COMMIT_ID" || warn "Helm values update failed"
 else
-  warn "update-values.sh not found - manual Helm values update may be required"
+  warn "update-helm-values.sh not found - manual Helm values update may be required"
 fi
 
 # =============================================================================
