@@ -2,7 +2,7 @@
 # =============================================================================
 # Game Stats UI Build & Deploy Script
 # =============================================================================
-# Purpose: Build Docker image, push to registry, and trigger ArgoCD deployment
+# Purpose: Build frontend, build Docker image, and trigger ArgoCD deployment
 # 
 # Usage:
 #   DEPLOY=true ./build.sh
@@ -46,26 +46,15 @@ IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/${APP_NAME}"
 
 # DevOps repository configuration
 DEVOPS_REPO=${DEVOPS_REPO:-"Bengo-Hub/mosuon-devops-k8s"}
-# Check for Windows path existence first, then fall back to a relative path
-DEVOPS_DIR_WINDOWS="d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"
-if [[ -z "${DEVOPS_DIR:-}" ]]; then
-  if [[ -d "$DEVOPS_DIR_WINDOWS" ]]; then
-    DEVOPS_DIR="$DEVOPS_DIR_WINDOWS"
-  else
-    DEVOPS_DIR="../mosuon-devops-k8s" # Fallback to a relative path
-  fi
+if [[ -d "d:/Projects/BengoBox/mosuon/mosuon-devops-k8s" ]]; then
+  DEVOPS_DIR=${DEVOPS_DIR:-"d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"}
+else
+  DEVOPS_DIR=${DEVOPS_DIR:-"../mosuon-devops-k8s"}
 fi
-VALUES_FILE_PATH=${VALUES_FILE_PATH:-"apps/${APP_NAME}/values.yaml"}
-
-# Standard production defaults for Next.js variables
-NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org"}
-NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"https://ultistatsapi.ultichange.org"}
-NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
 
 # Git configuration
 GIT_EMAIL=${GIT_EMAIL:-"dev@ultistats.ultichange.org"}
 GIT_USER=${GIT_USER:-"Game Stats Bot"}
-TRIVY_ECODE=${TRIVY_ECODE:-0}
 
 # Determine Git commit ID
 if [[ -z ${GITHUB_SHA:-} ]]; then
@@ -77,6 +66,7 @@ fi
 # Handle KUBE_CONFIG fallback for B64 variant
 KUBE_CONFIG=${KUBE_CONFIG:-${KUBE_CONFIG_B64:-}}
 
+
 info "Service: ${APP_NAME}"
 info "Namespace: ${NAMESPACE}"
 info "Image: ${IMAGE_REPO}:${GIT_COMMIT_ID}"
@@ -85,13 +75,11 @@ info "API URL: ${NEXT_PUBLIC_API_URL}"
 # =============================================================================
 # PREREQUISITE CHECKS
 # =============================================================================
-for tool in git docker; do
+for tool in git docker pnpm; do
   command -v "$tool" >/dev/null || { error "$tool is required"; exit 1; }
 done
-# Trivy is optional
-command -v trivy >/dev/null || warn "trivy is not installed - security scan will be skipped"
 if [[ ${DEPLOY} == "true" ]]; then
-  for tool in kubectl helm yq; do
+  for tool in kubectl helm yq jq; do
     command -v "$tool" >/dev/null || { error "$tool is required"; exit 1; }
   done
 fi
@@ -105,7 +93,7 @@ if [[ ${DEPLOY} == "true" ]]; then
   SYNC_SCRIPT=$(mktemp)
   if curl -fsSL https://raw.githubusercontent.com/Bengo-Hub/mosuon-devops-k8s/master/scripts/tools/check-and-sync-secrets.sh -o "$SYNC_SCRIPT" 2>/dev/null; then
     source "$SYNC_SCRIPT"
-    check_and_sync_secrets "REGISTRY_USERNAME" "REGISTRY_PASSWORD" "GIT_TOKEN" "POSTGRES_PASSWORD" "NEXT_PUBLIC_API_URL" "NEXT_PUBLIC_WS_URL" "NEXT_PUBLIC_ANALYTICS_URL" || warn "Secret sync failed - continuing with existing secrets"
+    check_and_sync_secrets "REGISTRY_USERNAME" "REGISTRY_PASSWORD" "KUBE_CONFIG" "POSTGRES_PASSWORD" "JWT_SECRET" "NEXT_PUBLIC_API_URL" "NEXT_PUBLIC_WS_URL" "NEXT_PUBLIC_ANALYTICS_URL" || warn "Secret sync failed - continuing with existing secrets"
     rm -f "$SYNC_SCRIPT"
   else
     warn "Unable to download secret sync script - continuing with existing secrets"
@@ -113,19 +101,26 @@ if [[ ${DEPLOY} == "true" ]]; then
 fi
 
 # =============================================================================
-# SECURITY SCAN
+# BUILD FRONTEND
 # =============================================================================
-info "Running Trivy filesystem scan"
-trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
+info "Installing dependencies and building frontend..."
+pnpm install
+# Ensure types are ignored if needed for production build stability
+# pnpm build
+NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+NEXT_PUBLIC_WS_URL="$NEXT_PUBLIC_WS_URL" \
+NEXT_PUBLIC_ANALYTICS_URL="$NEXT_PUBLIC_ANALYTICS_URL" \
+pnpm build
+success "Frontend build complete"
 
 # =============================================================================
 # BUILD DOCKER IMAGE
 # =============================================================================
 info "Building Docker image"
 DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" \
-  --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-  --build-arg NEXT_PUBLIC_WS_URL="${NEXT_PUBLIC_WS_URL}" \
-  --build-arg NEXT_PUBLIC_ANALYTICS_URL="${NEXT_PUBLIC_ANALYTICS_URL}"
+  --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+  --build-arg NEXT_PUBLIC_WS_URL="$NEXT_PUBLIC_WS_URL" \
+  --build-arg NEXT_PUBLIC_ANALYTICS_URL="$NEXT_PUBLIC_ANALYTICS_URL"
 success "Docker build complete"
 
 if [[ ${DEPLOY} != "true" ]]; then
@@ -155,12 +150,6 @@ fi
 
 # Create namespace if needed
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
-
-# Local dev secrets (not in CI)
-if [[ -z ${CI:-}${GITHUB_ACTIONS:-} && -f KubeSecrets/devENV.yml ]]; then
-  info "Applying local dev secrets"
-  kubectl apply -n "$NAMESPACE" -f KubeSecrets/devENV.yml || warn "Failed to apply devENV.yml"
-fi
 
 # Create registry credentials
 if [[ -n ${REGISTRY_USERNAME:-} && -n ${REGISTRY_PASSWORD:-} ]]; then
@@ -206,6 +195,9 @@ if [[ -f "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" ]]; then
   info "Updating Helm values in devops repo..."
   chmod +x "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh"
   
+  # Delegate solely to the centralized updater tool
+  "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" "$APP_NAME" "$GIT_COMMIT_ID" || warn "Helm values update failed"
+fi
 
 # =============================================================================
 # SUMMARY
