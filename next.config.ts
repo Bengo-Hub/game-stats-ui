@@ -11,8 +11,6 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  // Enable React strict mode for better error detection
-  reactStrictMode: true,
 
   // Produce a standalone build so the Dockerfile can copy the standalone output
   // This instructs Next to emit a `standalone` folder under `.next` containing

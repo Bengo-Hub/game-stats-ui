@@ -45,9 +45,13 @@ REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-codevertex}
 IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/${APP_NAME}"
 
 # DevOps repository configuration
-DEVOPS_REPO=${DEVOPS_REPO:-"Bengo-Hub/mosuon-devops-k8s"}
 DEVOPS_DIR=${DEVOPS_DIR:-"d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"}
 VALUES_FILE_PATH=${VALUES_FILE_PATH:-"apps/${APP_NAME}/values.yaml"}
+
+# Standard production defaults for Next.js variables
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org"}
+NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"https://ultistatsapi.ultichange.org"}
+NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
 
 # Git configuration
 GIT_EMAIL=${GIT_EMAIL:-"dev@ultistats.ultichange.org"}
@@ -94,7 +98,7 @@ if [[ ${DEPLOY} == "true" ]]; then
   SYNC_SCRIPT=$(mktemp)
   if curl -fsSL https://raw.githubusercontent.com/Bengo-Hub/mosuon-devops-k8s/master/scripts/tools/check-and-sync-secrets.sh -o "$SYNC_SCRIPT" 2>/dev/null; then
     source "$SYNC_SCRIPT"
-    check_and_sync_secrets "REGISTRY_USERNAME" "REGISTRY_PASSWORD" "GIT_TOKEN" "POSTGRES_PASSWORD" "REDIS_PASSWORD" "JWT_SECRET" "KUBE_CONFIG" "NEXT_PUBLIC_API_URL" "NEXT_PUBLIC_WS_URL" "NEXT_PUBLIC_ANALYTICS_URL" || warn "Secret sync failed - continuing with existing secrets"
+    check_and_sync_secrets "REGISTRY_USERNAME" "REGISTRY_PASSWORD" "GIT_TOKEN" "POSTGRES_PASSWORD" "NEXT_PUBLIC_API_URL" "NEXT_PUBLIC_WS_URL" "NEXT_PUBLIC_ANALYTICS_URL" || warn "Secret sync failed - continuing with existing secrets"
     rm -f "$SYNC_SCRIPT"
   else
     warn "Unable to download secret sync script - continuing with existing secrets"
