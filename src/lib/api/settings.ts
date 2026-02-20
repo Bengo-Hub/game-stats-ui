@@ -71,7 +71,7 @@ export const settingsApi = {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/profile/avatar`, {
+    const response = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '')}/api/v1/settings/profile/avatar`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiClient.getAccessToken()}`,
@@ -162,7 +162,7 @@ export const settingsApi = {
    * Export user data (GDPR)
    */
   async exportData(): Promise<Blob> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/export`, {
+    const response = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '')}/api/v1/settings/export`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${apiClient.getAccessToken()}`,

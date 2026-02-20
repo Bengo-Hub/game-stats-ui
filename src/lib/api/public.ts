@@ -2,25 +2,25 @@
 // These endpoints are rate-limited and provide read-only access
 
 import type {
-  Game,
-  GameTimeline,
-  Team,
-  Event,
-  EventCategory,
+  Bracket,
+  Continent,
   DivisionPool,
   DivisionStandings,
-  Bracket,
-  SpiritScore,
+  Event,
+  EventCategory,
+  Game,
+  GameTimeline,
+  PaginationParams,
   PlayerStat,
+  Scoring,
+  SpiritScore,
+  Team,
   TeamSpiritAverage,
   World,
-  Continent,
-  PaginationParams,
-  Scoring,
 } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-const PUBLIC_BASE = `${API_BASE_URL}/public`;
+const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '');
+const PUBLIC_BASE = `${API_ROOT}/api/v1/public`;
 
 type QueryParams = Record<string, string | number | boolean | string[] | undefined>;
 

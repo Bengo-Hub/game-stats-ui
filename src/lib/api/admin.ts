@@ -195,7 +195,7 @@ export const adminApi = {
    */
   async exportAuditLogs(params?: ListAuditLogsParams): Promise<Blob> {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/export`,
+      `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '')}/api/v1/admin/audit-logs/export`,
       {
         method: 'POST',
         headers: {
@@ -278,7 +278,7 @@ export const adminApi = {
    */
   async exportData(type: 'events' | 'games' | 'teams' | 'users', format: 'csv' | 'json'): Promise<Blob> {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/admin/export/${type}?format=${format}`,
+      `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '')}/api/v1/admin/export/${type}?format=${format}`,
       {
         method: 'GET',
         headers: {

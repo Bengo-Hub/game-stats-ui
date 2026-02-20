@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import type { Game, GameEvent } from '@/types';
 import { useAuthStore } from '@/stores/auth';
+import type { Game, GameEvent } from '@/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // SSE Event Types
 export type SSEEventType =
@@ -41,7 +41,8 @@ interface UseGameStreamOptions {
   onError?: (error: Error) => void;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '');
+const API_BASE_URL = `${API_ROOT}/api/v1`;
 
 export function useGameStream(
   gameId: string | null,
