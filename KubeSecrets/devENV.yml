@@ -6,11 +6,11 @@ metadata:
 type: Opaque
 stringData:
   # API Configuration
-  NEXT_PUBLIC_API_URL: "https://api.ultimatestats.co.ke"
-  NEXT_PUBLIC_WS_URL: "wss://ultimatestats.co.ke"
+  NEXT_PUBLIC_API_URL: "https://api.ultichange.org"
+  NEXT_PUBLIC_WS_URL: "wss://ultichange.org"
   
   # Metabase Integration
-  NEXT_PUBLIC_METABASE_URL: "https://analytics.ultimatestats.co.ke"
+  NEXT_PUBLIC_METABASE_URL: "https://analytics.ultichange.org"
   
   # Feature Flags
   NEXT_PUBLIC_ENABLE_PWA: "true"

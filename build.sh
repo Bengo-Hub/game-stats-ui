@@ -50,14 +50,14 @@ DEVOPS_DIR=${DEVOPS_DIR:-"$HOME/mosuon-devops-k8s"}
 VALUES_FILE_PATH=${VALUES_FILE_PATH:-"apps/${APP_NAME}/values.yaml"}
 
 # Git configuration
-GIT_EMAIL=${GIT_EMAIL:-"dev@ultimatestats.co.ke"}
+GIT_EMAIL=${GIT_EMAIL:-"dev@ultistats.ultichange.org"}
 GIT_USER=${GIT_USER:-"Game Stats Bot"}
 TRIVY_ECODE=${TRIVY_ECODE:-0}
 
 # Build-time environment variables for Next.js
-NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://api.ultimatestats.co.ke"}
-NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"wss://ultimatestats.co.ke"}
-NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultimatestats.co.ke"}
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org"}
+NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"wss://ultistats.ultichange.org"}
+NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
 
 # Determine Git commit ID
 if [[ -z ${GITHUB_SHA:-} ]]; then
