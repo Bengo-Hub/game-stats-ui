@@ -63,8 +63,6 @@ else
   GIT_COMMIT_ID=${GITHUB_SHA::8}
 fi
 
-# Handle KUBE_CONFIG fallback for B64 variant
-KUBE_CONFIG=${KUBE_CONFIG:-${KUBE_CONFIG_B64:-}}
 
 
 info "Service: ${APP_NAME}"
