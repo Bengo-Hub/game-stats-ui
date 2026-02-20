@@ -12,7 +12,7 @@
 #   NAMESPACE         - Kubernetes namespace (default: mosuon)
 #   DEPLOY            - Enable deployment (default: true)
 #   DEVOPS_REPO       - DevOps repository (default: Bengo-Hub/mosuon-devops-k8s)
-#   DEVOPS_DIR        - Local devops directory (default: $HOME/mosuon-devops-k8s)
+#   DEVOPS_DIR        - Local devops directory (default: d:/Projects/BengoBox/mosuon/mosuon-devops-k8s)
 # =============================================================================
 
 set -euo pipefail
@@ -45,6 +45,7 @@ REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE:-codevertex}
 IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/${APP_NAME}"
 
 # DevOps repository configuration
+DEVOPS_REPO=${DEVOPS_REPO:-"Bengo-Hub/mosuon-devops-k8s"}
 DEVOPS_DIR=${DEVOPS_DIR:-"d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"}
 VALUES_FILE_PATH=${VALUES_FILE_PATH:-"apps/${APP_NAME}/values.yaml"}
 
@@ -58,17 +59,15 @@ GIT_EMAIL=${GIT_EMAIL:-"dev@ultistats.ultichange.org"}
 GIT_USER=${GIT_USER:-"Game Stats Bot"}
 TRIVY_ECODE=${TRIVY_ECODE:-0}
 
-# Build-time environment variables for Next.js
-NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org"}
-NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"wss://ultistats.ultichange.org"}
-NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
-
 # Determine Git commit ID
 if [[ -z ${GITHUB_SHA:-} ]]; then
   GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD || echo "localbuild")
 else
   GIT_COMMIT_ID=${GITHUB_SHA::8}
 fi
+
+# Handle KUBE_CONFIG fallback for B64 variant
+KUBE_CONFIG=${KUBE_CONFIG:-${KUBE_CONFIG_B64:-}}
 
 info "Service: ${APP_NAME}"
 info "Namespace: ${NAMESPACE}"
@@ -201,6 +200,17 @@ if [[ -f "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" ]]; then
   
   # Delegate solely to the centralized updater tool
   "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" "$APP_NAME" "$GIT_COMMIT_ID" || warn "Helm values update failed"
+
+  # Wait for deployment to be ready (ArgoCD will trigger the rollout)
+  if [[ -n ${KUBE_CONFIG:-} || -n ${KUBECONFIG:-} ]]; then
+    info "Waiting for deployment ${APP_NAME} to be ready in namespace ${NAMESPACE}..."
+    info "Note: This depends on ArgoCD synchronization speed."
+    kubectl -n "$NAMESPACE" rollout status deployment/"$APP_NAME" --timeout=300s || {
+      error "Deployment failed to become ready within 300s. Check pod logs or ImagePullBackOff."
+      exit 1
+    }
+    success "Deployment ${APP_NAME} is ready!"
+  fi
 else
   warn "update-helm-values.sh not found - manual Helm values update may be required"
 fi
