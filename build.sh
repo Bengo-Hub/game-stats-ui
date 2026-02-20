@@ -77,7 +77,7 @@ info "API URL: ${NEXT_PUBLIC_API_URL}"
 # =============================================================================
 # PREREQUISITE CHECKS
 # =============================================================================
-for tool in git docker pnpm; do
+for tool in git docker; do
   command -v "$tool" >/dev/null || { error "$tool is required"; exit 1; }
 done
 if [[ ${DEPLOY} == "true" ]]; then
@@ -103,20 +103,7 @@ if [[ ${DEPLOY} == "true" ]]; then
 fi
 
 # =============================================================================
-# BUILD FRONTEND
-# =============================================================================
-info "Installing dependencies and building frontend..."
-pnpm install
-# Ensure types are ignored if needed for production build stability
-# pnpm build
-NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}" \
-NEXT_PUBLIC_WS_URL="${NEXT_PUBLIC_WS_URL}" \
-NEXT_PUBLIC_ANALYTICS_URL="${NEXT_PUBLIC_ANALYTICS_URL}" \
-pnpm build
-success "Frontend build complete"
-
-# =============================================================================
-# BUILD DOCKER IMAGE
+# BUILD DOCKER IMAGE (Dockerfile handles pnpm install + pnpm build internally)
 # =============================================================================
 info "Building Docker image"
 DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" \

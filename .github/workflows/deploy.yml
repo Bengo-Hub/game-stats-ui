@@ -139,19 +139,6 @@ jobs:
         if: needs.sync-secrets.outputs.result != 'synced'
         uses: Bengo-Hub/mosuon-devops-k8s/.github/actions/install-devops-tools@master
 
-      - name: Setup Node.js
-        if: needs.sync-secrets.outputs.result != 'synced'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install pnpm
-        if: needs.sync-secrets.outputs.result != 'synced'
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm --version
-
       - name: Set deployment variables
         if: needs.sync-secrets.outputs.result != 'synced'
         run: |
