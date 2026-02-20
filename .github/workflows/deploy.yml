@@ -228,7 +228,7 @@ jobs:
           DEVOPS_REPO: Bengo-Hub/mosuon-devops-k8s
           GIT_USER: ${{ secrets.GIT_USER || 'Game Stats Bot' }}
           GIT_EMAIL: ${{ secrets.GIT_EMAIL || 'dev@ultistats.ultichange.org' }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://ultistatsapi.ultichange.org/api/v1' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://ultistatsapi.ultichange.org' }}
           NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://ultistatsapi.ultichange.org' }}
           NEXT_PUBLIC_ANALYTICS_URL: ${{ secrets.NEXT_PUBLIC_ANALYTICS_URL || 'https://analytics.ultichange.org' }}
         run: |

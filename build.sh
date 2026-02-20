@@ -64,8 +64,8 @@ else
 fi
 
 
-# Frontend environment defaults (include /api/v1 prefix for production)
-NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org/api/v1"}
+# Frontend environment defaults (client.ts appends /api/v1 prefix automatically)
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-"https://ultistatsapi.ultichange.org"}
 NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-"wss://ultistatsapi.ultichange.org"}
 NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-"https://analytics.ultichange.org"}
 
