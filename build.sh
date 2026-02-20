@@ -170,6 +170,23 @@ if [[ ! -d "$DEVOPS_DIR" ]]; then
 fi
 
 # =============================================================================
+# SECRETS SETUP (using centralized devops script)
+# =============================================================================
+if [[ -f "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" ]]; then
+  info "Creating secrets for UI using centralized script..."
+  chmod +x "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh"
+  
+  # Delegate to the centralized secret generator
+  SERVICE_NAME="$APP_NAME" \
+  NAMESPACE="$NAMESPACE" \
+  POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}" \
+  JWT_SECRET="${JWT_SECRET:-}" \
+  bash "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" || warn "Secret creation failed"
+else
+  warn "create-service-secrets.sh not found (checked $DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh)"
+fi
+
+# =============================================================================
 # UPDATE HELM VALUES (using centralized script)
 # =============================================================================
 if [[ -f "${DEVOPS_DIR}/scripts/tools/update-helm-values.sh" ]]; then
