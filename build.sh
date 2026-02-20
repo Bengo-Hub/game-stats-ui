@@ -46,7 +46,15 @@ IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/${APP_NAME}"
 
 # DevOps repository configuration
 DEVOPS_REPO=${DEVOPS_REPO:-"Bengo-Hub/mosuon-devops-k8s"}
-DEVOPS_DIR=${DEVOPS_DIR:-"d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"}
+# Check for Windows path existence first, then fall back to a relative path
+DEVOPS_DIR_WINDOWS="d:/Projects/BengoBox/mosuon/mosuon-devops-k8s"
+if [[ -z "${DEVOPS_DIR:-}" ]]; then
+  if [[ -d "$DEVOPS_DIR_WINDOWS" ]]; then
+    DEVOPS_DIR="$DEVOPS_DIR_WINDOWS"
+  else
+    DEVOPS_DIR="../mosuon-devops-k8s" # Fallback to a relative path
+  fi
+fi
 VALUES_FILE_PATH=${VALUES_FILE_PATH:-"apps/${APP_NAME}/values.yaml"}
 
 # Standard production defaults for Next.js variables
