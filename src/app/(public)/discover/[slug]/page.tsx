@@ -61,7 +61,7 @@ function useEventDetail(idOrSlug: string | undefined) {
 function useEventGames(eventId: string | undefined) {
   return useQuery({
     queryKey: ['events', eventId, 'games'],
-    queryFn: () => publicApi.listGames({ limit: 200 }), // Get all games for this event
+    queryFn: () => publicApi.listGames({ eventId, limit: 200 }), // Get all games for this event
     enabled: !!eventId,
     staleTime: 1000 * 60 * 2,
   });

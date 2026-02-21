@@ -1,39 +1,36 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicApi, type GameStreamEvent } from '@/lib/api/public';
+import { cn } from '@/lib/utils';
+import type { Game, GameEvent, Scoring, SpiritScore } from '@/types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { format, parseISO } from 'date-fns';
 import {
-  ArrowLeft,
-  Clock,
-  Radio,
-  RefreshCw,
-  Target,
-  User,
-  Share2,
-  AlertCircle,
-  Calendar,
   Activity,
-  Users,
-  Heart,
-  Disc,
-  Shield,
-  RotateCcw,
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
   ChevronDown,
   ChevronUp,
-  MapPin,
-  Trophy,
+  Clock,
+  Disc,
+  Heart,
   Info,
+  MapPin,
+  RefreshCw,
+  RotateCcw,
+  Share2,
+  Shield,
+  Target,
+  Trophy,
+  Users
 } from 'lucide-react';
-import { publicApi, type GameStreamEvent } from '@/lib/api/public';
-import type { Game, GameEvent, Scoring, SpiritScore } from '@/types';
-import { format, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import * as React from 'react';
 
 // ============================================
 // Split View Stats Component
@@ -239,9 +236,8 @@ function SpiritDisplay({ spiritScores, homeTeamId, awayTeamId }: SpiritDisplayPr
                   {Array.from({ length: cat.max }, (_, i) => (
                     <div
                       key={i}
-                      className={`w-2 h-2 rounded-full ${
-                        i < (score[cat.key] as number) ? 'bg-primary' : 'bg-muted'
-                      }`}
+                      className={`w-2 h-2 rounded-full ${i < (score[cat.key] as number) ? 'bg-primary' : 'bg-muted'
+                        }`}
                     />
                   ))}
                 </div>
@@ -542,11 +538,11 @@ export default function LiveGameDetailPage() {
             <div className="flex-shrink-0">
               <div className="flex items-center gap-2 md:gap-4 px-3 py-2 bg-card rounded-lg shadow-sm border">
                 <span className="text-2xl md:text-4xl font-bold tabular-nums text-blue-600 dark:text-blue-400">
-                  {game.homeTeamScore}
+                  {gameStats.home.goals}
                 </span>
                 <span className="text-xl md:text-3xl font-light text-muted-foreground">-</span>
                 <span className="text-2xl md:text-4xl font-bold tabular-nums text-red-600 dark:text-red-400">
-                  {game.awayTeamScore}
+                  {gameStats.away.goals}
                 </span>
               </div>
               {isLive && (
@@ -813,14 +809,14 @@ export default function LiveGameDetailPage() {
                           <div className={cn(
                             'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                             isGoal ? 'bg-green-500 text-white' :
-                            isAssist ? 'bg-blue-500 text-white' :
-                            isTimeout ? 'bg-amber-500 text-white' :
-                            'bg-muted text-muted-foreground'
+                              isAssist ? 'bg-blue-500 text-white' :
+                                isTimeout ? 'bg-amber-500 text-white' :
+                                  'bg-muted text-muted-foreground'
                           )}>
                             {isGoal ? <Disc className="h-4 w-4" /> :
-                             isAssist ? <Target className="h-4 w-4" /> :
-                             isTimeout ? <Clock className="h-4 w-4" /> :
-                             <Activity className="h-4 w-4" />}
+                              isAssist ? <Target className="h-4 w-4" /> :
+                                isTimeout ? <Clock className="h-4 w-4" /> :
+                                  <Activity className="h-4 w-4" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-medium">

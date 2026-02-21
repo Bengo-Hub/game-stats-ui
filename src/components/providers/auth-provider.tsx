@@ -106,8 +106,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [accessToken, isAuthenticated, fetchUser, router]);
 
-  // Sync token with API client
-  useEffect(() => {
+  // Sync token with API client synchronously to prevent race conditions 
+  // with initial API calls from child components
+  useMemo(() => {
     apiClient.setAccessToken(accessToken);
   }, [accessToken]);
 

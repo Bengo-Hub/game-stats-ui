@@ -32,6 +32,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useEventsQuery } from '@/lib/hooks/useEventsQuery';
 import { gameKeys, useGamesQuery } from '@/lib/hooks/useGamesQuery';
 import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
 import { usePermissions } from '@/lib/hooks/usePermission';
@@ -81,6 +82,8 @@ export default function GamesPage() {
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [status, setStatus] = React.useState<GameStatus | 'all'>('all');
+  const [selectedEventId, setSelectedEventId] = React.useState<string>('all');
+  const [selectedDivisionId, setSelectedDivisionId] = React.useState<string>('all');
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
   const [showFilters, setShowFilters] = React.useState(false);
   const [dateFilter, setDateFilter] = React.useState<'today' | 'week' | 'all'>('all');
@@ -99,7 +102,12 @@ export default function GamesPage() {
   // Reset pagination when filters change
   React.useEffect(() => {
     pagination.reset();
-  }, [status, dateFilter]);
+  }, [status, dateFilter, selectedEventId, selectedDivisionId]);
+
+  // Reset division when event changes
+  React.useEffect(() => {
+    setSelectedDivisionId('all');
+  }, [selectedEventId]);
 
   // Calculate date range for filter
   const getDateRange = () => {
@@ -122,11 +130,18 @@ export default function GamesPage() {
     const dateRange = getDateRange();
     return {
       ...(status !== 'all' && { status }),
+      ...(selectedEventId !== 'all' && { eventId: selectedEventId }),
+      ...(selectedDivisionId !== 'all' && { divisionPoolId: selectedDivisionId }),
       ...dateRange,
       limit: pagination.pageSize,
       offset: pagination.offset,
     };
-  }, [status, dateFilter, pagination.pageSize, pagination.offset]);
+  }, [status, dateFilter, selectedEventId, selectedDivisionId, pagination.pageSize, pagination.offset]);
+
+  // Fetch events for filters
+  const { data: events = [] } = useEventsQuery();
+  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const eventDivisions = selectedEvent?.divisions || [];
 
   // Fetch games using TanStack Query
   const {
@@ -176,10 +191,12 @@ export default function GamesPage() {
     setDebouncedSearch('');
     setStatus('all');
     setDateFilter('all');
+    setSelectedEventId('all');
+    setSelectedDivisionId('all');
   };
 
   // Check if any filters are active
-  const hasActiveFilters = status !== 'all' || dateFilter !== 'all' || debouncedSearch;
+  const hasActiveFilters = status !== 'all' || dateFilter !== 'all' || debouncedSearch || selectedEventId !== 'all' || selectedDivisionId !== 'all';
 
   // Handle cancel game
   const handleCancelGame = (game: Game) => {
@@ -301,6 +318,34 @@ export default function GamesPage() {
               <SelectItem value="week">This week</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Event filter */}
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Events" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {events.map(event => (
+                <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Division filter (only if event is selected) */}
+          {selectedEventId !== 'all' && eventDivisions.length > 0 && (
+            <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="All Divisions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Divisions</SelectItem>
+                {eventDivisions.map(div => (
+                  <SelectItem key={div.id} value={div.id}>{div.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Clear filters */}
           {hasActiveFilters && (

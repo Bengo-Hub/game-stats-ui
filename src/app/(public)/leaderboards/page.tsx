@@ -1,22 +1,30 @@
 'use client';
 
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SearchInput } from '@/components/ui/search-input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SearchInput } from '@/components/ui/search-input';
 import {
-  Trophy,
-  Target,
-  Star,
-  TrendingUp,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicApi, type TeamSpiritAverage } from '@/lib/api';
+import type { PlayerStat, Team } from '@/types';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import {
+  AlertCircle,
   Medal,
   RefreshCw,
-  AlertCircle,
+  Star,
+  Target,
+  TrendingUp,
+  Users
 } from 'lucide-react';
-import { publicApi, type TeamSpiritAverage } from '@/lib/api';
-import type { PlayerStat } from '@/types';
+import * as React from 'react';
 
 // Extended player stat for display with rank
 interface DisplayPlayerStat extends PlayerStat {
@@ -42,57 +50,75 @@ const getRankIcon = (rank: number) => {
 };
 
 export default function LeaderboardsPage() {
-  const [topScorers, setTopScorers] = React.useState<DisplayPlayerStat[]>([]);
-  const [topAssists, setTopAssists] = React.useState<DisplayPlayerStat[]>([]);
-  const [spiritLeaders, setSpiritLeaders] = React.useState<DisplaySpiritStat[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  // Filtering state
+  const [selectedGender, setSelectedGender] = React.useState<string>('all');
+  const [selectedTeam, setSelectedTeam] = React.useState<string>('all');
   const [search, setSearch] = React.useState('');
 
-  // Fetch leaderboard data
-  const fetchLeaderboards = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Fetch teams for filter
+  const { data: teamsData = [] } = useQuery({
+    queryKey: ['teams', 'list'],
+    queryFn: () => publicApi.listTeams(),
+    staleTime: 1000 * 60 * 5,
+  });
+  const teams = teamsData;
 
-    try {
-      // Fetch all leaderboards in parallel
-      const [scorersData, assistsData, spiritData] = await Promise.all([
-        publicApi.getPlayerLeaderboard({ category: 'goals', limit: 10 }),
-        publicApi.getPlayerLeaderboard({ category: 'assists', limit: 10 }),
-        publicApi.getSpiritLeaderboard({ limit: 10 }),
-      ]);
+  const params = React.useMemo(() => ({
+    limit: 50,
+    gender: selectedGender !== 'all' ? selectedGender : undefined,
+    teamId: selectedTeam !== 'all' ? selectedTeam : undefined,
+  }), [selectedGender, selectedTeam]);
 
-      // Transform data with ranks
-      const rankedScorers: DisplayPlayerStat[] = scorersData.map((player, index) => ({
-        ...player,
-        rank: index + 1,
-      }));
+  // Fetch all leaderboards in parallel
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: ['leaderboards', 'goals', params],
+        queryFn: () => publicApi.getPlayerLeaderboard({ category: 'goals', ...params }),
+        staleTime: 1000 * 60 * 2,
+      },
+      {
+        queryKey: ['leaderboards', 'assists', params],
+        queryFn: () => publicApi.getPlayerLeaderboard({ category: 'assists', ...params }),
+        staleTime: 1000 * 60 * 2,
+      },
+      {
+        queryKey: ['leaderboards', 'spirit'],
+        queryFn: () => publicApi.getSpiritLeaderboard({ limit: 50 }),
+        staleTime: 1000 * 60 * 5,
+      }
+    ]
+  });
 
-      const rankedAssists: DisplayPlayerStat[] = assistsData.map((player, index) => ({
-        ...player,
-        rank: index + 1,
-      }));
+  const loading = results.some((r: any) => r.isLoading);
+  const hasError = results.some((r: any) => r.isError);
+  const errorMsg = results.find((r: any) => r.error)?.error?.message || 'Failed to load leaderboards';
 
-      const rankedSpirit: DisplaySpiritStat[] = spiritData.map((team, index) => ({
-        ...team,
-        rank: index + 1,
-      }));
+  const handleRefresh = () => {
+    results.forEach((r: any) => r.refetch());
+  };
 
-      setTopScorers(rankedScorers);
-      setTopAssists(rankedAssists);
-      setSpiritLeaders(rankedSpirit);
-    } catch (err) {
-      console.error('Failed to fetch leaderboards:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load leaderboards');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Transform data with ranks
+  const topScorers: DisplayPlayerStat[] = React.useMemo(() => {
+    return (results[0].data || []).map((player: PlayerStat, index: number) => ({
+      ...player,
+      rank: index + 1,
+    }));
+  }, [results[0].data]);
 
-  // Initial load
-  React.useEffect(() => {
-    fetchLeaderboards();
-  }, [fetchLeaderboards]);
+  const topAssists: DisplayPlayerStat[] = React.useMemo(() => {
+    return (results[1].data || []).map((player: PlayerStat, index: number) => ({
+      ...player,
+      rank: index + 1,
+    }));
+  }, [results[1].data]);
+
+  const spiritLeaders: DisplaySpiritStat[] = React.useMemo(() => {
+    return (results[2].data || []).map((team: TeamSpiritAverage, index: number) => ({
+      ...team,
+      rank: index + 1,
+    }));
+  }, [results[2].data]);
 
   // Client-side search filtering
   const filteredScorers = React.useMemo(() => {
@@ -136,31 +162,65 @@ export default function LeaderboardsPage() {
       </div>
 
       {/* Search and Refresh */}
-      <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto mb-8">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search players or teams..."
-          className="flex-1"
-        />
-        <Button
-          variant="outline"
-          onClick={fetchLeaderboards}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+      <div className="flex flex-col gap-4 max-w-4xl mx-auto mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 items-center w-full">
+          <div className="flex-1 w-full">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search players or teams..."
+              className="w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-4 w-full sm:w-auto">
+            <Select value={selectedGender} onValueChange={setSelectedGender}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <Users className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Gender</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map((team: Team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="col-span-2 sm:col-span-1"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Error State */}
-      {error && (
+      {hasError && (
         <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3 max-w-2xl mx-auto">
           <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive">{errorMsg}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchLeaderboards}>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             Retry
           </Button>
         </div>
@@ -199,9 +259,8 @@ export default function LeaderboardsPage() {
                       {filteredScorers.map((player) => (
                         <div
                           key={`scorer-${player.playerId || player.rank}`}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            player.rank <= 3 ? 'bg-primary/5' : ''
-                          }`}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${player.rank <= 3 ? 'bg-primary/5' : ''
+                            }`}
                         >
                           <div className="w-6 flex justify-center">
                             {getRankIcon(player.rank)}
@@ -247,9 +306,8 @@ export default function LeaderboardsPage() {
                       {filteredAssists.map((player) => (
                         <div
                           key={`assist-${player.playerId || player.rank}`}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            player.rank <= 3 ? 'bg-primary/5' : ''
-                          }`}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${player.rank <= 3 ? 'bg-primary/5' : ''
+                            }`}
                         >
                           <div className="w-6 flex justify-center">
                             {getRankIcon(player.rank)}
@@ -300,9 +358,8 @@ export default function LeaderboardsPage() {
                       {filteredSpirit.map((team) => (
                         <div
                           key={`spirit-${team.teamId || team.rank}`}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            team.rank <= 3 ? 'bg-primary/5' : ''
-                          }`}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${team.rank <= 3 ? 'bg-primary/5' : ''
+                            }`}
                         >
                           <div className="w-6 flex justify-center">
                             {getRankIcon(team.rank)}

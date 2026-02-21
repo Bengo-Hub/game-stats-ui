@@ -125,8 +125,8 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 
     // Fetch available events
     const { data: events = [] } = useQuery({
-        queryKey: eventKeys.list({ status: 'published' }),
-        queryFn: () => publicApi.listEvents({ status: 'published', limit: 100 }),
+        queryKey: eventKeys.list({ limit: 100 }),
+        queryFn: () => publicApi.listEvents({ limit: 100 }),
         enabled: open,
     });
 

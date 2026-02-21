@@ -19,6 +19,7 @@ import type {
   TeamSpiritAverage,
   World,
 } from '@/types';
+import { mapGameResponse } from './games';
 
 const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '');
 const PUBLIC_BASE = `${API_ROOT}/api/v1/public`;
@@ -147,11 +148,11 @@ export async function listEvents(params?: ListEventsParams): Promise<Event[]> {
   });
 }
 
-export async function getUpcomingEvents(limit: number = 10): Promise<Event[]> {
+export async function getUpcomingEvents(limit: number = 50): Promise<Event[]> {
   return listEvents({ temporal: 'upcoming', limit, sortBy: 'start_date', sortOrder: 'asc' });
 }
 
-export async function getPastEvents(limit: number = 10): Promise<Event[]> {
+export async function getPastEvents(limit: number = 50): Promise<Event[]> {
   return listEvents({ temporal: 'past', limit, sortBy: 'start_date', sortOrder: 'desc' });
 }
 
@@ -201,6 +202,7 @@ export async function getEventCrew(eventId: string): Promise<EventCrew> {
 // ============================================
 
 export interface ListGamesParams extends PaginationParams {
+  eventId?: string;
   status?: 'scheduled' | 'in_progress' | 'finished' | 'ended' | 'canceled';
   divisionPoolId?: string;
   fieldId?: string;
@@ -209,36 +211,41 @@ export interface ListGamesParams extends PaginationParams {
 }
 
 export async function listGames(params?: ListGamesParams): Promise<Game[]> {
-  return publicFetch<Game[]>('/games', {
+  const data = await publicFetch<any[]>('/games', {
     params: {
+      event_id: params?.eventId,
       status: params?.status,
-      divisionPoolId: params?.divisionPoolId,
-      fieldId: params?.fieldId,
-      startDate: params?.startDate,
-      endDate: params?.endDate,
+      division_pool_id: params?.divisionPoolId,
+      field_id: params?.fieldId,
+      start_date: params?.startDate,
+      end_date: params?.endDate,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
     } as QueryParams,
   });
+  return Array.isArray(data) ? data.map(mapGameResponse) : [];
 }
 
 export async function getLiveGames(): Promise<Game[]> {
-  return publicFetch<Game[]>('/games', {
+  const data = await publicFetch<any[]>('/games', {
     params: { status: 'in_progress', limit: DEFAULT_LIMIT },
   });
+  return Array.isArray(data) ? data.map(mapGameResponse) : [];
 }
 
-export async function getUpcomingGames(limit: number = 10): Promise<Game[]> {
-  return publicFetch<Game[]>('/games', {
+export async function getUpcomingGames(limit: number = 50): Promise<Game[]> {
+  const data = await publicFetch<any[]>('/games', {
     params: {
       status: 'scheduled',
       limit,
     },
   });
+  return Array.isArray(data) ? data.map(mapGameResponse) : [];
 }
 
 export async function getGame(gameId: string): Promise<Game> {
-  return publicFetch<Game>(`/games/${gameId}`);
+  const data = await publicFetch<any>(`/games/${gameId}`);
+  return mapGameResponse(data);
 }
 
 export async function getGameTimeline(gameId: string): Promise<GameTimeline> {
@@ -369,6 +376,8 @@ export interface LeaderboardParams extends PaginationParams {
   eventId?: string;
   divisionPoolId?: string;
   category?: 'goals' | 'assists' | 'total';
+  teamId?: string;
+  gender?: string;
 }
 
 export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<PlayerStat[]> {
@@ -377,6 +386,8 @@ export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<
       eventId: params?.eventId,
       divisionPoolId: params?.divisionPoolId,
       category: params?.category,
+      teamId: params?.teamId,
+      gender: params?.gender,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
     } as QueryParams,

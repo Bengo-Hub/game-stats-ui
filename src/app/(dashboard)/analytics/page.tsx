@@ -1,17 +1,37 @@
 'use client';
 
-import * as React from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { BarChart, DonutChart } from '@tremor/react';
-import { TrendingUp, Users, Trophy, Target, Star, Search, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { analyticsApi } from '@/lib/api/analytics';
 import { publicApi } from '@/lib/api/public';
 import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Title,
+  Tooltip
+} from 'chart.js';
+import { AlertCircle, RefreshCw, Search, Sparkles, Star, Target, TrendingUp, Trophy, Users } from 'lucide-react';
+import * as React from 'react';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 export default function AnalyticsPage() {
   const [query, setQuery] = React.useState('');
@@ -188,17 +208,22 @@ export default function AnalyticsPage() {
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground mb-4">{queryMutation.data.explanation}</p>
               {queryMutation.data.results && queryMutation.data.results.length > 0 && (
-                <BarChart
-                  data={queryMutation.data.results.slice(0, 10).map((r, i) => ({
-                    name: String(Object.values(r)[0] || `Item ${i + 1}`),
-                    value: Number(Object.values(r)[1]) || 0,
-                  }))}
-                  index="name"
-                  categories={['value']}
-                  colors={['blue']}
-                  valueFormatter={(v) => `${v}`}
-                  className="h-48"
-                />
+                <div className="h-48 relative">
+                  <Bar
+                    data={{
+                      labels: queryMutation.data.results.slice(0, 10).map((r: any, i: number) => String(Object.values(r)[0] || `Item ${i + 1}`)),
+                      datasets: [{
+                        label: 'Value',
+                        data: queryMutation.data.results.slice(0, 10).map((r: any) => Number(Object.values(r)[1]) || 0),
+                        backgroundColor: '#3B82F6',
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                    }}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -266,14 +291,22 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {divisionDistribution.length > 0 ? (
-              <DonutChart
-                data={divisionDistribution}
-                index="name"
-                category="value"
-                colors={['blue', 'cyan', 'pink', 'amber', 'emerald', 'violet']}
-                valueFormatter={(v) => `${v} teams`}
-                className="h-64"
-              />
+              <div className="h-64 relative">
+                <Doughnut
+                  data={{
+                    labels: divisionDistribution.map((d) => d.name),
+                    datasets: [{
+                      data: divisionDistribution.map((d) => d.value),
+                      backgroundColor: ['#3B82F6', '#06B6D4', '#EC4899', '#F59E0B', '#10B981', '#8B5CF6'],
+                      borderWidth: 1,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                  }}
+                />
+              </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No division data available
@@ -290,15 +323,23 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {topScorersData.length > 0 ? (
-              <BarChart
-                data={topScorersData}
-                index="name"
-                categories={['goals']}
-                colors={['emerald']}
-                valueFormatter={(v) => `${v} goals`}
-                layout="vertical"
-                className="h-64"
-              />
+              <div className="h-64 relative">
+                <Bar
+                  data={{
+                    labels: topScorersData.map((d) => d.name),
+                    datasets: [{
+                      label: 'Goals',
+                      data: topScorersData.map((d) => d.goals),
+                      backgroundColor: '#10B981',
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                  }}
+                />
+              </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No scoring data available
@@ -318,15 +359,23 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {spiritScoresData.length > 0 ? (
-              <BarChart
-                data={spiritScoresData}
-                index="team"
-                categories={['spirit']}
-                colors={['amber']}
-                valueFormatter={(v) => `${v.toFixed(1)}`}
-                layout="vertical"
-                className="h-64"
-              />
+              <div className="h-64 relative">
+                <Bar
+                  data={{
+                    labels: spiritScoresData.map((d) => d.team),
+                    datasets: [{
+                      label: 'Spirit',
+                      data: spiritScoresData.map((d) => d.spirit),
+                      backgroundColor: '#F59E0B',
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                  }}
+                />
+              </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No spirit data available
@@ -349,12 +398,11 @@ export default function AnalyticsPage() {
                     key={player.playerId}
                     className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                   >
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                      index === 0 ? 'bg-amber-500 text-white' :
-                      index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-amber-700 text-white' :
-                      'bg-primary/10 text-primary'
-                    }`}>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                          index === 2 ? 'bg-amber-700 text-white' :
+                            'bg-primary/10 text-primary'
+                      }`}>
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -395,12 +443,11 @@ export default function AnalyticsPage() {
                       key={`assist-${player.playerId}`}
                       className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                     >
-                      <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                        index === 0 ? 'bg-amber-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                        index === 2 ? 'bg-amber-700 text-white' :
-                        'bg-primary/10 text-primary'
-                      }`}>
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
+                          index === 1 ? 'bg-gray-400 text-white' :
+                            index === 2 ? 'bg-amber-700 text-white' :
+                              'bg-primary/10 text-primary'
+                        }`}>
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -436,12 +483,11 @@ export default function AnalyticsPage() {
                     key={team.teamId}
                     className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                   >
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                      index === 0 ? 'bg-amber-500 text-white' :
-                      index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-amber-700 text-white' :
-                      'bg-primary/10 text-primary'
-                    }`}>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                          index === 2 ? 'bg-amber-700 text-white' :
+                            'bg-primary/10 text-primary'
+                      }`}>
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
