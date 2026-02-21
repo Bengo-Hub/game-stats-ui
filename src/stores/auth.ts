@@ -1,9 +1,9 @@
 // Auth store using Zustand
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { User, LoginCredentials, AuthResponse } from '@/types';
 import { authApi } from '@/lib/api/auth';
+import type { AuthResponse, LoginCredentials, User } from '@/types';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface AuthState {
   user: User | null;
@@ -117,8 +117,8 @@ export const useAuthStore = create<AuthStore>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
         return localStorage;
@@ -129,7 +129,7 @@ export const useAuthStore = create<AuthStore>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
-      skipHydration: true,
+      skipHydration: false,
     }
   )
 );

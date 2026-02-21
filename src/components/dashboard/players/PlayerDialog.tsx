@@ -1,5 +1,6 @@
 'use client';
 
+import { FileUploader } from '@/components/shared/FileUploader';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Player } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ export const playerSchema = z.object({
     isCaptain: z.boolean(),
     isSpiritCaptain: z.boolean(),
     gender: z.string().min(1, 'Gender is required'),
+    profileImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
 
 export type PlayerFormData = z.infer<typeof playerSchema>;
@@ -57,6 +59,8 @@ export function PlayerDialog({
         register,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<PlayerFormData>({
         resolver: zodResolver(playerSchema),
@@ -67,6 +71,7 @@ export function PlayerDialog({
                 isCaptain: player.isCaptain,
                 isSpiritCaptain: player.isSpiritCaptain,
                 gender: player.gender || 'X',
+                profileImageUrl: player.profileImageUrl || '',
             }
             : {
                 name: '',
@@ -77,6 +82,7 @@ export function PlayerDialog({
                 isCaptain: false,
                 isSpiritCaptain: false,
                 gender: 'X',
+                profileImageUrl: '',
             },
     });
 
@@ -89,6 +95,7 @@ export function PlayerDialog({
                     isCaptain: player.isCaptain,
                     isSpiritCaptain: player.isSpiritCaptain,
                     gender: player.gender || 'X',
+                    profileImageUrl: player.profileImageUrl || '',
                 });
             } else {
                 reset({
@@ -101,6 +108,7 @@ export function PlayerDialog({
                     isCaptain: false,
                     isSpiritCaptain: false,
                     gender: 'X',
+                    profileImageUrl: '',
                 } as any);
             }
         }
@@ -196,6 +204,30 @@ export function PlayerDialog({
                             <input type="checkbox" {...register('isSpiritCaptain')} className="rounded" />
                             <span className="text-sm">Spirit Captain</span>
                         </label>
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                        <Label className="flex items-center gap-2">
+                            <Upload className="h-4 w-4" />
+                            Profile Image
+                        </Label>
+                        <FileUploader
+                            value={watch('profileImageUrl')}
+                            onChange={(url) => setValue('profileImageUrl', url)}
+                            onRemove={() => setValue('profileImageUrl', '')}
+                            label=""
+                            description="Upload profile photo (PNG, JPG or WEBP, max. 5MB)"
+                        />
+                        <div className="pt-2">
+                            <Label htmlFor="profileImageUrlInput" className="text-xs text-muted-foreground mb-1 block">Or enter URL manually</Label>
+                            <Input
+                                id="profileImageUrlInput"
+                                type="url"
+                                placeholder="https://example.com/avatar.png"
+                                {...register('profileImageUrl')}
+                                className={errors.profileImageUrl ? 'border-destructive' : ''}
+                            />
+                        </div>
                     </div>
 
                     <DialogFooter>

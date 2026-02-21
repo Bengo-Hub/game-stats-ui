@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -37,6 +38,7 @@ import {
   Trash2,
   Upload,
   UserCircle,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
@@ -48,12 +50,29 @@ export default function PlayersPage() {
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
 
+  // Filters state
+  const [selectedTeamId, setSelectedTeamId] = React.useState<string>('all');
+  const [selectedEventId, setSelectedEventId] = React.useState<string>('all');
+  const [selectedGender, setSelectedGender] = React.useState<string>('all');
+
   // State for single player edit
   const [isPlayerDialogOpen, setIsPlayerDialogOpen] = React.useState(false);
   const [editingPlayer, setEditingPlayer] = React.useState<Player | undefined>(undefined);
 
-  const pagination = usePaginationState(25);
+  const pagination = usePaginationState(50); // Consistent page size
   const queryClient = useQueryClient();
+
+  // Fetch teams for filter
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams', 'list', 'filter'],
+    queryFn: () => publicApi.listTeams({ limit: 100 }),
+  });
+
+  // Fetch events for filter
+  const { data: events = [] } = useQuery({
+    queryKey: ['events', 'list', 'filter'],
+    queryFn: () => publicApi.listEvents({ limit: 100 }),
+  });
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,7 +83,7 @@ export default function PlayersPage() {
   }, [search, pagination]);
 
   // Fetch players logically
-  const queryKey = ['dashboard', 'players', 'list', debouncedSearch, pagination.pageSize, pagination.offset];
+  const queryKey = ['dashboard', 'players', 'list', debouncedSearch, selectedTeamId, selectedEventId, selectedGender, pagination.pageSize, pagination.offset];
   const {
     data: players = [],
     isLoading,
@@ -76,6 +95,9 @@ export default function PlayersPage() {
     queryKey,
     queryFn: () => publicApi.listPlayers({
       search: debouncedSearch,
+      teamId: selectedTeamId === 'all' ? undefined : selectedTeamId,
+      eventId: selectedEventId === 'all' ? undefined : selectedEventId,
+      gender: selectedGender === 'all' ? undefined : (selectedGender === 'm' ? 'M' : selectedGender === 'f' ? 'F' : 'X'),
       limit: pagination.pageSize,
       offset: pagination.offset,
     }),
@@ -193,14 +215,68 @@ export default function PlayersPage() {
         </div>
       </PageHeader>
 
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search players by name..."
-          className="max-w-md w-full"
-        />
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 max-w-md">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search players by name..."
+            className="w-full"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Select value={selectedGender} onValueChange={setSelectedGender}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Gender</SelectItem>
+              <SelectItem value="m">Male (M)</SelectItem>
+              <SelectItem value="f">Female (F)</SelectItem>
+              <SelectItem value="x">Mixed (X)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Teams" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Teams</SelectItem>
+              {teams.map(t => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Events" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {events.map(e => (
+                <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(selectedGender !== 'all' || selectedTeamId !== 'all' || selectedEventId !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedGender('all');
+                setSelectedTeamId('all');
+                setSelectedEventId('all');
+              }}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Error State */}
@@ -342,7 +418,7 @@ export default function PlayersPage() {
                       {player.teamId && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon-sm">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

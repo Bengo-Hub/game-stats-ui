@@ -427,7 +427,7 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="__none__" disabled>
                     No fields available
                   </SelectItem>
                 )}

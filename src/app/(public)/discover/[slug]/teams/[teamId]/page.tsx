@@ -1,30 +1,29 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicApi } from '@/lib/api/public';
+import { cn } from '@/lib/utils';
+import type { Game } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
-  Users,
-  Trophy,
+  Calendar,
   Crown,
   Heart,
   MapPin,
-  Calendar,
-  Target,
-  Swords,
-  Medal,
-  TrendingUp,
   Shirt,
+  Swords,
+  Target,
+  TrendingUp,
+  Trophy,
+  Users
 } from 'lucide-react';
-import { publicApi } from '@/lib/api/public';
-import type { Team, Player, Game } from '@/types';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Query hooks
 function useTeamDetail(teamId: string | undefined) {
@@ -36,11 +35,11 @@ function useTeamDetail(teamId: string | undefined) {
   });
 }
 
-function useTeamGames(teamId: string | undefined) {
+function useTeamGames(teamId: string | undefined, eventId: string | undefined) {
   return useQuery({
-    queryKey: ['teams', teamId, 'games'],
-    queryFn: () => publicApi.listGames({ limit: 100 }),
-    enabled: !!teamId,
+    queryKey: ['teams', teamId, 'event', eventId, 'games'],
+    queryFn: () => publicApi.listGames({ eventId: eventId, limit: 200 }),
+    enabled: !!teamId && !!eventId,
     staleTime: 1000 * 60 * 2,
     select: (games) => {
       // Filter games where this team is home or away
@@ -97,20 +96,13 @@ function calculateTeamStats(games: Game[], teamId: string) {
   };
 }
 
-// Helper to aggregate player stats from games
-function aggregatePlayerStats(games: Game[], players: Player[] | undefined, teamId: string) {
-  // For now, return placeholder stats since we don't have per-game player stats in the API
-  // In a real implementation, you'd fetch game scores and aggregate
-  return players?.map(player => ({
-    ...player,
-    gamesPlayed: games.filter(g =>
-      (g.status === 'finished' || g.status === 'ended') &&
-      (g.homeTeam?.id === teamId || g.awayTeam?.id === teamId)
-    ).length,
-    goals: 0, // Would come from API
-    assists: 0, // Would come from API
-    total: 0,
-  })) || [];
+function usePlayerLeaderboard(teamId: string | undefined) {
+  return useQuery({
+    queryKey: ['teams', teamId, 'player-stats'],
+    queryFn: () => publicApi.getPlayerLeaderboard({ teamId: teamId, limit: 100 }),
+    enabled: !!teamId,
+    staleTime: 1000 * 60 * 5,
+  });
 }
 
 export default function TeamDetailPage() {
@@ -120,8 +112,9 @@ export default function TeamDetailPage() {
   const teamId = params?.teamId as string;
 
   const { data: team, isLoading, isError } = useTeamDetail(teamId);
-  const { data: games = [] } = useTeamGames(teamId);
+  const { data: games = [] } = useTeamGames(teamId, team?.eventId);
   const { data: spiritAverage } = useTeamSpiritAverage(teamId);
+  const { data: leaderboardStats = [] } = usePlayerLeaderboard(teamId);
 
   const teamStats = React.useMemo(() => {
     if (!teamId) return null;
@@ -130,8 +123,19 @@ export default function TeamDetailPage() {
 
   const playerStats = React.useMemo(() => {
     if (!team?.players || !teamId) return [];
-    return aggregatePlayerStats(games, team.players, teamId);
-  }, [games, team?.players, teamId]);
+
+    // Merge team players with leaderboard stats
+    return team.players.map(player => {
+      const stats = leaderboardStats.find(s => s.playerId === player.id);
+      return {
+        ...player,
+        goals: stats?.goals || 0,
+        assists: stats?.assists || 0,
+        gamesPlayed: stats?.gamesPlayed || 0,
+        total: (stats?.goals || 0) + (stats?.assists || 0),
+      };
+    }).sort((a, b) => b.total - a.total);
+  }, [team?.players, teamId, leaderboardStats]);
 
   if (isLoading) {
     return (
@@ -232,7 +236,7 @@ export default function TeamDetailPage() {
                     <p className={cn(
                       "text-2xl font-bold",
                       teamStats.pointDifferential > 0 ? 'text-emerald-600' :
-                      teamStats.pointDifferential < 0 ? 'text-red-500' : ''
+                        teamStats.pointDifferential < 0 ? 'text-red-500' : ''
                     )}>
                       {teamStats.pointDifferential > 0 ? '+' : ''}{teamStats.pointDifferential}
                     </p>
@@ -421,8 +425,8 @@ export default function TeamDetailPage() {
                             <div className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
                               isWin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                              isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                              "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                                isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                                  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                             )}>
                               {isWin ? 'W' : isLoss ? 'L' : 'D'}
                             </div>

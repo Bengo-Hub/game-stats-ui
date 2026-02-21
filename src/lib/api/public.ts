@@ -360,6 +360,8 @@ export async function getTeamSpiritAverage(teamId: string): Promise<TeamSpiritAv
 export interface ListPlayersParams extends PaginationParams {
   search?: string;
   teamId?: string;
+  eventId?: string;
+  gender?: string;
 }
 
 export async function listPlayers(params?: ListPlayersParams): Promise<Player[]> {

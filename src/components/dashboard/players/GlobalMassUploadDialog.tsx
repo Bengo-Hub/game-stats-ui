@@ -2,7 +2,7 @@
 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { teamsApi } from '@/lib/api/teams';
+import { publicApi } from '@/lib/api/public';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import { MassUploadPlayersDialog } from './MassUploadPlayersDialog';
@@ -18,8 +18,8 @@ export function GlobalMassUploadDialog({ open, onOpenChange, onSuccess }: Global
     const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
 
     const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
-        queryKey: ['teams'],
-        queryFn: () => teamsApi.list(),
+        queryKey: ['teams', 'list', 'global-upload'],
+        queryFn: () => publicApi.listTeams({ limit: 100 }),
         enabled: open,
     });
 

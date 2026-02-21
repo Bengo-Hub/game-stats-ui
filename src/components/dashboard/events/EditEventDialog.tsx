@@ -1,11 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { FileUploader } from '@/components/shared/FileUploader';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,10 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -25,12 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, CalendarDays } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { eventsApi, type UpdateEventRequest } from '@/lib/api/events';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
-import type { Event, EventCategory } from '@/types';
 import { cn } from '@/lib/utils';
+import type { Event, EventCategory } from '@/types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
+import { CalendarDays, Loader2 } from 'lucide-react';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Validation schema
 const editEventSchema = z.object({
@@ -127,6 +128,7 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<EditEventFormData>({
     resolver: zodResolver(editEventSchema),
@@ -351,16 +353,26 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
             </div>
           </div>
 
-          {/* Logo URL */}
+          {/* Logo URL / Upload */}
           <div className="space-y-2">
-            <Label htmlFor="logoUrl">Logo URL</Label>
-            <Input
-              id="logoUrl"
-              type="url"
-              placeholder="https://example.com/logo.png"
-              {...register('logoUrl')}
-              className={errors.logoUrl ? 'border-destructive' : ''}
+            <Label htmlFor="logoUrl">Event Logo</Label>
+            <FileUploader
+              value={watch('logoUrl')}
+              onChange={(url) => setValue('logoUrl', url, { shouldDirty: true })}
+              onRemove={() => setValue('logoUrl', '', { shouldDirty: true })}
+              label=""
+              description="Upload event logo (PNG, JPG or WEBP, max. 5MB)"
             />
+            <div className="pt-2">
+              <Label htmlFor="logoUrlInput" className="text-xs text-muted-foreground mb-1 block">Or enter URL manually</Label>
+              <Input
+                id="logoUrlInput"
+                type="url"
+                placeholder="https://example.com/logo.png"
+                {...register('logoUrl')}
+                className={errors.logoUrl ? 'border-destructive' : ''}
+              />
+            </div>
             {errors.logoUrl && (
               <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
             )}

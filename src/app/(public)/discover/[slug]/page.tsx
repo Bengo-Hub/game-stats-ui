@@ -47,6 +47,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 // Query hooks
 function useEventDetail(idOrSlug: string | undefined) {
@@ -561,6 +562,7 @@ export default function EventDetailPage() {
   const { data: eventRounds = [] } = useEventRounds(event?.id);
   const { data: playerStats = [] } = usePlayerLeaderboard(event?.id);
   const { data: crew } = useEventCrew(event?.id);
+  const divisions = event?.divisions || [];
 
   // Local state
   const [selectedDivision, setSelectedDivision] = React.useState<string>('all');
@@ -693,6 +695,31 @@ export default function EventDetailPage() {
     // Intentionally empty - we want to show all dates by default
   }, [gameDates]);
 
+  const handleShare = async () => {
+    if (typeof window === 'undefined' || !event) return;
+
+    const shareData = {
+      title: `${event.name} - BengoBox`,
+      text: `Check out the ${event.name} tournament on BengoBox!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard');
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Error sharing:', err);
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -728,7 +755,6 @@ export default function EventDetailPage() {
   }
 
   const countryCode = event.location?.country?.code;
-  const divisions = event.divisions || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -783,7 +809,7 @@ export default function EventDetailPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
                 <Share2 className="h-4 w-4" />
                 Share
               </Button>

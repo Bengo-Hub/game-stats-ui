@@ -31,6 +31,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 // ============================================
 // Split View Stats Component
@@ -400,6 +401,31 @@ export default function LiveGameDetailPage() {
     return '--:--';
   };
 
+  const handleShare = async () => {
+    if (typeof window === 'undefined' || !game) return;
+
+    const shareData = {
+      title: `${game.homeTeam?.name || 'Home'} vs ${game.awayTeam?.name || 'Away'} - Live Scores`,
+      text: `Check out the live scores for ${game.homeTeam?.name || 'Home'} vs ${game.awayTeam?.name || 'Away'} on BengoBox!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard');
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Error sharing:', err);
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -496,7 +522,7 @@ export default function LiveGameDetailPage() {
               >
                 <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
               </Button>
-              <Button variant="ghost" size="sm" className="h-8 px-2">
+              <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleShare}>
                 <Share2 className="h-4 w-4" />
               </Button>
             </div>

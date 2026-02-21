@@ -1,5 +1,6 @@
 'use client';
 
+import { FileUploader } from '@/components/shared/FileUploader';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -36,7 +37,7 @@ const editTeamSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
     eventId: z.string().min(1, 'Please select an event'),
     divisionPoolId: z.string().min(1, 'Please select a division'),
-    initialSeed: z.number().min(1).max(999).optional(),
+    initialSeed: z.number().min(0).max(999).optional(),
     finalPlacement: z.number().min(1).max(999).optional(),
     logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
     primaryColor: z.string().optional(),
@@ -75,7 +76,6 @@ const PRESET_COLORS = [
 ];
 
 export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeamDialogProps) {
-    const [logoPreview, setLogoPreview] = React.useState<string>('');
     const queryClient = useQueryClient();
 
     const {
@@ -101,27 +101,17 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
                 name: team.name,
                 eventId: team.eventId || '',
                 divisionPoolId: team.divisionPoolId || '',
-                initialSeed: team.initialSeed,
+                initialSeed: team.initialSeed ?? 0,
                 finalPlacement: team.finalPlacement,
                 logoUrl: team.logoUrl || '',
                 primaryColor: team.primaryColor || '#3B82F6',
                 secondaryColor: team.secondaryColor || '#FFFFFF',
-                contactEmail: team.contactEmail || '',
                 contactPhone: team.contactPhone || '',
                 locationName: team.locationName || '',
             });
-            setLogoPreview(team.logoUrl || '');
         }
     }, [team, open, reset]);
 
-    // Update logo preview when URL changes
-    React.useEffect(() => {
-        if (logoUrl && logoUrl.startsWith('http')) {
-            setLogoPreview(logoUrl);
-        } else {
-            setLogoPreview('');
-        }
-    }, [logoUrl]);
 
     // Fetch available events
     const { data: events = [] } = useQuery({
@@ -320,25 +310,21 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
                             <Upload className="h-4 w-4" />
                             Team Logo
                         </h3>
-                        <div className="flex items-start gap-4">
-                            {logoPreview && (
-                                <div className="w-20 h-20 rounded-lg border overflow-hidden flex-shrink-0">
-                                    <img
-                                        src={logoPreview}
-                                        alt="Logo preview"
-                                        className="w-full h-full object-cover"
-                                        onError={() => setLogoPreview('')}
-                                    />
-                                </div>
-                            )}
-                            <div className="flex-1 space-y-2">
-                                <Input
-                                    id="logoUrl"
-                                    type="url"
-                                    placeholder="https://example.com/logo.png"
-                                    {...register('logoUrl')}
-                                />
-                            </div>
+                        <FileUploader
+                            value={watch('logoUrl')}
+                            onChange={(url) => setValue('logoUrl', url, { shouldDirty: true })}
+                            onRemove={() => setValue('logoUrl', '', { shouldDirty: true })}
+                            label=""
+                            description="Upload team logo (PNG, JPG or WEBP, max. 5MB)"
+                        />
+                        <div className="pt-2">
+                            <Label htmlFor="logoUrlInput" className="text-xs text-muted-foreground mb-1 block">Or enter URL manually</Label>
+                            <Input
+                                id="logoUrlInput"
+                                type="url"
+                                placeholder="https://example.com/logo.png"
+                                {...register('logoUrl')}
+                            />
                         </div>
                     </div>
 

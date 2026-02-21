@@ -1,11 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { FileUploader } from '@/components/shared/FileUploader';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,10 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -26,11 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Loader2, CalendarDays } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { eventsApi, type CreateEventRequest } from '@/lib/api/events';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
-import type { EventCategory } from '@/types';
 import { cn } from '@/lib/utils';
+import type { EventCategory } from '@/types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CalendarDays, Loader2, Plus } from 'lucide-react';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Validation schema
 const createEventSchema = z.object({
@@ -307,16 +308,26 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
             </div>
           </div>
 
-          {/* Logo URL */}
+          {/* Logo URL / Upload */}
           <div className="space-y-2">
-            <Label htmlFor="logoUrl">Logo URL</Label>
-            <Input
-              id="logoUrl"
-              type="url"
-              placeholder="https://example.com/logo.png"
-              {...register('logoUrl')}
-              className={errors.logoUrl ? 'border-destructive' : ''}
+            <Label htmlFor="logoUrl">Event Logo</Label>
+            <FileUploader
+              value={watch('logoUrl')}
+              onChange={(url) => setValue('logoUrl', url)}
+              onRemove={() => setValue('logoUrl', '')}
+              label=""
+              description="Upload event logo (PNG, JPG or WEBP, max. 5MB)"
             />
+            <div className="pt-2">
+              <Label htmlFor="logoUrlInput" className="text-xs text-muted-foreground mb-1 block">Or enter URL manually</Label>
+              <Input
+                id="logoUrlInput"
+                type="url"
+                placeholder="https://example.com/logo.png"
+                {...register('logoUrl')}
+                className={errors.logoUrl ? 'border-destructive' : ''}
+              />
+            </div>
             {errors.logoUrl && (
               <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
             )}

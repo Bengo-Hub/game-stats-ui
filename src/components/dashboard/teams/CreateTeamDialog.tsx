@@ -1,11 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { FileUploader } from '@/components/shared/FileUploader';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,19 +20,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Loader2, Upload, Palette, Users } from 'lucide-react';
-import { teamsApi, type CreateTeamRequest } from '@/lib/api/teams';
 import { publicApi } from '@/lib/api/public';
-import { teamKeys } from '@/lib/hooks/useTeamsQuery';
+import { teamsApi, type CreateTeamRequest } from '@/lib/api/teams';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
+import { teamKeys } from '@/lib/hooks/useTeamsQuery';
 import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Palette, Plus, Upload, Users } from 'lucide-react';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Validation schema
 const createTeamSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
   eventId: z.string().min(1, 'Please select an event'),
   divisionPoolId: z.string().min(1, 'Please select a division'),
-  initialSeed: z.number().min(1).max(999).optional(),
+  initialSeed: z.number().min(0).max(999).optional(),
   logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
@@ -76,7 +77,6 @@ const PRESET_COLORS = [
 
 export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDialogProps) {
   const [open, setOpen] = React.useState(false);
-  const [logoPreview, setLogoPreview] = React.useState<string>('');
   const queryClient = useQueryClient();
 
   const {
@@ -92,7 +92,7 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
       name: '',
       eventId: eventId || '',
       divisionPoolId: '',
-      initialSeed: undefined,
+      initialSeed: 0,
       logoUrl: '',
       primaryColor: '#3B82F6',
       secondaryColor: '#FFFFFF',
@@ -107,14 +107,6 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
   const secondaryColor = watch('secondaryColor');
   const logoUrl = watch('logoUrl');
 
-  // Update logo preview when URL changes
-  React.useEffect(() => {
-    if (logoUrl && logoUrl.startsWith('http')) {
-      setLogoPreview(logoUrl);
-    } else {
-      setLogoPreview('');
-    }
-  }, [logoUrl]);
 
   // Fetch available events
   const { data: events = [] } = useQuery({
@@ -146,7 +138,6 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
       toast.success('Team created successfully');
       setOpen(false);
       reset();
-      setLogoPreview('');
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -261,9 +252,9 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
                 <Input
                   id="initialSeed"
                   type="number"
-                  min={1}
+                  min={0}
                   max={999}
-                  placeholder="e.g., 1"
+                  placeholder="e.g., 0"
                   {...register('initialSeed', { valueAsNumber: true })}
                 />
               </div>
@@ -360,33 +351,26 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
               <Upload className="h-4 w-4" />
               Team Logo
             </h3>
-            <div className="flex items-start gap-4">
-              {logoPreview && (
-                <div className="w-20 h-20 rounded-lg border overflow-hidden flex-shrink-0">
-                  <img
-                    src={logoPreview}
-                    alt="Logo preview"
-                    className="w-full h-full object-cover"
-                    onError={() => setLogoPreview('')}
-                  />
-                </div>
-              )}
-              <div className="flex-1 space-y-2">
-                <Input
-                  id="logoUrl"
-                  type="url"
-                  placeholder="https://example.com/logo.png"
-                  {...register('logoUrl')}
-                  className={errors.logoUrl ? 'border-destructive' : ''}
-                />
-                {errors.logoUrl && (
-                  <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Enter a URL to your team logo (PNG, JPG, or SVG recommended)
-                </p>
-              </div>
+            <FileUploader
+              value={watch('logoUrl')}
+              onChange={(url) => setValue('logoUrl', url)}
+              onRemove={() => setValue('logoUrl', '')}
+              label=""
+              description="Upload team logo (PNG, JPG or WEBP, max. 5MB)"
+            />
+            <div className="pt-2">
+              <Label htmlFor="logoUrlInput" className="text-xs text-muted-foreground mb-1 block">Or enter URL manually</Label>
+              <Input
+                id="logoUrlInput"
+                type="url"
+                placeholder="https://example.com/logo.png"
+                {...register('logoUrl')}
+                className={errors.logoUrl ? 'border-destructive' : ''}
+              />
             </div>
+            {errors.logoUrl && (
+              <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
+            )}
           </div>
 
           {/* Contact Info */}

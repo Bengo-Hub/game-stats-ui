@@ -2,6 +2,7 @@
 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { publicApi } from '@/lib/api/public';
 import { teamsApi } from '@/lib/api/teams';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
@@ -19,8 +20,8 @@ export function GlobalAddPlayerDialog({ open, onOpenChange, onSuccess }: GlobalA
     const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
 
     const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
-        queryKey: ['teams'],
-        queryFn: () => teamsApi.list(),
+        queryKey: ['teams', 'list', 'global-add'],
+        queryFn: () => publicApi.listTeams({ limit: 100 }),
         enabled: open,
     });
 

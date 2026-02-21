@@ -11,6 +11,7 @@ export interface ListGamesParams {
   endDate?: string;
   page?: number;
   limit?: number;
+  event_id?: string;
   [key: string]: string | number | boolean | undefined;
 }
 

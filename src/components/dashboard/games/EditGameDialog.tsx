@@ -234,7 +234,7 @@ export function EditGameDialog({ game, open, onOpenChange, onSuccess }: EditGame
                 <SelectValue placeholder={game.fieldLocation?.name || 'Select field'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No field assigned</SelectItem>
+                <SelectItem value="__none__">No field assigned</SelectItem>
                 {fields.map((field: { id: string; name: string }) => (
                   <SelectItem key={field.id} value={field.id}>
                     {field.name}
@@ -258,7 +258,7 @@ export function EditGameDialog({ game, open, onOpenChange, onSuccess }: EditGame
                 <SelectValue placeholder={game.scorekeeper?.name || 'Assign scorekeeper'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No scorekeeper</SelectItem>
+                <SelectItem value="__none__">No scorekeeper</SelectItem>
                 {scorekeepers.map((user: { id: string; name: string }) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
