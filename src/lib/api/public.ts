@@ -347,9 +347,24 @@ export async function getTeamSpiritAverage(teamId: string): Promise<TeamSpiritAv
 }
 
 // ============================================
-// Leaderboards API
+// Players & Leaderboards API
 // ============================================
 
+export interface ListPlayersParams extends PaginationParams {
+  search?: string;
+  teamId?: string;
+}
+
+export async function listPlayers(params?: ListPlayersParams): Promise<Player[]> {
+  return publicFetch<Player[]>('/players', {
+    params: {
+      search: params?.search,
+      teamId: params?.teamId,
+      limit: params?.limit ?? DEFAULT_LIMIT,
+      offset: params?.offset ?? 0,
+    } as QueryParams,
+  });
+}
 export interface LeaderboardParams extends PaginationParams {
   eventId?: string;
   divisionPoolId?: string;
@@ -451,6 +466,9 @@ export const publicApi = {
   // Leaderboards
   getPlayerLeaderboard,
   getSpiritLeaderboard,
+
+  // Players
+  listPlayers,
 
   // Geographic
   listContinents,

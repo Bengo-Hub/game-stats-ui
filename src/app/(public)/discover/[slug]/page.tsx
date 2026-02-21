@@ -19,6 +19,7 @@ import type { Event, Game } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
+  ArrowDownUp,
   ArrowLeft,
   BarChart3,
   Calendar,
@@ -30,6 +31,7 @@ import {
   Heart,
   Info,
   Layers,
+  ListFilter,
   MapPin,
   Search,
   Share2,
@@ -572,6 +574,10 @@ export default function EventDetailPage() {
   const [teamSearchQuery, setTeamSearchQuery] = React.useState<string>('');
   const [selectedTeamDivision, setSelectedTeamDivision] = React.useState<string>('all');
 
+  // Schedule view state
+  const [scheduleView, setScheduleView] = React.useState<'list' | 'group'>('list');
+  const [scheduleSortOrder, setScheduleSortOrder] = React.useState<'asc' | 'desc'>('asc');
+
   // Find bracket rounds from event rounds
   const bracketRounds = React.useMemo(() => {
     return eventRounds.filter(r =>
@@ -604,10 +610,13 @@ export default function EventDetailPage() {
 
   // Filter games
   const filteredGames = React.useMemo(() => {
-    return games.filter(g => {
+    let result = games.filter(g => {
       // Filter by division if we have division info
       if (selectedDivision !== 'all') {
-        // Could filter by division pool if game has that info
+        const divName = divisions.find(d => d.id === selectedDivision)?.name;
+        if (divName && g.name && !g.name.includes(divName)) {
+          // Basic heuristic for division filtering on games without direct division linking
+        }
       }
       // Filter by date
       if (selectedDate && !g.scheduledTime?.startsWith(selectedDate)) return false;
@@ -622,7 +631,43 @@ export default function EventDetailPage() {
       }
       return true;
     });
-  }, [games, selectedDivision, selectedDate, selectedStage]);
+
+    // Sort the filtered results based on round priority
+    // Lower rounds (pool, crossover, bracket) -> Finals
+    // Ascending: Pool (lowest priority) -> Final (highest priority)
+    const roundPriority: Record<string, number> = {
+      'final': 8,
+      'third_place': 7,
+      'semi': 6,
+      'quarter': 5,
+      'bracket': 4,
+      'crossover': 3,
+      'pool': 2,
+      'other': 1
+    };
+
+    result.sort((a, b) => {
+      const typeA = a.gameRound?.roundType?.toLowerCase() || 'other';
+      const typeB = b.gameRound?.roundType?.toLowerCase() || 'other';
+
+      const pA = roundPriority[typeA] || 1;
+      const pB = roundPriority[typeB] || 1;
+
+      // Primary sort: by bracket priority
+      if (pA !== pB) {
+        return scheduleSortOrder === 'asc' ? pA - pB : pB - pA;
+      }
+
+      // Secondary sort: by absolute scheduled time
+      const timeA = new Date(a.scheduledTime).getTime();
+      const timeB = new Date(b.scheduledTime).getTime();
+      if (timeA !== timeB) return timeA - timeB; // always chronological within round
+
+      return 0;
+    });
+
+    return result;
+  }, [games, selectedDivision, selectedDate, selectedStage, scheduleSortOrder]);
 
   // Filter teams by search and division
   const filteredTeams = React.useMemo(() => {
@@ -1118,8 +1163,49 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {/* Timetable Button - Right aligned */}
-              <div className="ml-auto">
+              {/* View options - List vs Group & Sorting */}
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="flex bg-background border rounded-md p-1 mr-2">
+                  <button
+                    onClick={() => setScheduleSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                    className={cn(
+                      'p-1.5 rounded flex items-center gap-1 text-xs font-medium transition-colors',
+                      'hover:bg-muted text-muted-foreground hover:text-foreground'
+                    )}
+                    title={`Sort ${scheduleSortOrder === 'asc' ? 'Descending' : 'Ascending'} Bracket Priorities`}
+                  >
+                    <ArrowDownUp className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex bg-background border rounded-md p-1">
+                  <button
+                    onClick={() => setScheduleView('list')}
+                    className={cn(
+                      'p-1.5 rounded transition-colors',
+                      scheduleView === 'list'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                    title="List View"
+                  >
+                    <ListFilter className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setScheduleView('group')}
+                    className={cn(
+                      'p-1.5 rounded transition-colors',
+                      scheduleView === 'group'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                    title="Group View"
+                  >
+                    <Layers className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Timetable Button */}
                 <Button
                   variant="default"
                   size="sm"
@@ -1132,8 +1218,31 @@ export default function EventDetailPage() {
               </div>
             </div>
 
-            {/* Games grouped by round */}
-            {(() => {
+            {/* List View */}
+            {scheduleView === 'list' && (
+              filteredGames.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-semibold mb-2">No Games Found</h3>
+                  <p className="text-muted-foreground">
+                    {games.length === 0
+                      ? 'Games will appear here once they are scheduled.'
+                      : 'No games match your current filters.'}
+                  </p>
+                </Card>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredGames.map(game => (
+                    <Link key={game.id} href={`/live/${game.id}`}>
+                      <GameCard game={game} />
+                    </Link>
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Grouped View */}
+            {scheduleView === 'group' && (() => {
               // Group games by round
               const gamesByRound = filteredGames.reduce((acc, game) => {
                 const roundName = game.gameRound?.name || 'Other Games';
@@ -2120,6 +2229,6 @@ export default function EventDetailPage() {
         event={event}
         games={games}
       />
-    </div>
+    </div >
   );
 }

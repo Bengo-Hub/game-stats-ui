@@ -7,6 +7,17 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV !== "production",
   // Note: Custom runtimeCaching and fallbacks removed for pnpm compatibility
   // The default caching strategies from next-pwa work well for most cases
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /^https?:\/\/[a-zA-Z0-9.-]+\/api\/.*/i,
+        handler: 'NetworkOnly',
+        options: {
+          cacheName: 'api-calls-bypass',
+        },
+      }
+    ]
+  },
 });
 
 const nextConfig: NextConfig = {

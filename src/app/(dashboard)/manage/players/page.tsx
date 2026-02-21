@@ -1,10 +1,18 @@
 'use client';
 
-import { GlobalAddPlayerDialog, GlobalMassUploadDialog } from '@/components/dashboard/players';
+import { GlobalAddPlayerDialog, GlobalMassUploadDialog, PlayerDialog, type PlayerFormData } from '@/components/dashboard/players';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -16,18 +24,47 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { publicApi } from '@/lib/api/public';
-import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Plus, RefreshCw, Target, Trophy, Upload, UserCircle } from 'lucide-react';
+import { teamsApi } from '@/lib/api/teams';
+import { usePaginationState } from '@/lib/hooks/usePagination';
+import type { Player } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Edit,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Upload,
+  UserCircle,
+} from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 export default function PlayersPage() {
   const [search, setSearch] = React.useState('');
-  const [category, setCategory] = React.useState<'goals' | 'assists' | 'total'>('goals');
+  const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
 
-  // Fetch player stats from API (leaderboard endpoint)
+  // State for single player edit
+  const [isPlayerDialogOpen, setIsPlayerDialogOpen] = React.useState(false);
+  const [editingPlayer, setEditingPlayer] = React.useState<Player | undefined>(undefined);
+
+  const pagination = usePaginationState(25);
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      pagination.reset();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, pagination]);
+
+  // Fetch players logically
+  const queryKey = ['dashboard', 'players', 'list', debouncedSearch, pagination.pageSize, pagination.offset];
   const {
     data: players = [],
     isLoading,
@@ -36,21 +73,78 @@ export default function PlayersPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ['dashboard', 'players', category],
-    queryFn: () => publicApi.getPlayerLeaderboard({ limit: 100, category }),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryKey,
+    queryFn: () => publicApi.listPlayers({
+      search: debouncedSearch,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
+    }),
+    staleTime: 1000 * 60, // 1 minute
   });
 
-  // Filter players based on search
-  const filteredPlayers = React.useMemo(() => {
-    if (!search) return players;
-    const searchLower = search.toLowerCase();
-    return players.filter(
-      (player) =>
-        player.playerName.toLowerCase().includes(searchLower) ||
-        player.teamName.toLowerCase().includes(searchLower)
-    );
-  }, [players, search]);
+  // Calculate total pages for UI
+  const hasMorePages = players.length === pagination.pageSize;
+  const totalPages = hasMorePages ? pagination.page + 1 : pagination.page;
+
+  // Edit Player Mutation
+  const updatePlayerMutation = useMutation({
+    mutationFn: (data: PlayerFormData) => {
+      if (!editingPlayer?.teamId) {
+        throw new Error("Cannot edit player without a team");
+      }
+
+      // Remove nulls to satisfy UpdatePlayerRequest
+      const payload = {
+        ...data,
+        jerseyNumber: data.jerseyNumber === null ? undefined : data.jerseyNumber,
+      };
+
+      return teamsApi.updatePlayer(editingPlayer.teamId, editingPlayer.id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'players'] });
+      setIsPlayerDialogOpen(false);
+      setEditingPlayer(undefined);
+      toast.success('Player updated successfully');
+    },
+    onError: (err) => {
+      toast.error('Failed to update player');
+    },
+  });
+
+  // Delete Player Mutation
+  const deletePlayerMutation = useMutation({
+    mutationFn: (player: Player) => {
+      if (!player.teamId) {
+        throw new Error("Cannot delete player without a team");
+      }
+      return teamsApi.removePlayer(player.teamId, player.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'players'] });
+      toast.success('Player deleted successfully');
+    },
+    onError: (err) => {
+      toast.error('Failed to delete player');
+    },
+  });
+
+  const handleEditPlayer = (player: Player) => {
+    setEditingPlayer(player);
+    setIsPlayerDialogOpen(true);
+  };
+
+  const handleDeletePlayer = (player: Player) => {
+    if (confirm(`Are you sure you want to delete ${player.name}?`)) {
+      deletePlayerMutation.mutate(player);
+    }
+  };
+
+  const handleDialogSubmit = (data: PlayerFormData) => {
+    if (editingPlayer) {
+      updatePlayerMutation.mutate(data);
+    }
+  };
 
   // Generate a consistent color from player name
   const getPlayerColor = (name: string) => {
@@ -67,6 +161,7 @@ export default function PlayersPage() {
 
   // Get initials from player name
   const getInitials = (name: string) => {
+    if (!name) return '?';
     const parts = name.split(' ');
     if (parts.length >= 2) {
       return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
@@ -76,7 +171,7 @@ export default function PlayersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Players" description="View player statistics and profiles">
+      <PageHeader title="Players" description="Manage players across all teams and events">
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -103,22 +198,9 @@ export default function PlayersPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search players or teams..."
+          placeholder="Search players by name..."
           className="max-w-md w-full"
         />
-        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
-          {(['goals', 'assists', 'total'] as const).map((cat) => (
-            <Button
-              key={cat}
-              variant={category === cat ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setCategory(cat)}
-              className="capitalize h-8"
-            >
-              {cat}
-            </Button>
-          ))}
-        </div>
       </div>
 
       {/* Error State */}
@@ -143,11 +225,11 @@ export default function PlayersPage() {
             <Skeleton key={i} className="h-16" />
           ))}
         </div>
-      ) : filteredPlayers.length === 0 ? (
+      ) : players.length === 0 ? (
         <EmptyState
           icon={<UserCircle className="h-12 w-12" />}
           title="No players found"
-          description={search ? 'Try adjusting your search' : 'Player statistics will appear here once games are played'}
+          description={search ? 'Try adjusting your search terms' : 'Add players actively to see them here.'}
           action={
             search ? (
               <Button variant="outline" onClick={() => setSearch('')}>
@@ -158,52 +240,54 @@ export default function PlayersPage() {
         />
       ) : (
         <>
-          {/* Results count */}
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{filteredPlayers.length}</span> players
-          </p>
-
           {/* Mobile Card View */}
           <div className="grid gap-4 sm:hidden">
-            {filteredPlayers.map((player, index) => (
-              <Link key={player.playerId} href={`/players/${player.playerId}`}>
-                <Card className="hover:border-primary/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                          style={{ backgroundColor: getPlayerColor(player.playerName) }}
-                        >
-                          {getInitials(player.playerName)}
-                        </div>
-                        {index < 3 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">
-                            {index + 1}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{player.playerName}</h3>
-                        <p className="text-sm text-muted-foreground truncate">{player.teamName}</p>
+            {players.map((player) => (
+              <Card key={player.id} className="hover:border-primary/50 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                        style={{ backgroundColor: getPlayerColor(player.name) }}
+                      >
+                        {getInitials(player.name)}
                       </div>
                     </div>
-                    <div className="flex justify-between mt-3 pt-3 border-t text-sm">
-                      <div className="flex items-center gap-1">
-                        <Target className="h-4 w-4 text-green-500" />
-                        <span className="font-medium">{player.goals} goals</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Trophy className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium">{player.assists} assists</span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {player.gamesPlayed} games
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">
+                        <Link href={`/manage/players/${player.id}`} className="hover:underline hover:text-primary">
+                          {player.name}
+                        </Link>
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate">{player.teamName || 'No Team'}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    {player.teamId && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditPlayer(player)}>
+                            <Edit className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeletePlayer(player)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t text-sm">
+                    <Badge variant="outline">{player.gender}</Badge>
+                    {player.jerseyNumber !== undefined && player.jerseyNumber !== null && <Badge variant="outline">#{player.jerseyNumber}</Badge>}
+                    {player.isCaptain && <Badge variant="secondary">Captain</Badge>}
+                    {player.isSpiritCaptain && <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">Spirit Capt</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
@@ -212,57 +296,87 @@ export default function PlayersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-15">Rank</TableHead>
                   <TableHead>Player</TableHead>
                   <TableHead>Team</TableHead>
-                  <TableHead className="text-center">Games</TableHead>
-                  <TableHead className="text-center">Goals</TableHead>
-                  <TableHead className="text-center">Assists</TableHead>
-                  <TableHead className="text-center">Total Points</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPlayers.map((player, index) => (
-                  <TableRow key={player.playerId} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = `/players/${player.playerId}`}>
-                    <TableCell>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-amber-700 text-white' :
-                            'bg-muted text-muted-foreground'
-                        }`}>
-                        {index + 1}
-                      </div>
-                    </TableCell>
+                {players.map((player) => (
+                  <TableRow key={player.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div
                           className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                          style={{ backgroundColor: getPlayerColor(player.playerName) }}
+                          style={{ backgroundColor: getPlayerColor(player.name) }}
                         >
-                          {getInitials(player.playerName)}
+                          {getInitials(player.name)}
                         </div>
-                        <span className="font-medium">{player.playerName}</span>
+                        <Link href={`/manage/players/${player.id}`} className="font-medium hover:underline hover:text-primary">
+                          {player.name}
+                        </Link>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{player.teamName}</TableCell>
-                    <TableCell className="text-center">{player.gamesPlayed}</TableCell>
-                    <TableCell className="text-center font-mono font-medium text-green-600">
-                      {player.goals}
+                    <TableCell className="text-muted-foreground">
+                      {player.teamId ? (
+                        <Link href={`/manage/teams/${player.teamId}`} className="hover:underline">
+                          {player.teamName}
+                        </Link>
+                      ) : (
+                        <span className="italic">No Team</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-center font-mono font-medium text-blue-600">
-                      {player.assists}
+                    <TableCell>
+                      <Badge variant="outline" className="uppercase">{player.gender}</Badge>
                     </TableCell>
-                    <TableCell className="text-center font-mono font-bold">
-                      {player.goals + player.assists}
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {player.jerseyNumber !== undefined && player.jerseyNumber !== null && <Badge variant="outline">#{player.jerseyNumber}</Badge>}
+                        {player.isCaptain && <Badge variant="secondary" className="text-xs">Captain</Badge>}
+                        {player.isSpiritCaptain && <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200 text-xs hover:bg-purple-200">Spirit</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {player.teamId && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditPlayer(player)}>
+                              <Edit className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeletePlayer(player)}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </Card>
+
+          {/* Pagination */}
+          {players.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4 border-t">
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={totalPages}
+                onPageChange={pagination.setPage}
+              />
+            </div>
+          )}
         </>
       )}
 
+      {/* Dialogs */}
       <GlobalAddPlayerDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
@@ -272,6 +386,18 @@ export default function PlayersPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onSuccess={() => refetch()}
+      />
+      <PlayerDialog
+        open={isPlayerDialogOpen}
+        onOpenChange={(open) => {
+          setIsPlayerDialogOpen(open);
+          if (!open) setEditingPlayer(undefined);
+        }}
+        title="Edit Player"
+        description={`Update information for ${editingPlayer?.name}`}
+        player={editingPlayer}
+        onSubmit={handleDialogSubmit}
+        isPending={updatePlayerMutation.isPending}
       />
     </div>
   );

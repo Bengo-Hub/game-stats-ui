@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
+import { apiClient } from '@/lib/api/client';
 import { hasPermission, isRoleEqualOrHigher, type Role } from '@/lib/permissions';
 import { findRouteConfig, isDashboardRoute } from '@/lib/permissions/routes';
+import { useAuthStore } from '@/stores/auth';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 
 // Static public paths (exact matches and prefixes)
 const PUBLIC_PATHS = [
@@ -104,6 +105,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
     }
   }, [accessToken, isAuthenticated, fetchUser, router]);
+
+  // Sync token with API client
+  useEffect(() => {
+    apiClient.setAccessToken(accessToken);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!isLoading) {

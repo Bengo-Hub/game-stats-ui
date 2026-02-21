@@ -1,5 +1,6 @@
 'use client';
 
+import { EditEventDialog } from '@/components/dashboard/events';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -289,6 +290,15 @@ export default function EventDetailPage() {
                     </Tabs>
                 </div>
             </div>
+
+            {event && (
+                <EditEventDialog
+                    event={event}
+                    open={editDialogOpen}
+                    onOpenChange={setEditDialogOpen}
+                    onSuccess={() => refetchEvent()}
+                />
+            )}
         </div>
     );
 }

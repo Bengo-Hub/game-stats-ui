@@ -179,11 +179,13 @@ export interface GameTimeline {
 export interface Player {
   id: string;
   name: string;
-  gender: string;
+  gender: 'M' | 'F' | 'X';
   jerseyNumber?: number;
   profileImageUrl?: string;
-  isCaptain: boolean;
-  isSpiritCaptain: boolean;
+  isCaptain?: boolean;
+  isSpiritCaptain?: boolean;
+  teamId?: string;
+  teamName?: string;
 }
 
 // ============================================

@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useEventsQuery } from '@/lib/hooks/useEventsQuery';
 import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
 import { usePermissions } from '@/lib/hooks/usePermission';
 import { teamKeys, useTeamsQuery } from '@/lib/hooks/useTeamsQuery';
@@ -89,6 +90,7 @@ export default function TeamsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
   const [showFilters, setShowFilters] = React.useState(false);
   const [divisionFilter, setDivisionFilter] = React.useState<string>('all');
+  const [eventFilter, setEventFilter] = React.useState<string>('all');
   const [editingTeam, setEditingTeam] = React.useState<Team | null>(null);
 
   // Debounce search input
@@ -100,17 +102,20 @@ export default function TeamsPage() {
     return () => clearTimeout(timer);
   }, [search, pagination]);
 
+  const { data: events = [] } = useEventsQuery();
+
   // Reset pagination when filters change
   React.useEffect(() => {
     pagination.reset();
-  }, [divisionFilter]);
+  }, [divisionFilter, eventFilter]);
 
   // Build query params
   const queryParams = React.useMemo(() => ({
     ...(debouncedSearch && { search: debouncedSearch }),
+    ...(eventFilter !== 'all' && { eventId: eventFilter }),
     limit: pagination.pageSize,
     offset: pagination.offset,
-  }), [debouncedSearch, pagination.pageSize, pagination.offset]);
+  }), [debouncedSearch, eventFilter, pagination.pageSize, pagination.offset]);
 
   // Fetch teams using TanStack Query
   const {
@@ -252,6 +257,21 @@ export default function TeamsPage() {
           'flex flex-col sm:flex-row gap-3 sm:items-center',
           !showFilters && 'hidden sm:flex'
         )}>
+          {/* Event filter */}
+          {events.length > 0 && (
+            <Select value={eventFilter} onValueChange={setEventFilter}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="All events" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                {events.map((ev: any) => (
+                  <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {/* Division filter */}
           {divisions.length > 0 && (
             <Select value={divisionFilter} onValueChange={setDivisionFilter}>

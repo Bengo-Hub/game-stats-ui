@@ -43,33 +43,58 @@ export interface RecordScoreRequest {
   second?: number;
 }
 
+// Helper object to map backend generic objects to the Game entity
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapGameResponse(data: any): Game {
+  if (!data) return data;
+  return {
+    ...data,
+    homeTeamScore: data.home_team_score ?? data.homeTeamScore ?? 0,
+    awayTeamScore: data.away_team_score ?? data.awayTeamScore ?? 0,
+    scheduledTime: data.scheduled_time ?? data.scheduledTime,
+    actualStartTime: data.actual_start_time ?? data.actualStartTime,
+    actualEndTime: data.actual_end_time ?? data.actualEndTime,
+    allocatedTimeMinutes: data.allocated_time_minutes ?? data.allocatedTimeMinutes ?? 90,
+    stoppageTimeSeconds: data.stoppage_time_seconds ?? data.stoppageTimeSeconds ?? 0,
+    homeTeam: data.home_team ?? data.homeTeam,
+    awayTeam: data.away_team ?? data.awayTeam,
+    fieldLocation: data.field_location ?? data.fieldLocation,
+    gameRound: data.game_round ?? data.gameRound,
+    scorekeeper: data.scorekeeper,
+  } as Game;
+}
+
 export const gamesApi = {
   /**
    * Get a list of games with optional filters
    */
   async list(params?: ListGamesParams): Promise<Game[]> {
-    return apiClient.get<Game[]>('/games', params);
+    const data = await apiClient.get<any[]>('/games', params);
+    return Array.isArray(data) ? data.map(mapGameResponse) : [];
   },
 
   /**
    * Get a single game by ID
    */
   async get(id: string): Promise<Game> {
-    return apiClient.get<Game>(`/games/${id}`);
+    const data = await apiClient.get<any>(`/games/${id}`);
+    return mapGameResponse(data);
   },
 
   /**
    * Create a new game
    */
   async create(data: CreateGameRequest): Promise<Game> {
-    return apiClient.post<Game>('/games', data);
+    const response = await apiClient.post<any>('/games', data);
+    return mapGameResponse(response);
   },
 
   /**
    * Update a game
    */
   async update(id: string, data: UpdateGameRequest): Promise<Game> {
-    return apiClient.put<Game>(`/games/${id}`, data);
+    const response = await apiClient.put<any>(`/games/${id}`, data);
+    return mapGameResponse(response);
   },
 
   /**
@@ -83,21 +108,24 @@ export const gamesApi = {
    * Start a game
    */
   async start(id: string): Promise<Game> {
-    return apiClient.post<Game>(`/games/${id}/start`, {});
+    const response = await apiClient.post<any>(`/games/${id}/start`, {});
+    return mapGameResponse(response);
   },
 
   /**
    * Finish a game (timer done)
    */
   async finish(id: string): Promise<Game> {
-    return apiClient.post<Game>(`/games/${id}/finish`, {});
+    const response = await apiClient.post<any>(`/games/${id}/finish`, {});
+    return mapGameResponse(response);
   },
 
   /**
    * End a game (final submission)
    */
   async end(id: string): Promise<Game> {
-    return apiClient.post<Game>(`/games/${id}/end`, {});
+    const response = await apiClient.post<any>(`/games/${id}/end`, {});
+    return mapGameResponse(response);
   },
 
   /**
