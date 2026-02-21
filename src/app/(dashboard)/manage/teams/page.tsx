@@ -1,22 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
-import { SearchInput } from '@/components/ui/search-input';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CreateTeamDialog, EditTeamDialog } from '@/components/dashboard/teams';
 import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +11,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
+import { Pagination } from '@/components/ui/pagination';
+import { SearchInput } from '@/components/ui/search-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -32,28 +31,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
+import { usePermissions } from '@/lib/hooks/usePermission';
+import { teamKeys, useTeamsQuery } from '@/lib/hooks/useTeamsQuery';
+import { cn } from '@/lib/utils';
+import type { Team } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  Users,
-  Plus,
-  RefreshCw,
   AlertCircle,
-  MapPin,
-  MoreVertical,
   Edit,
-  Trash2,
   Eye,
+  Filter,
   LayoutGrid,
   List,
-  Filter,
-  X,
+  MapPin,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Trash2,
   UserPlus,
+  Users,
+  X,
 } from 'lucide-react';
-import { useTeamsQuery, teamKeys } from '@/lib/hooks/useTeamsQuery';
-import { usePaginationState, DEFAULT_PAGE_SIZE } from '@/lib/hooks/usePagination';
-import { usePermissions } from '@/lib/hooks/usePermission';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Team } from '@/types';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import * as React from 'react';
 
 type ViewMode = 'table' | 'cards';
 
@@ -88,6 +89,7 @@ export default function TeamsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
   const [showFilters, setShowFilters] = React.useState(false);
   const [divisionFilter, setDivisionFilter] = React.useState<string>('all');
+  const [editingTeam, setEditingTeam] = React.useState<Team | null>(null);
 
   // Debounce search input
   React.useEffect(() => {
@@ -189,10 +191,15 @@ export default function TeamsPage() {
             <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
           {canCreateTeams && (
-            <Button size="sm">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Add Team</span>
-            </Button>
+            <CreateTeamDialog
+              onSuccess={handleRefresh}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-2">Add Team</span>
+                </Button>
+              }
+            />
           )}
         </div>
       </PageHeader>
@@ -314,10 +321,15 @@ export default function TeamsPage() {
                 Clear filters
               </Button>
             ) : canCreateTeams ? (
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Team
-              </Button>
+              <CreateTeamDialog
+                onSuccess={handleRefresh}
+                trigger={
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Team
+                  </Button>
+                }
+              />
             ) : undefined
           }
         />
@@ -331,6 +343,7 @@ export default function TeamsPage() {
               canEdit={canEditTeams}
               canDelete={canDeleteTeams}
               onDelete={handleDeleteTeam}
+              onEdit={() => setEditingTeam(team)}
               getPlacementBadge={getPlacementBadge}
             />
           ))}
@@ -420,14 +433,14 @@ export default function TeamsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/teams/${team.id}`}>
+                          <Link href={`/manage/teams/${team.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         {canEditTeams && (
                           <>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditingTeam(team)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Team
                             </DropdownMenuItem>
@@ -485,6 +498,12 @@ export default function TeamsPage() {
           />
         </div>
       )}
+      <EditTeamDialog
+        team={editingTeam}
+        open={!!editingTeam}
+        onOpenChange={(open: boolean) => !open && setEditingTeam(null)}
+        onSuccess={handleRefresh}
+      />
     </div>
   );
 }
@@ -495,10 +514,11 @@ interface TeamCardProps {
   canEdit: boolean;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  onEdit: () => void;
   getPlacementBadge: (placement: number | undefined) => React.ReactNode;
 }
 
-function TeamCard({ team, canEdit, canDelete, onDelete, getPlacementBadge }: TeamCardProps) {
+function TeamCard({ team, canEdit, canDelete, onDelete, onEdit, getPlacementBadge }: TeamCardProps) {
   return (
     <Card className="hover:border-primary/50 transition-colors group relative">
       <CardContent className="p-4">
@@ -516,14 +536,14 @@ function TeamCard({ team, canEdit, canDelete, onDelete, getPlacementBadge }: Tea
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/teams/${team.id}`}>
+                <Link href={`/manage/teams/${team.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Link>
               </DropdownMenuItem>
               {canEdit && (
                 <>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={onEdit}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Team
                   </DropdownMenuItem>
@@ -567,7 +587,7 @@ function TeamCard({ team, canEdit, canDelete, onDelete, getPlacementBadge }: Tea
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <Link href={`/teams/${team.id}`}>
+            <Link href={`/manage/teams/${team.id}`}>
               <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
                 {team.name}
               </h3>

@@ -1,22 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { CancelGameDialog, EditGameDialog, ScheduleGameDialog } from '@/components/dashboard/games';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
-import { SearchInput } from '@/components/ui/search-input';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Pagination } from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
+import { Pagination } from '@/components/ui/pagination';
+import { SearchInput } from '@/components/ui/search-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import {
   Table,
   TableBody,
@@ -33,32 +32,34 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { gameKeys, useGamesQuery } from '@/lib/hooks/useGamesQuery';
+import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
+import { usePermissions } from '@/lib/hooks/usePermission';
+import { cn } from '@/lib/utils';
+import type { Game } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { format, parseISO } from 'date-fns';
 import {
-  Trophy,
-  Plus,
-  Calendar,
-  RefreshCw,
   AlertCircle,
-  MoreVertical,
+  Calendar,
+  Clock,
   Edit,
-  Trash2,
   Eye,
+  Filter,
   LayoutGrid,
   List,
-  Filter,
-  X,
   MapPin,
-  Clock,
+  MoreVertical,
+  Plus,
   Radio,
+  RefreshCw,
+  Trash2,
+  Trophy,
+  X,
   XCircle,
 } from 'lucide-react';
-import { useGamesQuery, gameKeys } from '@/lib/hooks/useGamesQuery';
-import { usePaginationState, DEFAULT_PAGE_SIZE } from '@/lib/hooks/usePagination';
-import { usePermissions } from '@/lib/hooks/usePermission';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Game } from '@/types';
-import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import Link from 'next/link';
+import * as React from 'react';
 
 type GameStatus = 'scheduled' | 'in_progress' | 'finished' | 'ended' | 'canceled';
 type ViewMode = 'table' | 'cards';
@@ -83,6 +84,8 @@ export default function GamesPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
   const [showFilters, setShowFilters] = React.useState(false);
   const [dateFilter, setDateFilter] = React.useState<'today' | 'week' | 'all'>('all');
+  const [editingGame, setEditingGame] = React.useState<Game | null>(null);
+  const [cancelingGame, setCancelingGame] = React.useState<Game | null>(null);
 
   // Debounce search input
   React.useEffect(() => {
@@ -178,11 +181,9 @@ export default function GamesPage() {
   // Check if any filters are active
   const hasActiveFilters = status !== 'all' || dateFilter !== 'all' || debouncedSearch;
 
-  // Handle delete game
-  const handleDeleteGame = async (gameId: string) => {
-    if (!confirm('Are you sure you want to cancel this game?')) return;
-    // TODO: Implement with authenticated API
-    console.log('Cancel game:', gameId);
+  // Handle cancel game
+  const handleCancelGame = (game: Game) => {
+    setCancelingGame(game);
   };
 
   // Permission checks
@@ -214,10 +215,15 @@ export default function GamesPage() {
             <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
           {canScheduleGames && (
-            <Button size="sm">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Schedule Game</span>
-            </Button>
+            <ScheduleGameDialog
+              onSuccess={handleRefresh}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-2">Schedule Game</span>
+                </Button>
+              }
+            />
           )}
         </div>
       </PageHeader>
@@ -350,10 +356,15 @@ export default function GamesPage() {
                 Clear filters
               </Button>
             ) : canScheduleGames ? (
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule Game
-              </Button>
+              <ScheduleGameDialog
+                onSuccess={handleRefresh}
+                trigger={
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Game
+                  </Button>
+                }
+              />
             ) : undefined
           }
         />
@@ -422,13 +433,13 @@ export default function GamesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/games/${game.id}`}>
+                          <Link href={`/manage/games/${game.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         {canEditGames && game.status === 'scheduled' && (
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditingGame(game)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
@@ -438,7 +449,7 @@ export default function GamesPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => handleDeleteGame(game.id)}
+                              onClick={() => handleCancelGame(game)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Cancel Game
@@ -463,7 +474,8 @@ export default function GamesPage() {
               formatTime={formatTime}
               canEdit={canEditGames}
               canCancel={canCancelGames}
-              onCancel={handleDeleteGame}
+              onCancel={handleCancelGame}
+              onEdit={(game) => setEditingGame(game)}
             />
           ))}
         </div>
@@ -495,6 +507,23 @@ export default function GamesPage() {
           />
         </div>
       )}
+      {editingGame && (
+        <EditGameDialog
+          game={editingGame}
+          open={!!editingGame}
+          onOpenChange={(open: boolean) => !open && setEditingGame(null)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {cancelingGame && (
+        <CancelGameDialog
+          game={cancelingGame}
+          open={!!cancelingGame}
+          onOpenChange={(open: boolean) => !open && setCancelingGame(null)}
+          onSuccess={handleRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -505,10 +534,11 @@ interface GameCardProps {
   formatTime: (dateStr: string) => string;
   canEdit: boolean;
   canCancel: boolean;
-  onCancel: (id: string) => void;
+  onCancel: (game: Game) => void;
+  onEdit: (game: Game) => void;
 }
 
-function GameCard({ game, formatTime, canEdit, canCancel, onCancel }: GameCardProps) {
+function GameCard({ game, formatTime, canEdit, canCancel, onCancel, onEdit }: GameCardProps) {
   const isLive = game.status === 'in_progress';
 
   return (
@@ -531,13 +561,13 @@ function GameCard({ game, formatTime, canEdit, canCancel, onCancel }: GameCardPr
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/games/${game.id}`}>
+                <Link href={`/manage/games/${game.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Link>
               </DropdownMenuItem>
               {canEdit && game.status === 'scheduled' && (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(game)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -547,7 +577,7 @@ function GameCard({ game, formatTime, canEdit, canCancel, onCancel }: GameCardPr
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => onCancel(game.id)}
+                    onClick={() => onCancel(game)}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Cancel Game
@@ -568,7 +598,7 @@ function GameCard({ game, formatTime, canEdit, canCancel, onCancel }: GameCardPr
           )}
         </div>
 
-        <Link href={`/games/${game.id}`}>
+        <Link href={`/manage/games/${game.id}`}>
           <div className="space-y-3">
             {/* Home Team */}
             <div className="flex items-center justify-between">

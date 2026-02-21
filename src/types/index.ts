@@ -200,9 +200,12 @@ export interface Team {
   secondaryColor?: string;
   metadata?: Record<string, unknown>;
   divisionPoolId?: string;
+  eventId?: string;
   homeLocationId?: string;
   locationName?: string;
   divisionName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   players?: Player[];
   captain?: Player;
   spiritCaptain?: Player;
@@ -287,6 +290,8 @@ export interface TeamSpiritAverage {
   gamesRated?: number;
   breakdown?: SpiritBreakdown;
   gameScores?: GameSpiritScore[];
+  mvpNominationsCount?: number;
+  spiritNominationsCount?: number;
 }
 
 // ============================================

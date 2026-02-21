@@ -1,22 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { CreateEventDialog, EditEventDialog } from '@/components/dashboard/events';
+import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
-import { SearchInput } from '@/components/ui/search-input';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Pagination } from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,34 +11,47 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
+import { Pagination } from '@/components/ui/pagination';
+import { SearchInput } from '@/components/ui/search-input';
 import {
-  CalendarDays,
-  Plus,
-  MapPin,
-  Users,
-  Trophy,
-  RefreshCw,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
+import type { EventSortField, SortOrder, TemporalFilter } from '@/lib/api/public';
+import { eventKeys, useEventsQuery } from '@/lib/hooks/useEventsQuery';
+import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
+import { usePermissions } from '@/lib/hooks/usePermission';
+import { cn } from '@/lib/utils';
+import type { Event, EventCategory } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
+import {
   AlertCircle,
-  MoreVertical,
+  CalendarDays,
   Edit,
-  Trash2,
   Eye,
+  Filter,
+  Gamepad2,
   LayoutGrid,
   List,
-  Filter,
+  MapPin,
+  MoreVertical,
+  Plus,
+  RefreshCw,
   SortAsc,
   SortDesc,
-  X,
-  Gamepad2,
+  Trash2,
+  Users,
+  X
 } from 'lucide-react';
-import { useEventsQuery, eventKeys } from '@/lib/hooks/useEventsQuery';
-import { usePaginationState, DEFAULT_PAGE_SIZE } from '@/lib/hooks/usePagination';
-import { usePermissions } from '@/lib/hooks/usePermission';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Event, EventCategory } from '@/types';
-import type { TemporalFilter, EventSortField, SortOrder } from '@/lib/api/public';
-import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import * as React from 'react';
 
 type EventStatus = 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
 type ViewMode = 'grid' | 'list';
@@ -95,6 +95,7 @@ export default function EventsPage() {
   const [sortOrder, setSortOrder] = React.useState<SortOrder>('desc');
   const [viewMode, setViewMode] = React.useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = React.useState(false);
+  const [editingEvent, setEditingEvent] = React.useState<Event | null>(null);
 
   // Debounce search input
   React.useEffect(() => {
@@ -201,10 +202,15 @@ export default function EventsPage() {
             <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
           {canCreateEvents && (
-            <Button size="sm">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Create Event</span>
-            </Button>
+            <CreateEventDialog
+              onSuccess={handleRefresh}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-2">Create Event</span>
+                </Button>
+              }
+            />
           )}
         </div>
       </PageHeader>
@@ -402,6 +408,7 @@ export default function EventsPage() {
               canEdit={canEditEvents}
               canDelete={canDeleteEvents}
               onDelete={handleDeleteEvent}
+              onEdit={() => setEditingEvent(event)}
             />
           ))}
         </div>
@@ -416,6 +423,7 @@ export default function EventsPage() {
               canEdit={canEditEvents}
               canDelete={canDeleteEvents}
               onDelete={handleDeleteEvent}
+              onEdit={() => setEditingEvent(event)}
             />
           ))}
         </div>
@@ -447,6 +455,18 @@ export default function EventsPage() {
           />
         </div>
       )}
+
+      {editingEvent && (
+        <EditEventDialog
+          event={editingEvent}
+          open={!!editingEvent}
+          onOpenChange={(open) => !open && setEditingEvent(null)}
+          onSuccess={() => {
+            handleRefresh();
+            setEditingEvent(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -458,9 +478,10 @@ interface EventCardProps {
   canEdit: boolean;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  onEdit: () => void;
 }
 
-function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete }: EventCardProps) {
+function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete, onEdit }: EventCardProps) {
   return (
     <Card className="h-full hover:border-primary/50 transition-colors group relative">
       <CardContent className="p-5">
@@ -484,7 +505,7 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete }:
                 </Link>
               </DropdownMenuItem>
               {canEdit && (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -516,7 +537,7 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete }:
           )}
         </div>
 
-        <Link href={`/discover/${event.slug || event.id}`}>
+        <Link href={`/manage/events/${event.id}`}>
           <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
             {event.name}
           </h3>
@@ -558,7 +579,7 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete }:
 }
 
 // List Card Component
-function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete }: EventCardProps) {
+function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete, onEdit }: EventCardProps) {
   return (
     <Card className="hover:border-primary/50 transition-colors group">
       <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -570,7 +591,7 @@ function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete }:
               <EventCategoryBadge key={cat} category={cat} size="sm" showIcon={false} />
             ))}
           </div>
-          <Link href={`/discover/${event.slug || event.id}`}>
+          <Link href={`/manage/events/${event.id}`}>
             <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
               {event.name}
             </h3>
@@ -618,7 +639,7 @@ function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete }:
                 </Link>
               </DropdownMenuItem>
               {canEdit && (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>

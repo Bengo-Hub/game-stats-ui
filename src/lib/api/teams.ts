@@ -1,6 +1,6 @@
 // Teams API module
 
-import type { SpiritScore, Team, Player } from '@/types';
+import type { Player, SpiritScore, Team } from '@/types';
 import { apiClient } from './client';
 
 export interface TeamSpiritAverage {
@@ -13,6 +13,8 @@ export interface TeamSpiritAverage {
   averageFairMindedness: number;
   averageAttitude: number;
   averageCommunication: number;
+  mvpNominationsCount?: number;
+  spiritNominationsCount?: number;
 }
 
 // Team CRUD Types
@@ -140,6 +142,15 @@ export const teamsApi = {
    */
   async removePlayer(teamId: string, playerId: string): Promise<void> {
     return apiClient.delete(`/teams/${teamId}/players/${playerId}`);
+  },
+
+  /**
+   * Bulk upload players for a team
+   */
+  async uploadRoster(teamId: string, file: File): Promise<{ count: number; errors?: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post<{ count: number; errors?: string[] }>(`/teams/${teamId}/players/upload`, formData);
   },
 
   /**

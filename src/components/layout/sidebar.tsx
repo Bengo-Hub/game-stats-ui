@@ -1,26 +1,26 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/lib/hooks/usePermission';
 import type { Permission } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
-  CalendarDays,
-  Trophy,
-  Users,
-  UserCircle,
   BarChart3,
-  Settings,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  LayoutDashboard,
   Menu,
-  X,
+  Settings,
   Shield,
+  Trophy,
+  UserCircle,
+  Users,
+  X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 interface NavItem {
   label: string;
@@ -32,10 +32,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, permission: 'view_dashboard' },
-  { label: 'Events', href: '/events', icon: <CalendarDays className="h-5 w-5" />, permission: 'view_events' },
-  { label: 'Games', href: '/games', icon: <Trophy className="h-5 w-5" />, permission: 'view_games' },
-  { label: 'Teams', href: '/teams', icon: <Users className="h-5 w-5" />, permission: 'view_teams' },
-  { label: 'Players', href: '/players', icon: <UserCircle className="h-5 w-5" />, permission: 'view_players' },
+  { label: 'Events', href: '/manage/events', icon: <CalendarDays className="h-5 w-5" />, permission: 'view_events' },
+  { label: 'Games', href: '/manage/games', icon: <Trophy className="h-5 w-5" />, permission: 'view_games' },
+  { label: 'Teams', href: '/manage/teams', icon: <Users className="h-5 w-5" />, permission: 'view_teams' },
+  { label: 'Players', href: '/manage/players', icon: <UserCircle className="h-5 w-5" />, permission: 'view_players' },
   { label: 'Analytics', href: '/analytics', icon: <BarChart3 className="h-5 w-5" />, permission: 'view_analytics' },
   { label: 'Admin', href: '/admin', icon: <Shield className="h-5 w-5" />, adminOnly: true },
   { label: 'Settings', href: '/settings', icon: <Settings className="h-5 w-5" /> },

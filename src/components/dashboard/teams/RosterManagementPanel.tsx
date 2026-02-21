@@ -1,22 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { MassUploadPlayersDialog, PlayerDialog } from '@/components/dashboard/players';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,34 +19,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Plus,
-  Loader2,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Crown,
-  Heart,
-  User,
-  Search,
-} from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { teamsApi, type CreatePlayerRequest, type UpdatePlayerRequest } from '@/lib/api/teams';
 import { teamKeys } from '@/lib/hooks/useTeamsQuery';
-import type { Team, Player } from '@/types';
 import { cn } from '@/lib/utils';
+import type { Player, Team } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Crown,
+  Edit,
+  Heart,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  User,
+} from 'lucide-react';
+import * as React from 'react';
+import { toast } from 'sonner';
 
-// Validation schema for player
-const playerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  jerseyNumber: z.number().min(0).max(99).optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  position: z.string().optional(),
-  isCaptain: z.boolean(),
-  isSpiritCaptain: z.boolean(),
-});
-
-type PlayerFormData = z.infer<typeof playerSchema>;
 
 interface RosterManagementPanelProps {
   team: Team;
@@ -71,6 +49,7 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = React.useState('');
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
   const [editingPlayer, setEditingPlayer] = React.useState<Player | null>(null);
   const [deletingPlayer, setDeletingPlayer] = React.useState<Player | null>(null);
 
@@ -178,10 +157,16 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
             {roster.length} player{roster.length !== 1 ? 's' : ''} registered
           </p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Player
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setUploadDialogOpen(true)} variant="outline" size="sm">
+            <Upload className="h-4 w-4 mr-2" />
+            Mass Upload
+          </Button>
+          <Button onClick={() => setAddDialogOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Player
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -219,8 +204,8 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
                   player.isCaptain
                     ? 'bg-amber-500 text-white'
                     : player.isSpiritCaptain
-                    ? 'bg-sky-500 text-white'
-                    : 'bg-primary/10 text-primary'
+                      ? 'bg-sky-500 text-white'
+                      : 'bg-primary/10 text-primary'
                 )}
               >
                 {player.jerseyNumber !== undefined ? `#${player.jerseyNumber}` : <User className="h-4 w-4" />}
@@ -299,6 +284,14 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
         isPending={addMutation.isPending}
       />
 
+      {/* Mass Upload Dialog */}
+      <MassUploadPlayersDialog
+        teamId={team.id}
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: [...teamKeys.detail(team.id), 'roster'] })}
+      />
+
       {/* Edit Player Dialog */}
       {editingPlayer && (
         <PlayerDialog
@@ -341,176 +334,5 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
   );
 }
 
-// Player Form Dialog Component
-interface PlayerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description: string;
-  player?: Player;
-  onSubmit: (data: CreatePlayerRequest | UpdatePlayerRequest) => void;
-  isPending: boolean;
-}
-
-function PlayerDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  player,
-  onSubmit,
-  isPending,
-}: PlayerDialogProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<PlayerFormData>({
-    resolver: zodResolver(playerSchema),
-    defaultValues: player
-      ? {
-          name: player.name,
-          jerseyNumber: player.jerseyNumber,
-          isCaptain: player.isCaptain,
-          isSpiritCaptain: player.isSpiritCaptain,
-        }
-      : {
-          name: '',
-          jerseyNumber: undefined,
-          email: '',
-          phone: '',
-          position: '',
-          isCaptain: false,
-          isSpiritCaptain: false,
-        },
-  });
-
-  React.useEffect(() => {
-    if (open && player) {
-      reset({
-        name: player.name,
-        jerseyNumber: player.jerseyNumber,
-        isCaptain: player.isCaptain,
-        isSpiritCaptain: player.isSpiritCaptain,
-      });
-    } else if (open && !player) {
-      reset({
-        name: '',
-        jerseyNumber: undefined,
-        email: '',
-        phone: '',
-        position: '',
-        isCaptain: false,
-        isSpiritCaptain: false,
-      });
-    }
-  }, [open, player, reset]);
-
-  const handleFormSubmit = (data: PlayerFormData) => {
-    onSubmit({
-      name: data.name,
-      jerseyNumber: data.jerseyNumber,
-      email: data.email || undefined,
-      phone: data.phone || undefined,
-      position: data.position || undefined,
-      isCaptain: data.isCaptain,
-      isSpiritCaptain: data.isSpiritCaptain,
-    });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              placeholder="Player name"
-              {...register('name')}
-              className={errors.name ? 'border-destructive' : ''}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-4 grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="jerseyNumber">Jersey #</Label>
-              <Input
-                id="jerseyNumber"
-                type="number"
-                min={0}
-                max={99}
-                placeholder="0-99"
-                {...register('jerseyNumber', { valueAsNumber: true })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="position">Position</Label>
-              <Input
-                id="position"
-                placeholder="e.g., Handler"
-                {...register('position')}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="player@example.com"
-              {...register('email')}
-              className={errors.email ? 'border-destructive' : ''}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+1 234 567 8900"
-              {...register('phone')}
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register('isCaptain')} className="rounded" />
-              <span className="text-sm">Captain</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register('isSpiritCaptain')} className="rounded" />
-              <span className="text-sm">Spirit Captain</span>
-            </label>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {player ? 'Save Changes' : 'Add Player'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default RosterManagementPanel;

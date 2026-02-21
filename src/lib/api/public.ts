@@ -11,6 +11,7 @@ import type {
   Game,
   GameTimeline,
   PaginationParams,
+  Player,
   PlayerStat,
   Scoring,
   SpiritScore,
@@ -337,6 +338,10 @@ export async function getTeam(teamId: string): Promise<Team> {
   return publicFetch<Team>(`/teams/${teamId}`);
 }
 
+export async function getPlayer(playerId: string): Promise<Player> {
+  return publicFetch<Player>(`/players/${playerId}`);
+}
+
 export async function getTeamSpiritAverage(teamId: string): Promise<TeamSpiritAverage> {
   return publicFetch<TeamSpiritAverage>(`/teams/${teamId}/spirit-average`);
 }
@@ -348,7 +353,7 @@ export async function getTeamSpiritAverage(teamId: string): Promise<TeamSpiritAv
 export interface LeaderboardParams extends PaginationParams {
   eventId?: string;
   divisionPoolId?: string;
-  category?: 'goals' | 'assists';
+  category?: 'goals' | 'assists' | 'total';
 }
 
 export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<PlayerStat[]> {
@@ -441,6 +446,7 @@ export const publicApi = {
   listTeams,
   getTeam,
   getTeamSpiritAverage,
+  getPlayer,
 
   // Leaderboards
   getPlayerLeaderboard,

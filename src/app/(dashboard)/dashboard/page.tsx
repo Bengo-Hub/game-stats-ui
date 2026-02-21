@@ -1,24 +1,24 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/stores/auth';
 import { publicApi } from '@/lib/api';
-import type { Game, Event } from '@/types';
+import { useUser } from '@/stores/auth';
+import type { Event, Game } from '@/types';
 import {
+  AlertCircle,
+  BarChart3,
+  CalendarDays,
+  ChevronRight,
+  Clock,
+  Radio,
+  RefreshCw,
   Trophy,
   Users,
-  CalendarDays,
-  BarChart3,
-  Radio,
-  Clock,
-  ChevronRight,
-  RefreshCw,
-  AlertCircle,
 } from 'lucide-react';
+import Link from 'next/link';
+import * as React from 'react';
 
 interface DashboardStats {
   activeEvents: number;
@@ -246,7 +246,7 @@ export default function DashboardPage() {
               <CardTitle>Upcoming Games</CardTitle>
               <CardDescription>Games scheduled soon</CardDescription>
             </div>
-            <Link href="/games">
+            <Link href="/manage/games">
               <Button variant="ghost" size="sm">
                 View all
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -300,7 +300,7 @@ export default function DashboardPage() {
               <CardTitle>Active Events</CardTitle>
               <CardDescription>Events currently in progress</CardDescription>
             </div>
-            <Link href="/events">
+            <Link href="/manage/events">
               <Button variant="ghost" size="sm">
                 Manage events
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -337,7 +337,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href="/events">
+            <Link href="/manage/events">
               <Button variant="outline" className="w-full justify-start h-auto py-3">
                 <CalendarDays className="h-4 w-4 mr-2" />
                 <div className="text-left">
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                 </div>
               </Button>
             </Link>
-            <Link href="/games">
+            <Link href="/manage/games">
               <Button variant="outline" className="w-full justify-start h-auto py-3">
                 <Trophy className="h-4 w-4 mr-2" />
                 <div className="text-left">
@@ -355,7 +355,7 @@ export default function DashboardPage() {
                 </div>
               </Button>
             </Link>
-            <Link href="/teams">
+            <Link href="/manage/teams">
               <Button variant="outline" className="w-full justify-start h-auto py-3">
                 <Users className="h-4 w-4 mr-2" />
                 <div className="text-left">

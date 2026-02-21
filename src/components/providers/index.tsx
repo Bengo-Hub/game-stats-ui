@@ -1,9 +1,9 @@
 'use client';
 
-import { ThemeProvider } from './theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from './auth-provider';
 import { QueryProvider } from './query-provider';
-import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from './theme-provider';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export function Providers({ children }: ProvidersProps) {
     <QueryProvider>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
+        defaultTheme="light"
         enableSystem
         disableTransitionOnChange
       >

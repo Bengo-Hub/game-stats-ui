@@ -1,12 +1,21 @@
 'use client';
 
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Star } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { Heart, Loader2, Star, Trophy as TrophyIcon } from 'lucide-react';
+import * as React from 'react';
 
 interface SpiritCategory {
   id: string;
@@ -33,6 +42,8 @@ export interface SpiritScoreData {
   attitude: number;
   communication: number;
   comments?: string;
+  mvpNomination?: string;
+  spiritNomination?: string;
 }
 
 function StarRating({
@@ -121,7 +132,18 @@ export function SpiritScoreForm({
   ]);
 
   const [comments, setComments] = React.useState('');
+  const [mvpNomination, setMvpNomination] = React.useState<string>('');
+  const [spiritNomination, setSpiritNomination] = React.useState<string>('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Fetch team roster for nominations
+  const { data: team, isLoading: isLoadingTeam } = useQuery({
+    queryKey: ['teams', teamId, 'roster'],
+    queryFn: () => publicApi.getTeam(teamId),
+    enabled: !!teamId,
+  });
+
+  const players = team?.players || [];
 
   const totalScore = categories.reduce((sum, cat) => sum + cat.value, 0);
   const averageScore = totalScore / categories.length;
@@ -145,6 +167,8 @@ export function SpiritScoreForm({
       attitude: categories.find((c) => c.id === 'attitude')?.value ?? 2,
       communication: categories.find((c) => c.id === 'communication')?.value ?? 2,
       comments: comments || undefined,
+      mvpNomination: mvpNomination || undefined,
+      spiritNomination: spiritNomination || undefined,
     };
 
     try {
@@ -206,16 +230,74 @@ export function SpiritScoreForm({
               onChange={(e) => setComments(e.target.value)}
               disabled={disabled || isSubmitting}
               rows={3}
+              className="rounded-xl"
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+            {/* MVP Nomination */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <TrophyIcon className="h-4 w-4 text-amber-500" />
+                MVP Nomination
+              </Label>
+              <Select
+                value={mvpNomination}
+                onValueChange={setMvpNomination}
+                disabled={disabled || isSubmitting || players.length === 0}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder={isLoadingTeam ? "Loading roster..." : (players.length === 0 ? "No players" : "Select player")} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {players.map((player) => (
+                    <SelectItem key={player.id} value={player.id}>
+                      {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Spirit Nomination */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-rose-500" />
+                Spirit Nomination
+              </Label>
+              <Select
+                value={spiritNomination}
+                onValueChange={setSpiritNomination}
+                disabled={disabled || isSubmitting || players.length === 0}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder={isLoadingTeam ? "Loading roster..." : (players.length === 0 ? "No players" : "Select player")} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {players.map((player) => (
+                    <SelectItem key={player.id} value={player.id}>
+                      {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Submit */}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-12 rounded-xl text-lg font-bold"
             disabled={disabled || isSubmitting}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Spirit Score'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit Spirit Score'
+            )}
           </Button>
         </form>
       </CardContent>

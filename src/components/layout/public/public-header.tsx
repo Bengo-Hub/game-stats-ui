@@ -1,21 +1,22 @@
 'use client';
 
-import * as React from 'react';
+import { Logo } from '@/components/brand/Logo';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { cn } from '@/lib/utils';
+import {
+  BarChart3,
+  Calendar,
+  ChevronRight,
+  Menu,
+  Radio,
+  Sparkles,
+  Users,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Logo } from '@/components/brand/Logo';
-import {
-  Menu,
-  X,
-  Calendar,
-  Radio,
-  Users,
-  BarChart3,
-  ChevronRight,
-  Sparkles,
-} from 'lucide-react';
+import * as React from 'react';
 
 const navigation = [
   { name: 'Discover', href: '/discover', icon: Calendar, description: 'Find events & tournaments' },
@@ -91,6 +92,7 @@ export function PublicHeader() {
 
           {/* Right side - Auth buttons */}
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link href="/login" className="hidden sm:block">
               <Button
                 variant="ghost"

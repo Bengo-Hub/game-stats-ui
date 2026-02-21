@@ -26,7 +26,8 @@
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.562.0",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "react": "19.1.0",
@@ -50,7 +51,7 @@
     "@types/node": "^20.19.31",
     "@types/react": "^19.2.11",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.1",
     "eslint-config-next": "16.1.6",
     "fs-extra": "^11.3.3",
     "tailwindcss": "^4.1.18",
@@ -59,7 +60,11 @@
   },
   "pnpm": {
     "overrides": {
-      "fs-extra": "^11.3.3"
+      "fs-extra": "^11.3.3",
+      "ajv@<6.14.0": ">=6.14.0",
+      "minimatch": "9.0.5",
+      "glob": "^11.0.1",
+      "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.4.15"
     }
   }
 }

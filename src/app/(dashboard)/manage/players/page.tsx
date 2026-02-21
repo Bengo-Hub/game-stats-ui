@@ -1,12 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
+import { GlobalAddPlayerDialog, GlobalMassUploadDialog } from '@/components/dashboard/players';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { SearchInput } from '@/components/ui/search-input';
-import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -16,12 +15,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { UserCircle, RefreshCw, Target, Trophy, AlertCircle } from 'lucide-react';
 import { publicApi } from '@/lib/api/public';
-import type { PlayerStat } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { AlertCircle, Plus, RefreshCw, Target, Trophy, Upload, UserCircle } from 'lucide-react';
+import Link from 'next/link';
+import * as React from 'react';
 
 export default function PlayersPage() {
   const [search, setSearch] = React.useState('');
+  const [category, setCategory] = React.useState<'goals' | 'assists' | 'total'>('goals');
+  const [addDialogOpen, setAddDialogOpen] = React.useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
 
   // Fetch player stats from API (leaderboard endpoint)
   const {
@@ -32,8 +36,8 @@ export default function PlayersPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ['dashboard', 'players'],
-    queryFn: () => publicApi.getPlayerLeaderboard({ limit: 100 }),
+    queryKey: ['dashboard', 'players', category],
+    queryFn: () => publicApi.getPlayerLeaderboard({ limit: 100, category }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -73,24 +77,49 @@ export default function PlayersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Players" description="View player statistics and profiles">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setUploadDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Mass Upload
+          </Button>
+          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Player
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Search */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Search players or teams..."
-        className="max-w-md"
-      />
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search players or teams..."
+          className="max-w-md w-full"
+        />
+        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+          {(['goals', 'assists', 'total'] as const).map((cat) => (
+            <Button
+              key={cat}
+              variant={category === cat ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setCategory(cat)}
+              className="capitalize h-8"
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
+      </div>
 
       {/* Error State */}
       {isError && (
@@ -137,42 +166,44 @@ export default function PlayersPage() {
           {/* Mobile Card View */}
           <div className="grid gap-4 sm:hidden">
             {filteredPlayers.map((player, index) => (
-              <Card key={player.playerId} className="hover:border-primary/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                        style={{ backgroundColor: getPlayerColor(player.playerName) }}
-                      >
-                        {getInitials(player.playerName)}
-                      </div>
-                      {index < 3 && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">
-                          {index + 1}
+              <Link key={player.playerId} href={`/players/${player.playerId}`}>
+                <Card className="hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                          style={{ backgroundColor: getPlayerColor(player.playerName) }}
+                        >
+                          {getInitials(player.playerName)}
                         </div>
-                      )}
+                        {index < 3 && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">
+                            {index + 1}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{player.playerName}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{player.teamName}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{player.playerName}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{player.teamName}</p>
+                    <div className="flex justify-between mt-3 pt-3 border-t text-sm">
+                      <div className="flex items-center gap-1">
+                        <Target className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">{player.goals} goals</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Trophy className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium">{player.assists} assists</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        {player.gamesPlayed} games
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex justify-between mt-3 pt-3 border-t text-sm">
-                    <div className="flex items-center gap-1">
-                      <Target className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">{player.goals} goals</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">{player.assists} assists</span>
-                    </div>
-                    <span className="text-muted-foreground">
-                      {player.gamesPlayed} games
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 
@@ -192,14 +223,13 @@ export default function PlayersPage() {
               </TableHeader>
               <TableBody>
                 {filteredPlayers.map((player, index) => (
-                  <TableRow key={player.playerId} className="hover:bg-muted/50">
+                  <TableRow key={player.playerId} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = `/players/${player.playerId}`}>
                     <TableCell>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        index === 0 ? 'bg-amber-500 text-white' :
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
                         index === 1 ? 'bg-gray-400 text-white' :
-                        index === 2 ? 'bg-amber-700 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
+                          index === 2 ? 'bg-amber-700 text-white' :
+                            'bg-muted text-muted-foreground'
+                        }`}>
                         {index + 1}
                       </div>
                     </TableCell>
@@ -232,6 +262,17 @@ export default function PlayersPage() {
           </Card>
         </>
       )}
+
+      <GlobalAddPlayerDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSuccess={() => refetch()}
+      />
+      <GlobalMassUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }

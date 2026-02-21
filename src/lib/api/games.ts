@@ -15,26 +15,32 @@ export interface ListGamesParams {
 }
 
 export interface CreateGameRequest {
-  homeTeamId: string;
-  awayTeamId: string;
-  scheduledTime: string;
-  allocatedTimeMinutes: number;
-  fieldId?: string;
-  divisionPoolId: string;
-  gameRoundId: string;
+  home_team_id: string;
+  away_team_id: string;
+  scheduled_time: string;
+  allocated_time_minutes: number;
+  field_location_id?: string;
+  division_pool_id: string;
+  game_round_id?: string;
 }
 
 export interface UpdateGameRequest {
-  scheduledTime?: string;
-  allocatedTimeMinutes?: number;
-  fieldId?: string;
-  scorekeeperId?: string;
+  scheduled_time?: string;
+  allocated_time_minutes?: number;
+  field_location_id?: string;
+  scorekeeper_id?: string;
 }
 
 export interface RecordScoreRequest {
-  scoringPlayerId: string;
-  assistPlayerId?: string;
-  teamId: string;
+  player_id: string;
+  assist_player_id?: string;
+  team_id: string;
+  goals: number;
+  assists?: number;
+  blocks?: number;
+  turns?: number;
+  minute?: number;
+  second?: number;
 }
 
 export const gamesApi = {
@@ -120,6 +126,24 @@ export const gamesApi = {
    */
   async recordStoppage(id: string, durationSeconds: number, reason?: string): Promise<Game> {
     return apiClient.post<Game>(`/games/${id}/stoppage`, { duration_seconds: durationSeconds, reason });
+  },
+
+  /**
+   * Submit spirit score
+   */
+  async submitSpiritScore(gameId: string, data: {
+    scored_by_team_id: string;
+    team_id: string;
+    rules_knowledge: number;
+    fouls_body_contact: number;
+    fair_mindedness: number;
+    attitude: number;
+    communication: number;
+    comments?: string;
+    mvp_nomination?: string;
+    spirit_nomination?: string;
+  }): Promise<any> {
+    return apiClient.post(`/games/${gameId}/spirit`, data);
   },
 };
 

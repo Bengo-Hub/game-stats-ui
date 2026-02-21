@@ -1,11 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,12 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Loader2, Calendar, MapPin, Users, Clock } from 'lucide-react';
 import { gamesApi, type CreateGameRequest } from '@/lib/api/games';
 import { publicApi } from '@/lib/api/public';
-import { gameKeys } from '@/lib/hooks/useGamesQuery';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
+import { gameKeys } from '@/lib/hooks/useGamesQuery';
 import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Calendar, Clock, Loader2, MapPin, Plus, Users } from 'lucide-react';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Validation schema
 const scheduleGameSchema = z.object({
@@ -159,13 +159,13 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
     const scheduledTime = new Date(`${data.scheduledDate}T${data.scheduledTime}`).toISOString();
 
     const request: CreateGameRequest = {
-      homeTeamId: data.homeTeamId,
-      awayTeamId: data.awayTeamId,
-      scheduledTime,
-      allocatedTimeMinutes: data.allocatedTimeMinutes,
-      divisionPoolId: data.divisionPoolId,
-      gameRoundId: data.gameRoundId,
-      fieldId: data.fieldId || undefined,
+      home_team_id: data.homeTeamId,
+      away_team_id: data.awayTeamId,
+      scheduled_time: scheduledTime,
+      allocated_time_minutes: data.allocatedTimeMinutes,
+      division_pool_id: data.divisionPoolId,
+      game_round_id: data.gameRoundId,
+      field_location_id: data.fieldId || undefined,
     };
     createMutation.mutate(request);
   };
