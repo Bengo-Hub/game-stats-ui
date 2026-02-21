@@ -4,7 +4,6 @@ import type { NextConfig } from "next";
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
-  skipWaiting: true,
   disable: process.env.NODE_ENV !== "production",
   // Note: Custom runtimeCaching and fallbacks removed for pnpm compatibility
   // The default caching strategies from next-pwa work well for most cases
