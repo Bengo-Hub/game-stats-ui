@@ -23,8 +23,17 @@ export function InstallPrompt({ className }: InstallPromptProps) {
 
   React.useEffect(() => {
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    const standsAlone = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+
+    if (standsAlone) {
       setIsInstalled(true);
+      return;
+    }
+
+    // Check if dismissed
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed === 'true') {
       return;
     }
 
@@ -39,7 +48,15 @@ export function InstallPrompt({ className }: InstallPromptProps) {
       setIsVisible(true);
     };
 
+    // Listen for app installed event
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setIsVisible(false);
+      setDeferredPrompt(null);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Show iOS prompt if on iOS
     if (isIOSDevice) {
@@ -48,6 +65,7 @@ export function InstallPrompt({ className }: InstallPromptProps) {
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
