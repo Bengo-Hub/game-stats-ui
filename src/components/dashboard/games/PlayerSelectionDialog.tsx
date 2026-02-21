@@ -1,8 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,15 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Search, User, Disc, HandHelping } from 'lucide-react';
 import { gamesApi, type RecordScoreRequest } from '@/lib/api/games';
 import { teamsApi } from '@/lib/api/teams';
 import { gameKeys } from '@/lib/hooks/useGamesQuery';
-import type { Game, Player, TeamSummary } from '@/types';
 import { cn } from '@/lib/utils';
+import type { Game, Player, TeamSummary } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Disc, HandHelping, Loader2, Search, User } from 'lucide-react';
+import * as React from 'react';
+import { toast } from 'sonner';
 
 interface PlayerSelectionDialogProps {
   game: Game;
@@ -91,9 +90,10 @@ export function PlayerSelectionDialog({
     if (!selectedScorer) return;
 
     const request: RecordScoreRequest = {
-      scoringPlayerId: selectedScorer.id,
-      assistPlayerId: selectedAssist?.id,
-      teamId: scoringTeam.id,
+      player_id: selectedScorer.id,
+      assist_player_id: selectedAssist?.id,
+      team_id: scoringTeam.id,
+      goals: 1,
     };
     recordScoreMutation.mutate(request);
   };

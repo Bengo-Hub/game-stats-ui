@@ -1,11 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -24,12 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Calendar, MapPin, Clock, User } from 'lucide-react';
 import { gamesApi, type UpdateGameRequest } from '@/lib/api/games';
-import { publicApi } from '@/lib/api/public';
 import { gameKeys } from '@/lib/hooks/useGamesQuery';
-import type { Game } from '@/types';
 import { cn } from '@/lib/utils';
+import type { Game } from '@/types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Calendar, Clock, Loader2, MapPin, User } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Validation schema for editing
 const editGameSchema = z.object({
@@ -123,10 +121,10 @@ export function EditGameDialog({ game, open, onOpenChange, onSuccess }: EditGame
     const scheduledTime = new Date(`${data.scheduledDate}T${data.scheduledTime}`).toISOString();
 
     const request: UpdateGameRequest = {
-      scheduledTime,
-      allocatedTimeMinutes: data.allocatedTimeMinutes,
-      fieldId: data.fieldId || undefined,
-      scorekeeperId: data.scorekeeperId || undefined,
+      scheduled_time: scheduledTime,
+      allocated_time_minutes: data.allocatedTimeMinutes,
+      field_location_id: data.fieldId || undefined,
+      scorekeeper_id: data.scorekeeperId || undefined,
     };
     updateMutation.mutate(request);
   };

@@ -297,7 +297,7 @@ function EventStat({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="bg-background/60 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-1 text-primary">
-                {React.cloneElement(icon as React.ReactElement, { className: 'h-3.5 w-3.5' })}
+                {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-3.5 w-3.5' })}
                 <span className="text-[10px] uppercase font-black tracking-tighter text-muted-foreground">{label}</span>
             </div>
             <div className="text-xl font-black">{value}</div>
@@ -309,7 +309,7 @@ function QuickLink({ href, label, icon }: { href: string; label: string; icon: R
     return (
         <Link href={href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-sm font-medium border border-transparent hover:border-muted-foreground/20">
             <div className="text-muted-foreground">
-                {React.cloneElement(icon as React.ReactElement, { className: 'h-4 w-4' })}
+                {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'h-4 w-4' })}
             </div>
             {label}
         </Link>
