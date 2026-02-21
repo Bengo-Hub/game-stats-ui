@@ -1,50 +1,50 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import TournamentBracket, { GamesBracket, SimpleBracket } from '@/components/features/brackets/tournament-bracket';
+import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicApi } from '@/lib/api/public';
+import { cn } from '@/lib/utils';
+import type { Event, Game } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import {
-  CalendarDays,
-  MapPin,
-  Users,
-  Trophy,
-  ArrowLeft,
-  Clock,
-  Share2,
-  Info,
-  Calendar,
-  Swords,
-  Table,
   AlertCircle,
-  Heart,
-  UsersRound,
-  X,
-  Target,
+  ArrowLeft,
   BarChart3,
+  Calendar,
+  CalendarDays,
   ChevronDown,
   ChevronUp,
-  Layers,
-  Shield,
+  Clock,
   Crown,
+  Heart,
+  Info,
+  Layers,
+  MapPin,
   Search,
+  Share2,
+  Shield,
+  Swords,
+  Table,
+  Target,
+  Trophy,
+  Users,
+  UsersRound,
+  X,
 } from 'lucide-react';
-import { publicApi } from '@/lib/api/public';
-import type { Event, Game } from '@/types';
-import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
-import TournamentBracket, { GamesBracket } from '@/components/features/brackets/tournament-bracket';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import * as React from 'react';
 
 // Query hooks
 function useEventDetail(idOrSlug: string | undefined) {
@@ -458,8 +458,8 @@ function TimetableModal({
                               <div className={cn(
                                 'p-3 rounded-lg transition-all hover:shadow-md cursor-pointer',
                                 isLive ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' :
-                                isFinished ? 'bg-muted/50 hover:bg-muted' :
-                                'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                                  isFinished ? 'bg-muted/50 hover:bg-muted' :
+                                    'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
                               )}>
                                 {/* Round badge */}
                                 <div className="flex items-center gap-2 mb-2">
@@ -467,10 +467,10 @@ function TimetableModal({
                                     <span className={cn(
                                       'px-2 py-0.5 text-[10px] font-bold uppercase rounded',
                                       game.gameRound.roundType === 'pool' ? 'bg-blue-500 text-white' :
-                                      game.gameRound.roundType === 'crossover' ? 'bg-orange-500 text-white' :
-                                      game.gameRound.roundType === 'bracket' ? 'bg-purple-500 text-white' :
-                                      game.gameRound.roundType === 'final' ? 'bg-amber-500 text-white' :
-                                      'bg-gray-500 text-white'
+                                        game.gameRound.roundType === 'crossover' ? 'bg-orange-500 text-white' :
+                                          game.gameRound.roundType === 'bracket' ? 'bg-purple-500 text-white' :
+                                            game.gameRound.roundType === 'final' ? 'bg-amber-500 text-white' :
+                                              'bg-gray-500 text-white'
                                     )}>
                                       {game.gameRound.roundType}
                                     </span>
@@ -807,14 +807,7 @@ export default function EventDetailPage() {
                 className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none px-4 py-3 gap-2"
               >
                 <Layers className="h-4 w-4" />
-                Group
-              </TabsTrigger>
-              <TabsTrigger
-                value="crossover"
-                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none px-4 py-3 gap-2"
-              >
-                <Target className="h-4 w-4" />
-                Crossover
+                Group Stage
               </TabsTrigger>
               <TabsTrigger
                 value="bracket"
@@ -1198,10 +1191,10 @@ export default function EventDetailPage() {
                         <div className={cn(
                           'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide',
                           roundType === 'final' || roundType === 'finals' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' :
-                          roundType === 'semi' || roundType === 'semifinal' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400' :
-                          roundType === 'bracket' || roundType === 'quarter' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400' :
-                          roundType === 'crossover' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400' :
-                          'bg-muted text-muted-foreground'
+                            roundType === 'semi' || roundType === 'semifinal' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400' :
+                              roundType === 'bracket' || roundType === 'quarter' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400' :
+                                roundType === 'crossover' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400' :
+                                  'bg-muted text-muted-foreground'
                         )}>
                           {roundName}
                         </div>
@@ -1412,8 +1405,8 @@ export default function EventDetailPage() {
                                   <span className={cn(
                                     'px-2 py-0.5 rounded text-xs font-medium',
                                     ratedPercent >= 90 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                    ratedPercent >= 70 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                      ratedPercent >= 70 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   )}>
                                     {ratedPercent}%
                                   </span>
@@ -1422,8 +1415,8 @@ export default function EventDetailPage() {
                                   <span className={cn(
                                     'px-2 py-1 rounded font-medium',
                                     score.averageScore >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                    score.averageScore >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                      score.averageScore >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   )}>
                                     {score.averageScore.toFixed(1)}
                                   </span>
@@ -1459,8 +1452,8 @@ export default function EventDetailPage() {
                                               <span className={cn(
                                                 'px-2 py-0.5 rounded text-sm font-bold',
                                                 gs.score >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                                gs.score >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                  gs.score >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                               )}>
                                                 {gs.score.toFixed(1)}
                                               </span>
@@ -1498,238 +1491,273 @@ export default function EventDetailPage() {
 
           {/* Group Tab - Pool Standings */}
           <TabsContent value="group" className="space-y-4">
-            {standings && standings.standings && standings.standings.length > 0 ? (
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{standings.divisionName} Standings</CardTitle>
-                    <span className="text-xs text-muted-foreground">
-                      Updated: {new Date(standings.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px]">
-                      <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="text-center p-3 font-medium w-12">#</th>
-                          <th className="text-left p-3 font-medium">Team</th>
-                          <th className="text-center p-3 font-medium w-10">G</th>
-                          <th className="text-center p-3 font-medium w-10">W</th>
-                          <th className="text-center p-3 font-medium w-10">L</th>
-                          <th className="text-center p-3 font-medium w-12">Pts</th>
-                          <th className="text-center p-3 font-medium w-12">GD</th>
-                          <th className="text-center p-3 font-medium w-12">F</th>
-                          <th className="text-center p-3 font-medium w-12">A</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.standings.map((team, idx) => (
-                          <tr key={team.teamId} className="border-b last:border-0 hover:bg-muted/30">
-                            <td className="p-3 text-center">
-                              <span className={cn(
-                                'inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold',
-                                idx === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' :
-                                idx === 1 ? 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300' :
-                                idx === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400' :
-                                'bg-muted text-muted-foreground'
-                              )}>
-                                {team.rank}
-                              </span>
-                            </td>
-                            <td className="p-3 font-medium">{team.teamName}</td>
-                            <td className="p-3 text-center text-muted-foreground">{team.gamesPlayed}</td>
-                            <td className="p-3 text-center font-medium text-emerald-600">{team.wins}</td>
-                            <td className="p-3 text-center text-muted-foreground">{team.losses}</td>
-                            <td className="p-3 text-center font-bold">{team.wins * 3}</td>
-                            <td className={cn(
-                              'p-3 text-center font-medium',
-                              team.pointDifferential > 0 ? 'text-emerald-600' : team.pointDifferential < 0 ? 'text-red-500' : ''
-                            )}>
-                              {team.pointDifferential > 0 ? '+' : ''}{team.pointDifferential}
-                            </td>
-                            <td className="p-3 text-center text-muted-foreground">{team.pointsFor}</td>
-                            <td className="p-3 text-center text-muted-foreground">{team.pointsAgainst}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="p-4 text-xs text-muted-foreground border-t space-y-1">
-                    <p><strong>G</strong> - Games Played, <strong>W</strong> - Wins, <strong>L</strong> - Losses, <strong>Pts</strong> - Points</p>
-                    <p><strong>GD</strong> - Goal Difference, <strong>F</strong> - Goals For, <strong>A</strong> - Goals Against</p>
-                    <p className="mt-2 text-indigo-600 dark:text-indigo-400">* 1 win = 3 points, 1 loss = 0 points</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="p-8 text-center">
-                <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-semibold mb-2">No Pool Standings Yet</h3>
-                <p className="text-muted-foreground">Standings will appear once pool play games are completed.</p>
-              </Card>
+            {/* Pool / Crossover sub-navigation */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedStage('pool')}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                  selectedStage === 'pool' || selectedStage === 'all'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-background hover:bg-muted border'
+                )}
+              >
+                <Layers className="h-4 w-4 inline mr-1.5" />
+                Pool
+              </button>
+              <button
+                onClick={() => setSelectedStage('crossover')}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                  selectedStage === 'crossover'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-background hover:bg-muted border'
+                )}
+              >
+                <Target className="h-4 w-4 inline mr-1.5" />
+                Crossover
+              </button>
+            </div>
+
+            {/* Pool Standings */}
+            {(selectedStage === 'pool' || selectedStage === 'all') && (
+              <>
+                {standings && standings.standings && standings.standings.length > 0 ? (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{standings.divisionName} Standings</CardTitle>
+                        <span className="text-xs text-muted-foreground">
+                          Updated: {new Date(standings.updatedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[700px]">
+                          <thead>
+                            <tr className="border-b bg-muted/50">
+                              <th className="text-center p-3 font-medium w-12">#</th>
+                              <th className="text-left p-3 font-medium">Team</th>
+                              <th className="text-center p-3 font-medium w-10">G</th>
+                              <th className="text-center p-3 font-medium w-10">W</th>
+                              <th className="text-center p-3 font-medium w-10">L</th>
+                              <th className="text-center p-3 font-medium w-12">Pts</th>
+                              <th className="text-center p-3 font-medium w-12">GD</th>
+                              <th className="text-center p-3 font-medium w-12">F</th>
+                              <th className="text-center p-3 font-medium w-12">A</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {standings.standings.map((team, idx) => (
+                              <tr key={team.teamId} className="border-b last:border-0 hover:bg-muted/30">
+                                <td className="p-3 text-center">
+                                  <span className={cn(
+                                    'inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold',
+                                    idx === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' :
+                                      idx === 1 ? 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300' :
+                                        idx === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400' :
+                                          'bg-muted text-muted-foreground'
+                                  )}>
+                                    {team.rank}
+                                  </span>
+                                </td>
+                                <td className="p-3 font-medium">{team.teamName}</td>
+                                <td className="p-3 text-center text-muted-foreground">{team.gamesPlayed}</td>
+                                <td className="p-3 text-center font-medium text-emerald-600">{team.wins}</td>
+                                <td className="p-3 text-center text-muted-foreground">{team.losses}</td>
+                                <td className="p-3 text-center font-bold">{team.wins * 3}</td>
+                                <td className={cn(
+                                  'p-3 text-center font-medium',
+                                  team.pointDifferential > 0 ? 'text-emerald-600' : team.pointDifferential < 0 ? 'text-red-500' : ''
+                                )}>
+                                  {team.pointDifferential > 0 ? '+' : ''}{team.pointDifferential}
+                                </td>
+                                <td className="p-3 text-center text-muted-foreground">{team.pointsFor}</td>
+                                <td className="p-3 text-center text-muted-foreground">{team.pointsAgainst}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="p-4 text-xs text-muted-foreground border-t space-y-1">
+                        <p><strong>G</strong> - Games Played, <strong>W</strong> - Wins, <strong>L</strong> - Losses, <strong>Pts</strong> - Points</p>
+                        <p><strong>GD</strong> - Goal Difference, <strong>F</strong> - Goals For, <strong>A</strong> - Goals Against</p>
+                        <p className="mt-2 text-indigo-600 dark:text-indigo-400">* 1 win = 3 points, 1 loss = 0 points</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="font-semibold mb-2">No Pool Standings Yet</h3>
+                    <p className="text-muted-foreground">Standings will appear once pool play games are completed.</p>
+                  </Card>
+                )}
+              </>
             )}
-          </TabsContent>
 
-          {/* Crossover Tab */}
-          <TabsContent value="crossover" className="space-y-4">
-            {(() => {
-              const crossoverGames = games.filter(g =>
-                g.gameRound?.roundType?.toLowerCase() === 'crossover' ||
-                g.gameRound?.name?.toLowerCase().includes('crossover') ||
-                g.gameRound?.name?.toLowerCase().includes('cross over')
-              );
+            {/* Crossover Games */}
+            {selectedStage === 'crossover' && (
+              <>
+                {(() => {
+                  const crossoverGames = games.filter(g =>
+                    g.gameRound?.roundType?.toLowerCase() === 'crossover' ||
+                    g.gameRound?.name?.toLowerCase().includes('crossover') ||
+                    g.gameRound?.name?.toLowerCase().includes('cross over')
+                  );
 
-              // Note: Division filtering for crossover games would require game.divisionPoolId
-              const filteredCrossoverGames = crossoverGames;
+                  // Note: Division filtering for crossover games would require game.divisionPoolId
+                  const filteredCrossoverGames = crossoverGames;
 
-              return (
-                <>
-                  {/* Division filter */}
-                  {divisions.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded-xl border">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Division</span>
-                        <div className="flex gap-1 flex-wrap">
-                          <button
-                            onClick={() => setSelectedDivision('all')}
-                            className={cn(
-                              'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                              selectedDivision === 'all'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-background hover:bg-muted border'
-                            )}
-                          >
-                            All
-                          </button>
-                          {divisions.map(d => (
-                            <button
-                              key={d.id}
-                              onClick={() => setSelectedDivision(d.id)}
-                              className={cn(
-                                'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                                selectedDivision === d.id
-                                  ? 'bg-indigo-600 text-white'
-                                  : 'bg-background hover:bg-muted border'
-                              )}
-                            >
-                              {d.name}
-                            </button>
+                  return (
+                    <>
+                      {/* Division filter */}
+                      {divisions.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded-xl border">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">Division</span>
+                            <div className="flex gap-1 flex-wrap">
+                              <button
+                                onClick={() => setSelectedDivision('all')}
+                                className={cn(
+                                  'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                                  selectedDivision === 'all'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-background hover:bg-muted border'
+                                )}
+                              >
+                                All
+                              </button>
+                              {divisions.map(d => (
+                                <button
+                                  key={d.id}
+                                  onClick={() => setSelectedDivision(d.id)}
+                                  className={cn(
+                                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                                    selectedDivision === d.id
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-background hover:bg-muted border'
+                                  )}
+                                >
+                                  {d.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {filteredCrossoverGames.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {filteredCrossoverGames.map(game => (
+                            <Link key={game.id} href={`/live/${game.id}`}>
+                              <Card className={cn(
+                                'hover:border-primary/50 hover:shadow-md transition-all cursor-pointer h-full',
+                                game.status === 'in_progress' && 'border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20'
+                              )}>
+                                <CardContent className="p-4">
+                                  {/* Game header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400">
+                                        CROSSOVER
+                                      </span>
+                                      {game.status === 'in_progress' && (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-white animate-pulse">
+                                          LIVE
+                                        </span>
+                                      )}
+                                      {game.name && (
+                                        <span className="text-xs text-muted-foreground">{game.name}</span>
+                                      )}
+                                    </div>
+                                    {game.fieldLocation && (
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        {game.fieldLocation.name}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Time */}
+                                  {game.scheduledTime && (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                      <Calendar className="h-3 w-3" />
+                                      <span>{formatDate(game.scheduledTime, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                                      <Clock className="h-3 w-3 ml-1" />
+                                      <span>{formatTime(game.scheduledTime)}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Teams */}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div className={cn(
+                                          'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
+                                          game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore
+                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                                            : 'bg-muted text-muted-foreground'
+                                        )}>
+                                          {game.homeTeam?.name?.charAt(0) || 'H'}
+                                        </div>
+                                        <span className={cn(
+                                          'truncate',
+                                          game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore ? 'font-semibold' : 'text-muted-foreground'
+                                        )}>
+                                          {game.homeTeam?.name || 'Home Team'}
+                                        </span>
+                                      </div>
+                                      <span className={cn(
+                                        'text-xl font-bold min-w-[2rem] text-right',
+                                        game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore && 'text-emerald-600'
+                                      )}>
+                                        {game.status === 'scheduled' ? '-' : game.homeTeamScore}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div className={cn(
+                                          'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
+                                          game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore
+                                            ? 'bg-gradient-to-br from-sky-500 to-cyan-600 text-white'
+                                            : 'bg-muted text-muted-foreground'
+                                        )}>
+                                          {game.awayTeam?.name?.charAt(0) || 'A'}
+                                        </div>
+                                        <span className={cn(
+                                          'truncate',
+                                          game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore ? 'font-semibold' : 'text-muted-foreground'
+                                        )}>
+                                          {game.awayTeam?.name || 'Away Team'}
+                                        </span>
+                                      </div>
+                                      <span className={cn(
+                                        'text-xl font-bold min-w-[2rem] text-right',
+                                        game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore && 'text-emerald-600'
+                                      )}>
+                                        {game.status === 'scheduled' ? '-' : game.awayTeamScore}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
                           ))}
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {filteredCrossoverGames.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {filteredCrossoverGames.map(game => (
-                        <Link key={game.id} href={`/live/${game.id}`}>
-                          <Card className={cn(
-                            'hover:border-primary/50 hover:shadow-md transition-all cursor-pointer h-full',
-                            game.status === 'in_progress' && 'border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20'
-                          )}>
-                            <CardContent className="p-4">
-                              {/* Game header */}
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400">
-                                    CROSSOVER
-                                  </span>
-                                  {game.status === 'in_progress' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-white animate-pulse">
-                                      LIVE
-                                    </span>
-                                  )}
-                                  {game.name && (
-                                    <span className="text-xs text-muted-foreground">{game.name}</span>
-                                  )}
-                                </div>
-                                {game.fieldLocation && (
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {game.fieldLocation.name}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Time */}
-                              {game.scheduledTime && (
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                                  <Calendar className="h-3 w-3" />
-                                  <span>{formatDate(game.scheduledTime, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                                  <Clock className="h-3 w-3 ml-1" />
-                                  <span>{formatTime(game.scheduledTime)}</span>
-                                </div>
-                              )}
-
-                              {/* Teams */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <div className={cn(
-                                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
-                                      game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore
-                                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                                        : 'bg-muted text-muted-foreground'
-                                    )}>
-                                      {game.homeTeam?.name?.charAt(0) || 'H'}
-                                    </div>
-                                    <span className={cn(
-                                      'truncate',
-                                      game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore ? 'font-semibold' : 'text-muted-foreground'
-                                    )}>
-                                      {game.homeTeam?.name || 'Home Team'}
-                                    </span>
-                                  </div>
-                                  <span className={cn(
-                                    'text-xl font-bold min-w-[2rem] text-right',
-                                    game.status !== 'scheduled' && game.homeTeamScore > game.awayTeamScore && 'text-emerald-600'
-                                  )}>
-                                    {game.status === 'scheduled' ? '-' : game.homeTeamScore}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <div className={cn(
-                                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
-                                      game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore
-                                        ? 'bg-gradient-to-br from-sky-500 to-cyan-600 text-white'
-                                        : 'bg-muted text-muted-foreground'
-                                    )}>
-                                      {game.awayTeam?.name?.charAt(0) || 'A'}
-                                    </div>
-                                    <span className={cn(
-                                      'truncate',
-                                      game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore ? 'font-semibold' : 'text-muted-foreground'
-                                    )}>
-                                      {game.awayTeam?.name || 'Away Team'}
-                                    </span>
-                                  </div>
-                                  <span className={cn(
-                                    'text-xl font-bold min-w-[2rem] text-right',
-                                    game.status !== 'scheduled' && game.awayTeamScore > game.homeTeamScore && 'text-emerald-600'
-                                  )}>
-                                    {game.status === 'scheduled' ? '-' : game.awayTeamScore}
-                                  </span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <Card className="p-8 text-center">
-                      <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="font-semibold mb-2">No Crossover Games Yet</h3>
-                      <p className="text-muted-foreground">Crossover games will appear once pool play is complete.</p>
-                    </Card>
-                  )}
-                </>
-              );
-            })()}
+                      ) : (
+                        <Card className="p-8 text-center">
+                          <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                          <h3 className="font-semibold mb-2">No Crossover Games Yet</h3>
+                          <p className="text-muted-foreground">Crossover games will appear once pool play is complete.</p>
+                        </Card>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            )}
           </TabsContent>
 
           {/* Bracket Tab */}
@@ -1825,9 +1853,14 @@ export default function EventDetailPage() {
                   {divisionBracketGames.length > 0 ? (
                     <GamesBracket games={divisionBracketGames} />
                   ) : bracket && bracket.bracketTree ? (
-                    <div className="overflow-x-auto pb-4">
-                      <TournamentBracket bracket={bracket} />
-                    </div>
+                    <>
+                      <div className="hidden md:block overflow-x-auto pb-4">
+                        <TournamentBracket bracket={bracket} />
+                      </div>
+                      <div className="block md:hidden pb-4 px-2">
+                        <SimpleBracket bracket={bracket} />
+                      </div>
+                    </>
                   ) : (
                     <Card className="p-8 text-center">
                       <Swords className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -1888,9 +1921,9 @@ export default function EventDetailPage() {
                                 <span className={cn(
                                   'inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold',
                                   idx === 0 ? 'bg-amber-400 text-white' :
-                                  idx === 1 ? 'bg-gray-400 text-white' :
-                                  idx === 2 ? 'bg-orange-400 text-white' :
-                                  'bg-muted text-muted-foreground'
+                                    idx === 1 ? 'bg-gray-400 text-white' :
+                                      idx === 2 ? 'bg-orange-400 text-white' :
+                                        'bg-muted text-muted-foreground'
                                 )}>
                                   {idx + 1}
                                 </span>
@@ -1944,8 +1977,8 @@ export default function EventDetailPage() {
                                 <span className={cn(
                                   'inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold',
                                   idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-lg' :
-                                  idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md' :
-                                  'bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md'
+                                    idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md' :
+                                      'bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md'
                                 )}>
                                   {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
                                 </span>

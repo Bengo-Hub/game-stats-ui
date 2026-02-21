@@ -1,10 +1,10 @@
 'use client';
 
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, X, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Download, Smartphone, X } from 'lucide-react';
+import * as React from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -36,18 +36,13 @@ export function InstallPrompt({ className }: InstallPromptProps) {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-
-      // Check if user has dismissed before
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (!dismissed) {
-        setIsVisible(true);
-      }
+      setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Show iOS prompt if on iOS and not dismissed
-    if (isIOSDevice && !localStorage.getItem('pwa-install-dismissed')) {
+    // Show iOS prompt if on iOS
+    if (isIOSDevice) {
       setIsVisible(true);
     }
 

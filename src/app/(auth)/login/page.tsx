@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/auth';
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -95,12 +95,12 @@ export default function LoginPage() {
             <Label htmlFor="password" className="text-sm font-medium">
               Password
             </Label>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-primary hover:underline"
+            <span
+              className="text-sm text-muted-foreground cursor-help"
+              title="Contact your administrator to reset your password"
             >
               Forgot password?
-            </Link>
+            </span>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -148,34 +148,12 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            New to UltimateStats?
-          </span>
-        </div>
-      </div>
-
-      {/* Register link */}
-      <div className="text-center">
-        <Link href="/register">
-          <Button variant="outline" className="w-full h-12">
-            Create an account
-          </Button>
-        </Link>
-      </div>
-
-      {/* Demo credentials hint */}
-      <div className="p-4 rounded-lg bg-muted/50 border text-sm">
-        <p className="font-medium text-muted-foreground mb-1">Demo Access</p>
-        <p className="text-xs text-muted-foreground">
-          Contact your administrator for access credentials or{' '}
-          <Link href="/discover" className="text-primary hover:underline">
-            browse public events
+      {/* Public access hint */}
+      <div className="p-4 rounded-lg bg-muted/50 border text-sm text-center">
+        <p className="text-muted-foreground">
+          Want to view live scores and events?{' '}
+          <Link href="/discover" className="text-primary hover:underline font-medium">
+            Browse public events →
           </Link>
         </p>
       </div>

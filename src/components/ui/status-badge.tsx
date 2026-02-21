@@ -1,6 +1,5 @@
-import * as React from 'react';
-import { Badge } from './badge';
 import { cn } from '@/lib/utils';
+import { Badge } from './badge';
 
 type StatusType =
   | 'scheduled'
@@ -23,7 +22,7 @@ export interface StatusBadgeProps {
 const statusConfig: Record<StatusType, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   scheduled: { label: 'Scheduled', variant: 'secondary' },
   in_progress: { label: 'In Progress', variant: 'default' },
-  finished: { label: 'Finished', variant: 'outline' },
+  finished: { label: 'Finished (Scores Open)', variant: 'secondary' },
   ended: { label: 'Ended', variant: 'outline' },
   canceled: { label: 'Canceled', variant: 'destructive' },
   draft: { label: 'Draft', variant: 'secondary' },

@@ -1,10 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { Play, Pause, StopCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { AlertCircle, Check, Clock, Edit2, Pause, Play, StopCircle } from 'lucide-react';
+import { useState } from 'react';
 
 interface GameTimerProps {
   elapsedSeconds: number;
@@ -16,6 +17,7 @@ interface GameTimerProps {
   onPause?: () => void;
   onEnd?: () => void;
   onStoppage?: () => void;
+  onEditTime?: (newElapsedSeconds: number) => void;
   showControls?: boolean;
   className?: string;
 }
@@ -36,9 +38,28 @@ export function GameTimer({
   onPause,
   onEnd,
   onStoppage,
+  onEditTime,
   showControls = true,
   className,
 }: GameTimerProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editMinutes, setEditMinutes] = useState('');
+  const [editSeconds, setEditSeconds] = useState('');
+
+  const handleEditSubmit = () => {
+    if (onEditTime) {
+      const m = parseInt(editMinutes) || 0;
+      const s = parseInt(editSeconds) || 0;
+      onEditTime(m * 60 + s);
+    }
+    setIsEditing(false);
+  };
+
+  const startEditing = () => {
+    setEditMinutes(Math.floor(elapsedSeconds / 60).toString());
+    setEditSeconds((elapsedSeconds % 60).toString().padStart(2, '0'));
+    setIsEditing(true);
+  };
   const allocatedSeconds = allocatedMinutes * 60;
   const totalElapsed = elapsedSeconds;
   const remainingSeconds = Math.max(0, allocatedSeconds - totalElapsed + stoppageSeconds);
@@ -69,18 +90,51 @@ export function GameTimer({
           {/* Main Time */}
           <div
             className={cn(
-              'font-mono text-5xl sm:text-6xl font-bold tracking-tight',
+              'font-mono text-5xl sm:text-6xl font-bold tracking-tight flex items-center justify-center gap-2 group relative',
               isOvertime && 'text-red-500',
               isStoppage && 'text-yellow-500'
             )}
           >
-            {isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(totalElapsed)}
+            {isEditing ? (
+              <div className="flex items-center gap-2 text-4xl sm:text-5xl">
+                <Input
+                  type="number"
+                  value={editMinutes}
+                  onChange={e => setEditMinutes(e.target.value)}
+                  className="w-20 text-center font-mono text-4xl sm:text-5xl h-14"
+                  min="0"
+                />:
+                <Input
+                  type="number"
+                  value={editSeconds}
+                  onChange={e => setEditSeconds(e.target.value)}
+                  className="w-20 text-center font-mono text-4xl sm:text-5xl h-14"
+                  min="0" max="59"
+                />
+              </div>
+            ) : (
+              isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(remainingSeconds)
+            )}
+
+            {showControls && onEditTime && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={isEditing ? handleEditSubmit : startEditing}
+                className={cn(
+                  "h-10 w-10 absolute -right-12",
+                  isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
+                )}
+              >
+                {isEditing ? <Check className="h-6 w-6 text-green-500" /> : <Edit2 className="h-5 w-5 text-muted-foreground" />}
+              </Button>
+            )}
           </div>
 
           {/* Remaining / Allocated */}
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
             <span>
-              Remaining: <span className="font-medium text-foreground">{formatTime(remainingSeconds)}</span>
+              Elapsed: <span className="font-medium text-foreground">{formatTime(totalElapsed)}</span>
             </span>
             <span>
               Allocated: <span className="font-medium">{allocatedMinutes} min</span>
@@ -170,6 +224,7 @@ export function CompactTimer({
   className,
 }: Omit<GameTimerProps, 'showControls' | 'onStart' | 'onPause' | 'onEnd' | 'onStoppage'>) {
   const allocatedSeconds = allocatedMinutes * 60;
+  const remainingSeconds = Math.max(0, allocatedSeconds - elapsedSeconds + stoppageSeconds);
   const isOvertime = elapsedSeconds > allocatedSeconds + stoppageSeconds;
   const overtimeSeconds = isOvertime ? elapsedSeconds - allocatedSeconds - stoppageSeconds : 0;
 
@@ -186,7 +241,7 @@ export function CompactTimer({
       >
         <Clock className="h-3 w-3" />
         <span className="font-bold">
-          {isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(elapsedSeconds)}
+          {isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(remainingSeconds)}
         </span>
       </div>
       {stoppageSeconds > 0 && (

@@ -1,0 +1,53 @@
+﻿
+> game-stats-ui@0.1.0 build D:\Projects\BengoBox\mosuon\game-stats\game-stats-ui
+> next build --webpack
+
+Ôû▓ Next.js 16.1.6 (webpack)
+
+  Creating an optimized production build ...
+> [PWA] Compile server
+> [PWA] Compile server
+> [PWA] Compile client (static)
+> [PWA] Auto register service worker with: D:\Projects\BengoBox\mosuon\game-stats\game-stats-ui\node_modules\.pnpm\next-pwa@5.6.0_@babel+core@_9e9c31ac9453575f82e5db13c9f1ae8e\node_modules\next-pwa\register.js
+> [PWA] Service worker: D:\Projects\BengoBox\mosuon\game-stats\game-stats-ui\public\sw.js
+> [PWA]   url: /sw.js
+> [PWA]   scope: /
+Ô£ô Compiled successfully in 23.3s
+  Running TypeScript ...
+node.exe : Failed to compile.
+At C:\Users\bob\AppData\Roaming\npm\pnpm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to compile.:String) [], RemoteExc 
+   eption
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+.next/types/validator.ts:6:15
+Type error: Module '"next/types.js"' has no exported member 'ResolvingMetadata'. Did 
+you mean to use 'import ResolvingMetadata from "next/types.js"' instead?
+
+[0m [90m 4 |[39m
+ [90m 5 |[39m [36mimport[39m type { [33mAppRoutes[39m[33m,[39m 
+[33mLayoutRoutes[39m[33m,[39m [33mParamMap[39m } [36mfrom[39m 
+[32m"./routes.js"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m type { 
+[33mResolvingMetadata[39m[33m,[39m [33mResolvingViewport[39m } [36mfrom[39m 
+[32m"next/types.js"[39m
+ [90m   |[39m               [31m[1m^[22m[39m
+ [90m 7 |[39m
+ [90m 8 |[39m type [33mAppPageConfig[39m[33m<[39m[33mRoute[39m 
+[36mextends[39m [33mAppRoutes[39m [33m=[39m [33mAppRoutes[39m[33m>[39m 
+[33m=[39m {
+ [90m 9 |[39m   [36mdefault[39m[33m:[39m 
+[33mReact[39m[33m.[39m[33mComponentType[39m[33m<[39m{ params[33m:[39m 
+[33mPromise[39m[33m<[39m[33mParamMap[39m[[33mRoute[39m][33m>[39m } 
+[33m&[39m any[33m>[39m [33m|[39m ((props[33m:[39m { params[33m:[39m 
+[33mPromise[39m[33m<[39m[33mParamMap[39m[[33mRoute[39m][33m>[39m } 
+[33m&[39m any) [33m=>[39m [33mReact[39m[33m.[39m[33mReactNode[39m 
+[33m|[39m 
+[33mPromise[39m[33m<[39m[33mReact[39m[33m.[39m[33mReactNode[39m[33m>[39m 
+[33m|[39m never [33m|[39m [36mvoid[39m [33m|[39m 
+[33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m)[0m
+Next.js build worker exited with code: 1 and signal: null
+ÔÇëELIFECYCLEÔÇë Command failed with exit code 1.

@@ -1,7 +1,7 @@
 {
-  "name": "Ultimate Game Stats",
+  "name": "UltimateStats",
   "short_name": "UltimateStats",
-  "description": "Game statistics and management platform",
+  "description": "Ultimate frisbee game statistics and management platform",
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "display": "standalone",

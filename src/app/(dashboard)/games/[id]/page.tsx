@@ -1,31 +1,31 @@
 'use client';
 
-import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { GameTimer, CompactTimer } from '@/components/features/games/game-timer';
 import { ConnectionStatus } from '@/components/features/games/connection-status';
-import { useGameStream } from '@/lib/hooks/useGameStream';
-import { useGameStore } from '@/stores/game';
+import { CompactTimer, GameTimer } from '@/components/features/games/game-timer';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { gamesApi } from '@/lib/api';
+import { useGameStream } from '@/lib/hooks/useGameStream';
+import { cn } from '@/lib/utils';
+import { useGameStore } from '@/stores/game';
 import type { Game, GameEvent } from '@/types';
 import {
+  AlertCircle,
   ArrowLeft,
-  Play,
-  Square,
   Clock,
   MapPin,
-  Trophy,
-  Timer,
+  Play,
   Plus,
-  AlertCircle,
+  Square,
+  Timer,
+  Trophy,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import * as React from 'react';
 
 export default function GameDetailPage() {
   const params = useParams();
@@ -37,7 +37,7 @@ export default function GameDetailPage() {
   const [loading, setLoading] = React.useState(true);
 
   // Real-time state from store
-  const { timer, setGame: setStoreGame, incrementTimer, startTimer, pauseTimer, startStoppage, endStoppage, addStoppageTime } = useGameStore();
+  const { timer, setGame: setStoreGame, incrementTimer, startTimer, pauseTimer, startStoppage, endStoppage, addStoppageTime, setElapsedTime } = useGameStore();
 
   // SSE connection for live updates
   const {
@@ -117,6 +117,10 @@ export default function GameDetailPage() {
     startTimer();
   };
 
+  const handleEditTime = (newElapsedSeconds: number) => {
+    setElapsedTime(newElapsedSeconds);
+  };
+
   const handleStoppage = async () => {
     if (timer.isStoppage) {
       // End stoppage
@@ -183,6 +187,8 @@ export default function GameDetailPage() {
   }
 
   const isLive = game.status === 'in_progress';
+  const isFinished = game.status === 'finished';
+  const isLiveOrFinished = isLive || isFinished;
 
   return (
     <div className="space-y-6">
@@ -216,7 +222,7 @@ export default function GameDetailPage() {
               Start Game
             </Button>
           )}
-          {isLive && (
+          {isLiveOrFinished && (
             <Button variant="destructive" onClick={handleEndGame}>
               <Square className="h-4 w-4 mr-2" />
               End Game
@@ -259,8 +265,8 @@ export default function GameDetailPage() {
         </div>
       )}
 
-      {/* Game Timer - Show for live games */}
-      {isLive && (
+      {/* Game Timer - Show for live or finished games */}
+      {isLiveOrFinished && (
         <GameTimer
           elapsedSeconds={timer.elapsedSeconds}
           allocatedMinutes={game.allocatedTimeMinutes}
@@ -271,6 +277,7 @@ export default function GameDetailPage() {
           onPause={handlePauseTimer}
           onEnd={handleEndGame}
           onStoppage={handleStoppage}
+          onEditTime={handleEditTime}
         />
       )}
 
@@ -298,7 +305,7 @@ export default function GameDetailPage() {
                 <div className="text-4xl sm:text-6xl font-bold font-mono">
                   {game.homeTeamScore} - {game.awayTeamScore}
                 </div>
-                {isLive && (
+                {isLiveOrFinished && (
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center justify-center gap-1 text-green-600">
                       <span className="relative flex h-2 w-2">
@@ -333,8 +340,8 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Quick Actions for Live Game */}
-            {isLive && (
+            {/* Quick Actions for Live/Finished Game */}
+            {isLiveOrFinished && (
               <div className="mt-6 pt-6 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <Button

@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     default: "UltimateStats",
     template: "%s | UltimateStats",
   },
-  description: "Game statistics and management platform for tournaments",
-  keywords: ["game stats", "tournament", "sports", "statistics", "scoring"],
+  description: "Ultimate frisbee game statistics and management platform",
+  keywords: ["game stats", "tournament", "sports", "statistics", "scoring", "ultimate frisbee"],
   authors: [{ name: "UltimateStats Team" }],
   manifest: "/manifest.json",
   appleWebApp: {
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "UltimateStats",
     title: "UltimateStats",
-    description: "Game statistics and management platform for tournaments",
+    description: "Ultimate frisbee game statistics and management platform",
   },
 };
 
