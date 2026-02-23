@@ -40,6 +40,7 @@ import type { Team } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  Download,
   Edit,
   Eye,
   Filter,
@@ -56,6 +57,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 type ViewMode = 'table' | 'cards';
 
@@ -92,6 +94,7 @@ export default function TeamsPage() {
   const [divisionFilter, setDivisionFilter] = React.useState<string>('all');
   const [eventFilter, setEventFilter] = React.useState<string>('all');
   const [editingTeam, setEditingTeam] = React.useState<Team | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
   // Debounce search input
   React.useEffect(() => {
@@ -163,8 +166,36 @@ export default function TeamsPage() {
   // Handle delete team
   const handleDeleteTeam = async (teamId: string) => {
     if (!confirm('Are you sure you want to delete this team?')) return;
-    // TODO: Implement with authenticated API
     console.log('Delete team:', teamId);
+    // TODO: Implement single delete API call
+    handleRefresh();
+  };
+
+  // Handle mass delete
+  const handleMassDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} teams?`)) return;
+    console.log('Mass delete teams:', Array.from(selectedIds));
+    // TODO: Implement batch delete API call
+    setSelectedIds(new Set());
+    handleRefresh();
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === teams.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(teams.map(t => t.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
   };
 
   // Permission checks
@@ -374,6 +405,14 @@ export default function TeamsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <input
+                    type="checkbox"
+                    checked={teams.length > 0 && selectedIds.size === teams.length}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                </TableHead>
                 <TableHead>Team</TableHead>
                 <TableHead className="hidden sm:table-cell">Division</TableHead>
                 <TableHead className="hidden md:table-cell">Seed</TableHead>
@@ -384,7 +423,15 @@ export default function TeamsPage() {
             </TableHeader>
             <TableBody>
               {teams.map((team) => (
-                <TableRow key={team.id} className="group">
+                <TableRow key={team.id} className={cn('group', selectedIds.has(team.id) && 'bg-muted/50')}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(team.id)}
+                      onChange={() => toggleSelect(team.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {team.logoUrl ? (
@@ -524,6 +571,57 @@ export default function TeamsPage() {
         onOpenChange={(open: boolean) => !open && setEditingTeam(null)}
         onSuccess={handleRefresh}
       />
+
+      {/* Floating Mass Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <Card className="shadow-2xl border-none bg-slate-900 text-white p-2 flex items-center gap-4 min-w-[300px] rounded-2xl">
+            <div className="pl-4 pr-2 flex items-center gap-2 border-r border-white/10">
+              <div className="bg-primary h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold">
+                {selectedIds.size}
+              </div>
+              <span className="text-sm font-medium">Selected</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+
+              {canDeleteTeams && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-rose-400 hover:bg-rose-400/10"
+                  onClick={handleMassDelete}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => {
+                  // Example: Export selected to CSV
+                  toast.success('Exporting selected teams...');
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

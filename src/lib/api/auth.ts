@@ -8,7 +8,12 @@ export const authApi = {
    * Login with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    const originalResponse = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    const response = {
+      ...originalResponse,
+      accessToken: originalResponse.access_token || originalResponse.accessToken,
+      refreshToken: originalResponse.refresh_token || originalResponse.refreshToken,
+    };
 
     // Store the access token
     if (response.accessToken) {
@@ -22,9 +27,14 @@ export const authApi = {
    * Refresh the access token
    */
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/refresh', {
+    const originalResponse = await apiClient.post<AuthResponse>('/auth/refresh', {
       refresh_token: refreshToken
     });
+    const response = {
+      ...originalResponse,
+      accessToken: originalResponse.access_token || originalResponse.accessToken,
+      refreshToken: originalResponse.refresh_token || originalResponse.refreshToken,
+    };
 
     if (response.accessToken) {
       apiClient.setAccessToken(response.accessToken);

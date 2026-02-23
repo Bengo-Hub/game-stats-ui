@@ -1,6 +1,7 @@
 'use client';
 
 import { EditEventDialog } from '@/components/dashboard/events';
+import { BulkTransferPlayersDialog, MassImportPlayersDialog } from '@/components/dashboard/players';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ import {
     RefreshCw,
     Settings,
     Trophy,
+    Upload,
     Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -34,6 +36,8 @@ export default function EventDetailPage() {
     const eventId = params.id as string;
 
     const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+    const [bulkTransferOpen, setBulkTransferOpen] = React.useState(false);
+    const [massImportOpen, setMassImportOpen] = React.useState(false);
 
     const {
         data: event,
@@ -220,6 +224,24 @@ export default function EventDetailPage() {
                                         <QuickLink href={`/manage/events/${eventId}/spirit`} label="Spirit Dashboard" icon={<Trophy />} />
                                         <QuickLink href={`/manage/events/${eventId}/bracket`} label="Bracket Builder" icon={<LayoutGrid />} />
                                         <QuickLink href={`/manage/events/${eventId}/crew`} label="Crew Management" icon={<Users />} />
+                                        <button
+                                            onClick={() => setBulkTransferOpen(true)}
+                                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-sm font-medium border border-transparent hover:border-muted-foreground/20"
+                                        >
+                                            <div className="text-muted-foreground">
+                                                <RefreshCw className="h-4 w-4" />
+                                            </div>
+                                            Bulk Player Transfer
+                                        </button>
+                                        <button
+                                            onClick={() => setMassImportOpen(true)}
+                                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-sm font-medium border border-transparent hover:border-muted-foreground/20"
+                                        >
+                                            <div className="text-muted-foreground">
+                                                <Upload className="h-4 w-4" />
+                                            </div>
+                                            Mass Import Players
+                                        </button>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -299,6 +321,20 @@ export default function EventDetailPage() {
                     onSuccess={() => refetchEvent()}
                 />
             )}
+
+            <BulkTransferPlayersDialog
+                eventId={eventId}
+                open={bulkTransferOpen}
+                onOpenChange={setBulkTransferOpen}
+                onSuccess={() => refetchEvent()}
+            />
+
+            <MassImportPlayersDialog
+                eventId={eventId}
+                open={massImportOpen}
+                onOpenChange={setMassImportOpen}
+                onSuccess={() => refetchEvent()}
+            />
         </div>
     );
 }

@@ -1,26 +1,21 @@
 // API module exports
 
-export { apiClient } from './client';
-export { authApi } from './auth';
-export { gamesApi } from './games';
-export { eventsApi, divisionsApi, roundsApi } from './events';
-export { teamsApi, spiritScoresApi } from './teams';
-export { analyticsApi } from './analytics';
 export { adminApi } from './admin';
+export { analyticsApi } from './analytics';
+export { authApi } from './auth';
+export { bulkApi } from './bulk';
+export { apiClient } from './client';
+export { divisionsApi, eventsApi, roundsApi } from './events';
+export { gamesApi } from './games';
+export { createGameStream, publicApi } from './public';
 export { settingsApi } from './settings';
-export { publicApi, createGameStream } from './public';
+export { spiritScoresApi, teamsApi } from './teams';
 
 // Re-export public API types
 export type {
-  ListEventsParams,
-  TemporalFilter,
-  EventSortField,
-  SortOrder,
-  ListGamesParams,
-  GameStreamEvent,
-  ListTeamsParams,
-  LeaderboardParams,
+  EventSortField, GameStreamEvent, LeaderboardParams, ListEventsParams, ListGamesParams, ListTeamsParams, SortOrder, TemporalFilter
 } from './public';
 
 // Re-export types from main types module
-export type { TeamSpiritAverage, GameTimeline } from '@/types';
+export type { GameTimeline, TeamSpiritAverage } from '@/types';
+

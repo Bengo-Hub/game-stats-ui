@@ -42,7 +42,10 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
-  expiresAt: string;
+  expiresAt?: string;
+  // Support for backend snake_case naming
+  access_token?: string;
+  refresh_token?: string;
 }
 
 // ============================================
