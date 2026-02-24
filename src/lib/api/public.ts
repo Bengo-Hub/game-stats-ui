@@ -369,6 +369,8 @@ export async function listPlayers(params?: ListPlayersParams): Promise<Player[]>
     params: {
       search: params?.search,
       teamId: params?.teamId,
+      eventId: params?.eventId,
+      gender: params?.gender,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
     } as QueryParams,

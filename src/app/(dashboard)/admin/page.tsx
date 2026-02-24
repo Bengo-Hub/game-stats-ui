@@ -1,6 +1,8 @@
 'use client';
 
+import ScoreApprovalTab from '@/components/dashboard/admin/ScoreApprovalTab';
 import { AssignScopedRoleModal } from '@/components/dashboard/users/AssignScopedRoleModal';
+import { UserModal } from '@/components/dashboard/users/UserModal';
 import { PermissionGuard } from '@/components/guards/permission-guard';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,14 +50,13 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { adminApi, type AdminUser, type ScoreEdit } from '@/lib/api/admin';
+import { adminApi, type AdminUser } from '@/lib/api/admin';
 import { usePaginationState } from '@/lib/hooks/usePagination';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   AlertCircle,
-  Check,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -68,9 +69,9 @@ import {
   Shield,
   UserCheck,
   UserCog,
+  UserPlus,
   Users,
-  UserX,
-  X,
+  UserX
 } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
@@ -127,6 +128,8 @@ function UserManagementTab() {
   const pagination = usePaginationState(20);
   const [selectedScopedUser, setSelectedScopedUser] = React.useState<AdminUser | null>(null);
   const [isScopedRoleModalOpen, setIsScopedRoleModalOpen] = React.useState(false);
+  const [selectedUser, setSelectedUser] = React.useState<AdminUser | null>(null);
+  const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
 
   // Fetch users
   const { data: users = [], isLoading, refetch } = useQuery({
@@ -184,10 +187,22 @@ function UserManagementTab() {
             <CardTitle>User Management</CardTitle>
             <CardDescription>Manage user accounts and roles</CardDescription>
           </div>
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            <RefreshCcw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setSelectedUser(null);
+                setIsUserModalOpen(true);
+              }}
+              size="sm"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+            <Button onClick={() => refetch()} variant="outline" size="sm">
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -275,6 +290,14 @@ function UserManagementTab() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user);
+                              setIsUserModalOpen(true);
+                            }}>
+                              <Edit3 className="h-4 w-4 mr-2" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => updateRoleMutation.mutate({ userId: user.id, role: 'admin' })}>
                               <Shield className="h-4 w-4 mr-2" />
                               Make Admin
@@ -353,6 +376,15 @@ function UserManagementTab() {
         onClose={() => {
           setIsScopedRoleModalOpen(false);
           setSelectedScopedUser(null);
+        }}
+      />
+
+      <UserModal
+        user={selectedUser}
+        isOpen={isUserModalOpen}
+        onClose={() => {
+          setIsUserModalOpen(false);
+          setSelectedUser(null);
         }}
       />
     </Card>
@@ -505,207 +537,7 @@ function AuditLogTab() {
   );
 }
 
-// Score Edit Approval Tab Component
-function ScoreEditApprovalTab() {
-  const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = React.useState<ScoreEdit['status']>('pending');
-  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
-  const [selectedEdit, setSelectedEdit] = React.useState<ScoreEdit | null>(null);
-  const [rejectReason, setRejectReason] = React.useState('');
-
-  // Fetch score edits
-  const { data: scoreEdits = [], isLoading } = useQuery({
-    queryKey: adminKeys.scoreEdits({ status: statusFilter }),
-    queryFn: () => adminApi.listScoreEdits({ status: statusFilter }),
-    staleTime: 1000 * 30, // 30 seconds for pending items
-  });
-
-  // Approve mutation
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => adminApi.approveScoreEdit(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.scoreEdits() });
-      toast.success('Score edit approved');
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  // Reject mutation
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => adminApi.rejectScoreEdit(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.scoreEdits() });
-      toast.success('Score edit rejected');
-      setRejectDialogOpen(false);
-      setSelectedEdit(null);
-      setRejectReason('');
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const handleReject = () => {
-    if (selectedEdit && rejectReason) {
-      rejectMutation.mutate({ id: selectedEdit.id, reason: rejectReason });
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Score Override Dialog */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Score Override</CardTitle>
-          <CardDescription>
-            Make direct corrections to game scores with audit trail
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScoreOverrideDialog />
-        </CardContent>
-      </Card>
-
-      {/* Pending Edits */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Score Edit Requests</CardTitle>
-              <CardDescription>Review and approve score corrections</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              {(['pending', 'approved', 'rejected'] as ScoreEdit['status'][]).map((status) => (
-                <Button
-                  key={status}
-                  variant={statusFilter === status ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter(status)}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : scoreEdits.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No {statusFilter} score edit requests
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {scoreEdits.map((edit) => (
-                <div key={edit.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{edit.gameName}</span>
-                    <StatusBadge status={getStatusColor(edit.status)} label={edit.status} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Previous Score:</span>
-                      <span className="ml-2 font-medium">{edit.previousHomeScore} - {edit.previousAwayScore}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Proposed Score:</span>
-                      <span className="ml-2 font-medium text-primary">{edit.newHomeScore} - {edit.newAwayScore}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Reason:</span>
-                      <span className="ml-2">{edit.reason}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Requested by:</span>
-                      <span className="ml-2">{edit.requestedByName}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Submitted:</span>
-                      <span className="ml-2">{formatDate(edit.createdAt)}</span>
-                    </div>
-                    {edit.reviewedByName && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Reviewed by:</span>
-                        <span className="ml-2">{edit.reviewedByName}</span>
-                        {edit.reviewedAt && <span className="text-muted-foreground ml-2">at {formatDate(edit.reviewedAt)}</span>}
-                      </div>
-                    )}
-                    {edit.rejectionReason && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Rejection reason:</span>
-                        <span className="ml-2 text-destructive">{edit.rejectionReason}</span>
-                      </div>
-                    )}
-                  </div>
-                  {edit.status === 'pending' && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => approveMutation.mutate(edit.id)}
-                        disabled={approveMutation.isPending}
-                      >
-                        {approveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedEdit(edit);
-                          setRejectDialogOpen(true);
-                        }}
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Reject Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Score Edit</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this score edit request.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rejectReason">Rejection Reason</Label>
-              <Textarea
-                id="rejectReason"
-                placeholder="Explain why this edit is being rejected..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleReject}
-              disabled={!rejectReason || rejectMutation.isPending}
-              variant="destructive"
-            >
-              {rejectMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Reject
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+// Replaced by separate ScoreApprovalTab component
 
 // Score Override Dialog Component
 function ScoreOverrideDialog() {
@@ -892,7 +724,7 @@ export default function AdminPage() {
 
   const { data: pendingEdits = [] } = useQuery({
     queryKey: adminKeys.scoreEdits({ status: 'pending' }),
-    queryFn: () => adminApi.listScoreEdits({ status: 'pending' }),
+    queryFn: () => adminApi.listPendingScoreEdits(),
     staleTime: 1000 * 30,
   });
 
@@ -1002,7 +834,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="scores">
-            <ScoreEditApprovalTab />
+            <ScoreApprovalTab />
           </TabsContent>
 
           <TabsContent value="audit">

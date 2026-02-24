@@ -131,28 +131,49 @@ export const adminApi = {
    * List all users
    */
   async listUsers(params?: ListUsersParams): Promise<AdminUser[]> {
-    return apiClient.get<AdminUser[]>('/admin/users', params as Record<string, string | number | boolean | undefined>);
+    const users = await apiClient.get<any[]>('/admin/users', params as Record<string, string | number | boolean | undefined>);
+    return users.map(user => ({
+      ...user,
+      status: user.isActive ? 'active' : 'inactive'
+    }));
   },
 
   /**
    * Get a single user
    */
   async getUser(id: string): Promise<AdminUser> {
-    return apiClient.get<AdminUser>(`/admin/users/${id}`);
+    const user = await apiClient.get<any>(`/admin/users/${id}`);
+    return {
+      ...user,
+      status: user.isActive ? 'active' : 'inactive'
+    };
   },
 
   /**
    * Create a new user
    */
   async createUser(data: CreateUserRequest): Promise<AdminUser> {
-    return apiClient.post<AdminUser>('/admin/users', data);
+    const user = await apiClient.post<any>('/admin/users', data);
+    return {
+      ...user,
+      status: user.isActive ? 'active' : 'inactive'
+    };
   },
 
   /**
    * Update a user
    */
   async updateUser(id: string, data: UpdateUserRequest): Promise<AdminUser> {
-    return apiClient.put<AdminUser>(`/admin/users/${id}`, data);
+    const { status, ...rest } = data;
+    const updateData: any = { ...rest };
+    if (status !== undefined) {
+      updateData.isActive = status === 'active';
+    }
+    const user = await apiClient.put<any>(`/admin/users/${id}`, updateData);
+    return {
+      ...user,
+      status: user.isActive ? 'active' : 'inactive'
+    };
   },
 
   /**
@@ -173,14 +194,16 @@ export const adminApi = {
    * Suspend a user
    */
   async suspendUser(id: string, reason?: string): Promise<AdminUser> {
-    return apiClient.post<AdminUser>(`/admin/users/${id}/suspend`, { reason });
+    // Backend lacks specific suspend endpoint, use update
+    return this.updateUser(id, { status: 'inactive' } as UpdateUserRequest);
   },
 
   /**
    * Activate a user
    */
   async activateUser(id: string): Promise<AdminUser> {
-    return apiClient.post<AdminUser>(`/admin/users/${id}/activate`, {});
+    // Backend lacks specific activate endpoint, use update
+    return this.updateUser(id, { status: 'active' } as UpdateUserRequest);
   },
 
   /**
@@ -247,8 +270,8 @@ export const adminApi = {
   /**
    * List pending score edits
    */
-  async listScoreEdits(params?: ListScoreEditsParams): Promise<ScoreEdit[]> {
-    return apiClient.get<ScoreEdit[]>('/admin/score-edits', params as Record<string, string | number | boolean | undefined>);
+  async listPendingScoreEdits(): Promise<ScoreEdit[]> {
+    return apiClient.get<ScoreEdit[]>('/admin/score-edits/pending');
   },
 
   /**
@@ -258,18 +281,8 @@ export const adminApi = {
     return apiClient.get<ScoreEdit>(`/admin/score-edits/${id}`);
   },
 
-  /**
-   * Approve a score edit
-   */
-  async approveScoreEdit(id: string): Promise<ScoreEdit> {
-    return apiClient.post<ScoreEdit>(`/admin/score-edits/${id}/approve`, {});
-  },
-
-  /**
-   * Reject a score edit
-   */
-  async rejectScoreEdit(id: string, reason: string): Promise<ScoreEdit> {
-    return apiClient.post<ScoreEdit>(`/admin/score-edits/${id}/reject`, { reason });
+  async reviewScoreEdit(id: string, data: { approve: boolean; rejectionReason?: string }): Promise<{ status: string }> {
+    return apiClient.post<{ status: string }>(`/admin/score-edits/${id}/review`, data);
   },
 
   // ============================================

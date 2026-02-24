@@ -816,7 +816,7 @@ export default function LiveGameDetailPage() {
                     {timeline.events.map((event: GameEvent) => {
                       const isGoal = event.eventType === 'goal' || event.eventType === 'goal_scored' || event.eventType === 'score';
                       const isAssist = event.eventType === 'assist' || event.eventType === 'assist_recorded';
-                      const isTimeout = event.eventType === 'timeout' || event.eventType === 'stoppage';
+                      const isTimeout = event.eventType === 'timeout' || event.eventType === 'stoppage' || event.eventType === 'stoppage_recorded';
 
                       return (
                         <div
