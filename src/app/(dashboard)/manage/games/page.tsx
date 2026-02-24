@@ -54,6 +54,7 @@ import {
   Plus,
   Radio,
   RefreshCw,
+  ShieldCheck,
   Trash2,
   Trophy,
   X,
@@ -62,14 +63,15 @@ import {
 import Link from 'next/link';
 import * as React from 'react';
 
-type GameStatus = 'scheduled' | 'in_progress' | 'finished' | 'ended' | 'canceled';
+type GameStatus = 'scheduled' | 'in_progress' | 'ended' | 'completed' | 'canceled';
 type ViewMode = 'table' | 'cards';
 
 const GAME_STATUSES: { value: GameStatus | 'all'; label: string; icon?: React.ReactNode }[] = [
   { value: 'all', label: 'All Games' },
   { value: 'scheduled', label: 'Scheduled', icon: <Clock className="h-3.5 w-3.5" /> },
   { value: 'in_progress', label: 'Live', icon: <Radio className="h-3.5 w-3.5 text-red-500" /> },
-  { value: 'finished', label: 'Finished', icon: <Trophy className="h-3.5 w-3.5" /> },
+  { value: 'ended', label: 'Ended', icon: <Trophy className="h-3.5 w-3.5" /> },
+  { value: 'completed', label: 'Completed', icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> },
   { value: 'canceled', label: 'Canceled', icon: <XCircle className="h-3.5 w-3.5" /> },
 ];
 
@@ -489,7 +491,7 @@ export default function GamesPage() {
                             Edit
                           </DropdownMenuItem>
                         )}
-                        {canCancelGames && game.status !== 'canceled' && game.status !== 'finished' && (
+                        {canCancelGames && game.status !== 'canceled' && game.status !== 'ended' && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -617,7 +619,7 @@ function GameCard({ game, formatTime, canEdit, canCancel, onCancel, onEdit }: Ga
                   Edit
                 </DropdownMenuItem>
               )}
-              {canCancel && game.status !== 'canceled' && game.status !== 'finished' && (
+              {canCancel && game.status !== 'canceled' && game.status !== 'ended' && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

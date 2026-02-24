@@ -64,6 +64,9 @@ export type Permission =
   | 'manage_users'
   | 'manage_roles'
   | 'manage_settings'
+  | 'reset_password'
+  | 'export_data'
+  | 'export_audit'
   // Settings
   | 'view_settings'
   | 'change_settings';
@@ -80,6 +83,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'view_spirit', 'submit_spirit', 'change_spirit', 'manage_spirit',
     'view_analytics', 'export_analytics',
     'view_admin', 'manage_users', 'manage_roles', 'manage_settings',
+    'reset_password', 'export_data', 'export_audit',
     'view_settings', 'change_settings',
   ],
 

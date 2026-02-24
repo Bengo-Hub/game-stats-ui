@@ -203,7 +203,7 @@ export async function getEventCrew(eventId: string): Promise<EventCrew> {
 
 export interface ListGamesParams extends PaginationParams {
   eventId?: string;
-  status?: 'scheduled' | 'in_progress' | 'finished' | 'ended' | 'canceled';
+  status?: 'scheduled' | 'in_progress' | 'ended' | 'completed' | 'canceled';
   divisionPoolId?: string;
   fieldId?: string;
   startDate?: string;
@@ -265,7 +265,7 @@ export async function getGameSpiritScores(gameId: string): Promise<SpiritScore[]
 // ============================================
 
 export interface GameStreamEvent {
-  type: 'score_updated' | 'game_started' | 'game_finished' | 'game_ended' | 'stoppage' | 'heartbeat';
+  type: 'score_updated' | 'game_started' | 'game_ended' | 'game_completed' | 'stoppage' | 'heartbeat';
   data: unknown;
   timestamp: string;
 }

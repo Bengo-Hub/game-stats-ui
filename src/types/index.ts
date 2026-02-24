@@ -146,7 +146,7 @@ export interface Game {
   actualEndTime?: string;
   allocatedTimeMinutes: number;
   stoppageTimeSeconds: number;
-  status: 'scheduled' | 'in_progress' | 'finished' | 'ended' | 'canceled';
+  status: 'scheduled' | 'in_progress' | 'ended' | 'completed' | 'canceled';
   homeTeamScore: number;
   awayTeamScore: number;
   firstPullBy?: string;

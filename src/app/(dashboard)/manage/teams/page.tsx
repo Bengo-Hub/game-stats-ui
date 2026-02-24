@@ -41,13 +41,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { teamsApi } from '@/lib/api/teams';
 import { useEventsQuery } from '@/lib/hooks/useEventsQuery';
 import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
 import { usePermissions } from '@/lib/hooks/usePermission';
 import { teamKeys, useTeamsQuery } from '@/lib/hooks/useTeamsQuery';
 import { cn } from '@/lib/utils';
 import type { Team } from '@/types';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   Download,
@@ -160,8 +161,18 @@ export default function TeamsPage() {
   }, [allTeams, divisionFilter]);
 
   // Calculate total pages
-  const hasMorePages = allTeams.length === pagination.pageSize;
-  const totalPages = hasMorePages ? pagination.page + 1 : pagination.page;
+  const totalPages = Math.ceil((allTeams.length || 0) / pagination.pageSize) || 1;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => teamsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamKeys.all });
+      toast.success('Team deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete team');
+    },
+  });
 
   // Refresh teams
   const handleRefresh = () => {
@@ -199,15 +210,12 @@ export default function TeamsPage() {
     setIsDeleting(true);
     try {
       if (deleteId) {
-        // Individual delete
-        console.log('Delete team:', deleteId);
-        // TODO: Implement single delete API call
-        toast.success('Team deleted successfully');
+        await deleteMutation.mutateAsync(deleteId);
       } else {
         // Mass delete
-        console.log('Mass delete teams:', Array.from(selectedIds));
-        // TODO: Implement batch delete API call
-        toast.success(`${selectedIds.size} teams deleted successfully`);
+        for (const id of selectedIds) {
+          await deleteMutation.mutateAsync(id);
+        }
         setSelectedIds(new Set());
       }
       handleRefresh();
@@ -457,9 +465,10 @@ export default function TeamsPage() {
                 <TableHead>Team</TableHead>
                 <TableHead className="hidden sm:table-cell">Division</TableHead>
                 <TableHead className="hidden md:table-cell">Seed</TableHead>
+                <TableHead className="hidden md:table-cell text-center">Players</TableHead>
                 <TableHead className="hidden lg:table-cell">Location</TableHead>
                 <TableHead>Placement</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[80px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -513,14 +522,19 @@ export default function TeamsPage() {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
+                  <TableCell className="hidden md:table-cell text-center">
+                    <Badge variant="secondary" className="font-mono">
+                      {team.playersCount || 0}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {team.locationName ? (
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
                         <MapPin className="h-3.5 w-3.5" />
-                        <span className="text-sm">{team.locationName}</span>
+                        <span className="truncate max-w-[120px]">{team.locationName}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">-</span>
+                      <span className="text-muted-foreground text-xs italic">Not set</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -534,7 +548,7 @@ export default function TeamsPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="hover:bg-muted"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>

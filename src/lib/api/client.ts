@@ -9,6 +9,33 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+// Helper to convert snake_case to camelCase
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+// Helper to recursively transform object keys from snake_case to camelCase
+function transformKeys(obj: unknown): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(transformKeys);
+  }
+
+  if (typeof obj === 'object') {
+    const transformed: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const camelKey = snakeToCamel(key);
+      transformed[camelKey] = transformKeys(value);
+    }
+    return transformed;
+  }
+
+  return obj;
+}
+
 class ApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
@@ -65,7 +92,12 @@ class ApiClient {
       return {} as T;
     }
 
-    return JSON.parse(text);
+    try {
+      const data = JSON.parse(text);
+      return transformKeys(data) as T;
+    } catch {
+      return text as unknown as T;
+    }
   }
 
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {

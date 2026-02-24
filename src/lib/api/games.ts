@@ -114,18 +114,18 @@ export const gamesApi = {
   },
 
   /**
-   * Finish a game (timer done)
+   * End a game (timer done)
    */
-  async finish(id: string): Promise<Game> {
-    const response = await apiClient.post<any>(`/games/${id}/finish`, {});
+  async end(id: string): Promise<Game> {
+    const response = await apiClient.post<any>(`/games/${id}/end`, {});
     return mapGameResponse(response);
   },
 
   /**
-   * End a game (final submission)
+   * Complete a game (final submission)
    */
-  async end(id: string): Promise<Game> {
-    const response = await apiClient.post<any>(`/games/${id}/end`, {});
+  async complete(id: string): Promise<Game> {
+    const response = await apiClient.post<any>(`/games/${id}/complete`, {});
     return mapGameResponse(response);
   },
 

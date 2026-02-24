@@ -28,7 +28,17 @@ export function GlobalAddPlayerDialog({ open, onOpenChange, onSuccess }: GlobalA
     const addMutation = useMutation({
         mutationFn: (data: any) => {
             if (!selectedTeamId) throw new Error('Please select a team');
-            return teamsApi.addPlayer(selectedTeamId, data);
+
+            const payload = {
+                ...data,
+                jerseyNumber: data.jerseyNumber ?? undefined,
+                email: data.email || undefined,
+                phone: data.phone || undefined,
+                position: data.position || undefined,
+                profileImageUrl: data.profileImageUrl || undefined,
+            };
+
+            return teamsApi.addPlayer(selectedTeamId, payload);
         },
         onSuccess: () => {
             toast.success('Player added successfully');

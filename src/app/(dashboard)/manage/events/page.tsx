@@ -555,9 +555,9 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/discover/${event.slug || event.id}`}>
+                <Link href={`/manage/events/${event.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
-                  View
+                  View Details
                 </Link>
               </DropdownMenuItem>
               {canEdit && (
@@ -689,9 +689,9 @@ function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/discover/${event.slug || event.id}`}>
+                <Link href={`/manage/events/${event.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
-                  View
+                  View Details
                 </Link>
               </DropdownMenuItem>
               {canEdit && (

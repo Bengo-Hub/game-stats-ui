@@ -127,10 +127,17 @@ export default function PlayersPage() {
         throw new Error("Cannot edit player without a team");
       }
 
-      // Remove nulls to satisfy UpdatePlayerRequest
-      const payload = {
-        ...data,
-        jerseyNumber: data.jerseyNumber === null ? undefined : data.jerseyNumber,
+      // Map form data to UpdatePlayerRequest
+      const payload: any = {
+        name: data.name,
+        gender: data.gender,
+        jerseyNumber: data.jerseyNumber ?? undefined,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        position: data.position || undefined,
+        isCaptain: data.isCaptain,
+        isSpiritCaptain: data.isSpiritCaptain,
+        profileImageUrl: data.profileImageUrl || undefined,
       };
 
       return teamsApi.updatePlayer(editingPlayer.teamId, editingPlayer.id, payload);
@@ -250,10 +257,10 @@ export default function PlayersPage() {
               <SelectValue placeholder="Gender" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Gender</SelectItem>
-              <SelectItem value="m">Male (M)</SelectItem>
-              <SelectItem value="f">Female (F)</SelectItem>
-              <SelectItem value="x">Mixed (X)</SelectItem>
+              <SelectItem value="all">All Genders</SelectItem>
+              <SelectItem value="m">Male</SelectItem>
+              <SelectItem value="f">Female</SelectItem>
+              <SelectItem value="x">Other / Mixed</SelectItem>
             </SelectContent>
           </Select>
 
@@ -360,7 +367,7 @@ export default function PlayersPage() {
                     {player.teamId && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
+                          <Button variant="ghost" size="icon-sm" className="hover:bg-muted">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -437,7 +444,7 @@ export default function PlayersPage() {
                       {player.teamId && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm">
+                            <Button variant="ghost" size="icon-sm" className="hover:bg-muted">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

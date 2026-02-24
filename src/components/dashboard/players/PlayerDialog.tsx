@@ -28,7 +28,7 @@ export const playerSchema = z.object({
     position: z.string().optional(),
     isCaptain: z.boolean(),
     isSpiritCaptain: z.boolean(),
-    gender: z.string().min(1, 'Gender is required'),
+    gender: z.enum(['M', 'F', 'X']),
     profileImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
 
@@ -120,7 +120,7 @@ export function PlayerDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[400px]">
+            <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>

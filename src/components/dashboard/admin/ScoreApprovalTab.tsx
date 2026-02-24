@@ -27,6 +27,7 @@ import {
     TableRow
 } from '@/components/ui/table';
 import { adminApi, ScoreEdit } from '@/lib/api/admin';
+import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     CheckCircle2,
@@ -110,8 +111,24 @@ export default function ScoreApprovalTab() {
                                         <TableCell>
                                             {req.previousHomeScore} - {req.previousAwayScore}
                                         </TableCell>
-                                        <TableCell className="text-primary font-bold">
-                                            {req.newHomeScore} - {req.newAwayScore}
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                    "font-bold",
+                                                    req.newHomeScore > req.previousHomeScore ? "text-green-500" :
+                                                        req.newHomeScore < req.previousHomeScore ? "text-red-500" : ""
+                                                )}>
+                                                    {req.newHomeScore}
+                                                </span>
+                                                <span>-</span>
+                                                <span className={cn(
+                                                    "font-bold",
+                                                    req.newAwayScore > req.previousAwayScore ? "text-green-500" :
+                                                        req.newAwayScore < req.previousAwayScore ? "text-red-500" : ""
+                                                )}>
+                                                    {req.newAwayScore}
+                                                </span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="max-w-xs truncate" title={req.reason}>
                                             {req.reason}

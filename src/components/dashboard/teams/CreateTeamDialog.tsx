@@ -148,8 +148,9 @@ export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDial
   const onSubmit = (data: CreateTeamFormData) => {
     const request: CreateTeamRequest = {
       name: data.name,
+      eventId: data.eventId,
       divisionPoolId: data.divisionPoolId,
-      initialSeed: data.initialSeed,
+      initialSeed: data.initialSeed || 1,
       logoUrl: data.logoUrl || undefined,
       primaryColor: data.primaryColor,
       secondaryColor: data.secondaryColor,

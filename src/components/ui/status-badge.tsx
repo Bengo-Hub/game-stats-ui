@@ -4,12 +4,11 @@ import { Badge } from './badge';
 type StatusType =
   | 'scheduled'
   | 'in_progress'
-  | 'finished'
   | 'ended'
+  | 'completed'
   | 'canceled'
   | 'draft'
   | 'published'
-  | 'completed'
   | 'pending';
 
 export interface StatusBadgeProps {
@@ -22,12 +21,11 @@ export interface StatusBadgeProps {
 const statusConfig: Record<StatusType, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   scheduled: { label: 'Scheduled', variant: 'secondary' },
   in_progress: { label: 'In Progress', variant: 'default' },
-  finished: { label: 'Finished (Scores Open)', variant: 'secondary' },
-  ended: { label: 'Ended', variant: 'outline' },
+  ended: { label: 'Ended (Scores Open)', variant: 'secondary' },
+  completed: { label: 'Completed', variant: 'outline' },
   canceled: { label: 'Canceled', variant: 'destructive' },
   draft: { label: 'Draft', variant: 'secondary' },
   published: { label: 'Published', variant: 'default' },
-  completed: { label: 'Completed', variant: 'outline' },
   pending: { label: 'Pending', variant: 'secondary' },
 };
 

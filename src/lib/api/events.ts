@@ -231,6 +231,20 @@ export const eventsApi = {
   async createDivisionPool(divisionId: string, data: CreateDivisionPoolRequest): Promise<DivisionPool> {
     return apiClient.post<DivisionPool>(`/divisions/${divisionId}/pools`, data);
   },
+
+  /**
+   * Get spirit scores for an event
+   */
+  async getSpiritScores(eventId: string): Promise<any[]> {
+    return apiClient.get<any[]>(`/events/${eventId}/spirit`);
+  },
+
+  /**
+   * Get crew for an event
+   */
+  async getEventCrew(eventId: string): Promise<{ admins: any[]; scorekeepers: any[] }> {
+    return apiClient.get<{ admins: any[]; scorekeepers: any[] }>(`/events/${eventId}/crew`);
+  },
 };
 
 export const divisionsApi = {

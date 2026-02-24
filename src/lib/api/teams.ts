@@ -20,6 +20,7 @@ export interface TeamSpiritAverage {
 // Team CRUD Types
 export interface CreateTeamRequest {
   name: string;
+  eventId: string;
   divisionPoolId: string;
   initialSeed?: number;
   logoUrl?: string;
@@ -54,22 +55,26 @@ export interface ListTeamsParams {
 // Player/Roster Types
 export interface CreatePlayerRequest {
   name: string;
+  gender: 'M' | 'F' | 'X';
   jerseyNumber?: number;
   email?: string;
   phone?: string;
   isCaptain?: boolean;
   isSpiritCaptain?: boolean;
   position?: string;
+  profileImageUrl?: string;
 }
 
 export interface UpdatePlayerRequest {
   name?: string;
+  gender?: 'M' | 'F' | 'X';
   jerseyNumber?: number;
   email?: string;
   phone?: string;
   isCaptain?: boolean;
   isSpiritCaptain?: boolean;
   position?: string;
+  profileImageUrl?: string;
 }
 
 export const teamsApi = {

@@ -106,6 +106,7 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
                 logoUrl: team.logoUrl || '',
                 primaryColor: team.primaryColor || '#3B82F6',
                 secondaryColor: team.secondaryColor || '#FFFFFF',
+                contactEmail: team.contactEmail || '',
                 contactPhone: team.contactPhone || '',
                 locationName: team.locationName || '',
             });

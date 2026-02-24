@@ -135,14 +135,29 @@ export default function GameDetailPage() {
     }
   };
 
-  const handleEndGame = async () => {
+  const handleFinishGame = async () => {
     try {
       const updated = await gamesApi.end(gameId);
       setGame(updated);
       setStoreGame(updated);
       pauseTimer();
+      toast.success('Game finished. Waiting for final score submission.');
     } catch (error) {
-      console.error('Failed to end game:', error);
+      console.error('Failed to finish game:', error);
+      toast.error('Failed to finish game');
+    }
+  };
+
+  const handleCompleteGame = async () => {
+    try {
+      const updated = await gamesApi.complete(gameId);
+      setGame(updated);
+      setStoreGame(updated);
+      pauseTimer();
+      toast.success('Game completed and scores finalized.');
+    } catch (error) {
+      console.error('Failed to complete game:', error);
+      toast.error('Failed to complete game');
     }
   };
 
@@ -239,8 +254,8 @@ export default function GameDetailPage() {
   }
 
   const isLive = game.status === 'in_progress';
-  const isFinished = game.status === 'finished';
-  const isLiveOrFinished = isLive || isFinished;
+  const isEnded = game.status === 'ended';
+  const isLiveOrEnded = isLive || isEnded;
 
   return (
     <div className="space-y-6">
@@ -274,10 +289,16 @@ export default function GameDetailPage() {
               Start Game
             </Button>
           )}
-          {isLiveOrFinished && (
-            <Button variant="destructive" onClick={handleEndGame}>
+          {isLive && (
+            <Button variant="destructive" onClick={handleFinishGame}>
               <Square className="h-4 w-4 mr-2" />
-              End Game
+              Finish Game
+            </Button>
+          )}
+          {isEnded && (
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCompleteGame}>
+              <Trophy className="h-4 w-4 mr-2" />
+              Complete Game
             </Button>
           )}
         </div>
@@ -318,7 +339,7 @@ export default function GameDetailPage() {
       )}
 
       {/* Game Timer - Show for live or finished games */}
-      {isLiveOrFinished && (
+      {isLiveOrEnded && (
         <GameTimer
           elapsedSeconds={timer.elapsedSeconds}
           allocatedMinutes={game.allocatedTimeMinutes}
@@ -327,7 +348,7 @@ export default function GameDetailPage() {
           isStoppage={timer.isStoppage}
           onStart={handleResumeTimer}
           onPause={handlePauseTimer}
-          onEnd={handleEndGame}
+          onEnd={handleFinishGame}
           onStoppage={handleStoppage}
           onEditTime={handleEditTime}
         />
@@ -357,7 +378,7 @@ export default function GameDetailPage() {
                 <div className="text-4xl sm:text-6xl font-bold font-mono">
                   {game.homeTeamScore} - {game.awayTeamScore}
                 </div>
-                {isLiveOrFinished && (
+                {isLiveOrEnded && (
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center justify-center gap-1 text-green-600">
                       <span className="relative flex h-2 w-2">
@@ -393,7 +414,7 @@ export default function GameDetailPage() {
             </div>
 
             {/* Quick Actions for Live/Finished Game */}
-            {isLiveOrFinished && (
+            {isLiveOrEnded && (
               <div className="mt-6 pt-6 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <Button
@@ -498,15 +519,17 @@ export default function GameDetailPage() {
                 <TabsTrigger value="spirit">Spirit Scores</TabsTrigger>
                 <TabsTrigger value="audit">Audit Trail</TabsTrigger>
               </TabsList>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-amber-600 border-amber-200 hover:bg-amber-50"
-                onClick={() => setShowOverrideDialog(true)}
-              >
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                Score Override
-              </Button>
+              {game.status !== 'completed' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                  onClick={() => setShowOverrideDialog(true)}
+                >
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Score Override
+                </Button>
+              )}
             </div>
 
             <TabsContent value="timeline">

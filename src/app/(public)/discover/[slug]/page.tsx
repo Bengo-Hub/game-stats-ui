@@ -151,8 +151,8 @@ function getGameStatusConfig(game: Game) {
   const isPast = game.scheduledTime ? new Date(game.scheduledTime) < new Date() : false;
   const configs: Record<string, { color: string; label: string; bg: string }> = {
     'in_progress': { color: 'text-emerald-600', label: 'LIVE', bg: 'bg-emerald-500' },
-    'finished': { color: 'text-orange-600', label: 'ENDED', bg: 'bg-orange-500' },
-    'ended': { color: 'text-gray-600', label: 'ENDED', bg: 'bg-gray-500' },
+    'ended': { color: 'text-orange-600', label: 'ENDED', bg: 'bg-orange-500' },
+    'completed': { color: 'text-gray-600', label: 'COMPLETED', bg: 'bg-gray-500' },
     'scheduled': isPast
       ? { color: 'text-amber-600', label: 'NOT STARTED', bg: 'bg-amber-500' }
       : { color: 'text-indigo-600', label: 'UPCOMING', bg: 'bg-indigo-500' },
@@ -456,7 +456,7 @@ function TimetableModal({
                     {fields.map(f => {
                       const game = row.games[f.id];
                       const isLive = game?.status === 'in_progress';
-                      const isFinished = game?.status === 'finished' || game?.status === 'ended';
+                      const isFinished = game?.status === 'ended' || game?.status === 'completed';
                       return (
                         <td key={f.id} className="p-2 border-r last:border-r-0 align-top">
                           {game ? (
@@ -1356,7 +1356,7 @@ export default function EventDetailPage() {
                                         LIVE
                                       </span>
                                     )}
-                                    {(game.status === 'finished' || game.status === 'ended') && (
+                                    {(game.status === 'ended' || game.status === 'completed') && (
                                       <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
                                         ENDED
                                       </span>
