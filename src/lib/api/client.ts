@@ -38,6 +38,14 @@ class ApiClient {
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
+    if (response.status === 401) {
+      // Clear token and redirect to login on unauthorized
+      this.accessToken = null;
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+
     if (!response.ok) {
       let error: ApiError;
       try {

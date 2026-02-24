@@ -104,6 +104,24 @@ export interface SystemHealth {
   timestamp: string;
 }
 
+export interface ScopedRole {
+  id: string;
+  userId: string;
+  role: string;
+  scopeType: 'event' | 'game' | 'team' | 'division';
+  scopeId: string;
+  permissions?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssignScopedRoleRequest {
+  userId: string;
+  role: string;
+  scopeType: string;
+  scopeId: string;
+}
+
 export const adminApi = {
   // ============================================
   // User Management
@@ -170,6 +188,20 @@ export const adminApi = {
    */
   async resetUserPassword(id: string): Promise<void> {
     return apiClient.post(`/admin/users/${id}/reset-password`, {});
+  },
+
+  /**
+   * Assign a scoped role
+   */
+  async assignScopedRole(data: AssignScopedRoleRequest): Promise<ScopedRole> {
+    return apiClient.post<ScopedRole>('/admin/users/roles/scoped', data);
+  },
+
+  /**
+   * List scoped roles for a user
+   */
+  async listUserScopedRoles(userId: string): Promise<ScopedRole[]> {
+    return apiClient.get<ScopedRole[]>(`/admin/users/${userId}/roles/scoped`);
   },
 
   // ============================================

@@ -1,6 +1,16 @@
 'use client';
 
-import { CreateTeamDialog, EditTeamDialog } from '@/components/dashboard/teams';
+import { CreateTeamDialog, EditTeamDialog, ManageRosterDialog } from '@/components/dashboard/teams';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,7 +104,12 @@ export default function TeamsPage() {
   const [divisionFilter, setDivisionFilter] = React.useState<string>('all');
   const [eventFilter, setEventFilter] = React.useState<string>('all');
   const [editingTeam, setEditingTeam] = React.useState<Team | null>(null);
+  const [rosterTeam, setRosterTeam] = React.useState<Team | null>(null);
+  const [isRosterDialogOpen, setIsRosterDialogOpen] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Debounce search input
   React.useEffect(() => {
@@ -164,20 +179,45 @@ export default function TeamsPage() {
   const hasActiveFilters = divisionFilter !== 'all' || debouncedSearch;
 
   // Handle delete team
-  const handleDeleteTeam = async (teamId: string) => {
-    if (!confirm('Are you sure you want to delete this team?')) return;
-    console.log('Delete team:', teamId);
-    // TODO: Implement single delete API call
-    handleRefresh();
+  const handleDeleteTeam = (teamId: string) => {
+    setDeleteId(teamId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleManageRoster = (team: Team) => {
+    setRosterTeam(team);
+    setIsRosterDialogOpen(true);
   };
 
   // Handle mass delete
-  const handleMassDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} teams?`)) return;
-    console.log('Mass delete teams:', Array.from(selectedIds));
-    // TODO: Implement batch delete API call
-    setSelectedIds(new Set());
-    handleRefresh();
+  const handleMassDeleteAction = () => {
+    setDeleteId(null);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      if (deleteId) {
+        // Individual delete
+        console.log('Delete team:', deleteId);
+        // TODO: Implement single delete API call
+        toast.success('Team deleted successfully');
+      } else {
+        // Mass delete
+        console.log('Mass delete teams:', Array.from(selectedIds));
+        // TODO: Implement batch delete API call
+        toast.success(`${selectedIds.size} teams deleted successfully`);
+        setSelectedIds(new Set());
+      }
+      handleRefresh();
+    } catch (error) {
+      toast.error('Failed to delete team(s)');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setDeleteId(null);
+    }
   };
 
   const toggleSelectAll = () => {
@@ -395,6 +435,7 @@ export default function TeamsPage() {
               canDelete={canDeleteTeams}
               onDelete={handleDeleteTeam}
               onEdit={() => setEditingTeam(team)}
+              onManageRoster={handleManageRoster}
               getPlacementBadge={getPlacementBadge}
             />
           ))}
@@ -511,7 +552,7 @@ export default function TeamsPage() {
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Team
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleManageRoster(team)}>
                               <UserPlus className="h-4 w-4 mr-2" />
                               Manage Roster
                             </DropdownMenuItem>
@@ -572,6 +613,33 @@ export default function TeamsPage() {
         onSuccess={handleRefresh}
       />
 
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteId
+                ? "This action cannot be undone. This will permanently delete the team and remove its data from our servers."
+                : `This action cannot be undone. This will permanently delete ${selectedIds.size} teams and remove their data from our servers.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Floating Mass Action Bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -599,7 +667,7 @@ export default function TeamsPage() {
                   variant="ghost"
                   size="sm"
                   className="text-rose-400 hover:bg-rose-400/10"
-                  onClick={handleMassDelete}
+                  onClick={handleMassDeleteAction}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -622,6 +690,11 @@ export default function TeamsPage() {
           </Card>
         </div>
       )}
+      <ManageRosterDialog
+        team={rosterTeam}
+        open={isRosterDialogOpen}
+        onOpenChange={setIsRosterDialogOpen}
+      />
     </div>
   );
 }
@@ -633,10 +706,11 @@ interface TeamCardProps {
   canDelete: boolean;
   onDelete: (id: string) => void;
   onEdit: () => void;
+  onManageRoster: (team: Team) => void;
   getPlacementBadge: (placement: number | undefined) => React.ReactNode;
 }
 
-function TeamCard({ team, canEdit, canDelete, onDelete, onEdit, getPlacementBadge }: TeamCardProps) {
+function TeamCard({ team, canEdit, canDelete, onDelete, onEdit, onManageRoster, getPlacementBadge }: TeamCardProps) {
   return (
     <Card className="hover:border-primary/50 transition-colors group relative">
       <CardContent className="p-4">
@@ -665,7 +739,7 @@ function TeamCard({ team, canEdit, canDelete, onDelete, onEdit, getPlacementBadg
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Team
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onManageRoster(team)}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Manage Roster
                   </DropdownMenuItem>

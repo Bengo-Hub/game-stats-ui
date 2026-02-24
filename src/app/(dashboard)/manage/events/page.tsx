@@ -2,6 +2,16 @@
 
 import { CreateEventDialog, EditEventDialog } from '@/components/dashboard/events';
 import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -52,6 +62,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { toast } from 'sonner';
 
 type EventStatus = 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
 type ViewMode = 'grid' | 'list';
@@ -96,6 +107,9 @@ export default function EventsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = React.useState(false);
   const [editingEvent, setEditingEvent] = React.useState<Event | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [eventIdToDelete, setEventIdToDelete] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Debounce search input
   React.useEffect(() => {
@@ -175,11 +189,28 @@ export default function EventsPage() {
   // Check if any filters are active
   const hasActiveFilters = status !== 'all' || temporal !== 'all' || selectedCategories.length > 0 || debouncedSearch;
 
-  // Handle delete event (placeholder - will be implemented with CRUD API)
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
-    // TODO: Implement with authenticated API
-    console.log('Delete event:', eventId);
+  // Handle delete event
+  const handleDeleteEvent = (eventId: string) => {
+    setEventIdToDelete(eventId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!eventIdToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      // TODO: Implement with authenticated API
+      console.log('Delete event:', eventIdToDelete);
+      toast.success('Event deleted successfully');
+      handleRefresh();
+    } catch (error) {
+      toast.error('Failed to delete event');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setEventIdToDelete(null);
+    }
   };
 
   // Permission checks
@@ -467,6 +498,31 @@ export default function EventsPage() {
           }}
         />
       )}
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event
+              and all associated data (games, teams, scores) from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeleteEvent();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

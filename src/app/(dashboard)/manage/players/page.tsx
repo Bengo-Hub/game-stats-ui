@@ -1,6 +1,16 @@
 'use client';
 
 import { GlobalAddPlayerDialog, GlobalMassUploadDialog, PlayerDialog, type PlayerFormData } from '@/components/dashboard/players';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,6 +68,8 @@ export default function PlayersPage() {
   // State for single player edit
   const [isPlayerDialogOpen, setIsPlayerDialogOpen] = React.useState(false);
   const [editingPlayer, setEditingPlayer] = React.useState<Player | undefined>(undefined);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [playerToDelete, setPlayerToDelete] = React.useState<Player | null>(null);
 
   const pagination = usePaginationState(50); // Consistent page size
   const queryClient = useQueryClient();
@@ -157,8 +169,15 @@ export default function PlayersPage() {
   };
 
   const handleDeletePlayer = (player: Player) => {
-    if (confirm(`Are you sure you want to delete ${player.name}?`)) {
-      deletePlayerMutation.mutate(player);
+    setPlayerToDelete(player);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeletePlayer = () => {
+    if (playerToDelete) {
+      deletePlayerMutation.mutate(playerToDelete);
+      setDeleteConfirmOpen(false);
+      setPlayerToDelete(null);
     }
   };
 
@@ -475,6 +494,32 @@ export default function PlayersPage() {
         onSubmit={handleDialogSubmit}
         isPending={updatePlayerMutation.isPending}
       />
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete
+              <span className="font-semibold text-foreground mx-1">{playerToDelete?.name}</span>
+              and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePlayerMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeletePlayer();
+              }}
+              disabled={deletePlayerMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePlayerMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

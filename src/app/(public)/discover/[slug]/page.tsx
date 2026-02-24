@@ -147,20 +147,23 @@ function formatTime(dateStr: string) {
   });
 }
 
-function getGameStatusConfig(status: string) {
+function getGameStatusConfig(game: Game) {
+  const isPast = game.scheduledTime ? new Date(game.scheduledTime) < new Date() : false;
   const configs: Record<string, { color: string; label: string; bg: string }> = {
     'in_progress': { color: 'text-emerald-600', label: 'LIVE', bg: 'bg-emerald-500' },
     'finished': { color: 'text-orange-600', label: 'ENDED', bg: 'bg-orange-500' },
     'ended': { color: 'text-gray-600', label: 'ENDED', bg: 'bg-gray-500' },
-    'scheduled': { color: 'text-indigo-600', label: 'UPCOMING', bg: 'bg-indigo-500' },
+    'scheduled': isPast
+      ? { color: 'text-amber-600', label: 'NOT STARTED', bg: 'bg-amber-500' }
+      : { color: 'text-indigo-600', label: 'UPCOMING', bg: 'bg-indigo-500' },
     'canceled': { color: 'text-red-600', label: 'CANCELED', bg: 'bg-red-500' },
   };
-  return configs[status] || configs.scheduled;
+  return configs[game.status] || configs.scheduled;
 }
 
 // Game Card Component
 function GameCard({ game, onClick }: { game: Game; onClick?: () => void }) {
-  const statusConfig = getGameStatusConfig(game.status);
+  const statusConfig = getGameStatusConfig(game);
   const isLive = game.status === 'in_progress';
 
   return (

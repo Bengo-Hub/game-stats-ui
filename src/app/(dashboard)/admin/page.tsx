@@ -1,49 +1,50 @@
 'use client';
 
+import { AssignScopedRoleModal } from '@/components/dashboard/users/AssignScopedRoleModal';
 import { PermissionGuard } from '@/components/guards/permission-guard';
 import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/ui/page-header';
 import { SearchInput } from '@/components/ui/search-input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,24 +53,24 @@ import { usePaginationState } from '@/lib/hooks/usePagination';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Activity,
-    AlertCircle,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Download,
-    Edit3,
-    History,
-    Key,
-    Loader2,
-    MoreHorizontal,
-    RefreshCcw,
-    Shield,
-    UserCheck,
-    UserCog,
-    Users,
-    UserX,
-    X,
+  Activity,
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Edit3,
+  History,
+  Key,
+  Loader2,
+  MoreHorizontal,
+  RefreshCcw,
+  Shield,
+  UserCheck,
+  UserCog,
+  Users,
+  UserX,
+  X,
 } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
@@ -124,6 +125,8 @@ function UserManagementTab() {
   const [roleFilter, setRoleFilter] = React.useState<string>('all');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const pagination = usePaginationState(20);
+  const [selectedScopedUser, setSelectedScopedUser] = React.useState<AdminUser | null>(null);
+  const [isScopedRoleModalOpen, setIsScopedRoleModalOpen] = React.useState(false);
 
   // Fetch users
   const { data: users = [], isLoading, refetch } = useQuery({
@@ -284,6 +287,13 @@ function UserManagementTab() {
                               <Edit3 className="h-4 w-4 mr-2" />
                               Make Scorekeeper
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedScopedUser(user);
+                              setIsScopedRoleModalOpen(true);
+                            }}>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Manage Granular Roles
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {user.status === 'suspended' ? (
                               <DropdownMenuItem onClick={() => activateMutation.mutate(user.id)}>
@@ -336,6 +346,15 @@ function UserManagementTab() {
           </div>
         </div>
       </CardContent>
+
+      <AssignScopedRoleModal
+        user={selectedScopedUser}
+        isOpen={isScopedRoleModalOpen}
+        onClose={() => {
+          setIsScopedRoleModalOpen(false);
+          setSelectedScopedUser(null);
+        }}
+      />
     </Card>
   );
 }
