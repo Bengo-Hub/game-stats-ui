@@ -76,6 +76,7 @@ export interface ScoreEdit {
   rejectionReason?: string;
   reviewedById?: string;
   reviewedByName?: string;
+  playerScores?: Array<{ player_id: string; goals: number }>;
   createdAt: string;
   reviewedAt?: string;
 }

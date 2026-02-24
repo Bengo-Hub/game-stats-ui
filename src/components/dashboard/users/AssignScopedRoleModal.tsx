@@ -81,8 +81,8 @@ export function AssignScopedRoleModal({ user, isOpen, onClose }: AssignScopedRol
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle className="flex items-center gap-2">
                         <Shield className="h-5 w-5 text-primary" />
                         Assign Scoped Role
@@ -92,7 +92,7 @@ export function AssignScopedRoleModal({ user, isOpen, onClose }: AssignScopedRol
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 px-6 overflow-y-auto flex-1">
                     <div className="grid gap-2">
                         <Label htmlFor="scope-type">Scope Type</Label>
                         <Select
@@ -154,7 +154,7 @@ export function AssignScopedRoleModal({ user, isOpen, onClose }: AssignScopedRol
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="p-6 pt-2">
                     <Button variant="outline" onClick={onClose} disabled={assignMutation.isPending}>
                         Cancel
                     </Button>

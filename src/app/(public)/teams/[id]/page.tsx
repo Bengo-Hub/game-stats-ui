@@ -1,31 +1,31 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { publicApi } from '@/lib/api/public';
+import { cn } from '@/lib/utils';
+import type { Game } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
-  Users,
-  Trophy,
+  Calendar,
   Crown,
   Heart,
-  MapPin,
-  Calendar,
-  Target,
-  Swords,
-  TrendingUp,
-  Shirt,
   Home,
+  MapPin,
   Plane,
+  Shirt,
+  Swords,
+  Target,
+  TrendingUp,
+  Trophy,
+  Users,
 } from 'lucide-react';
-import { publicApi } from '@/lib/api/public';
-import type { Team, Player, Game } from '@/types';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Query hooks
 function useTeamDetail(teamId: string | undefined) {
@@ -70,7 +70,7 @@ function calculateTeamStats(games: Game[], teamId: string) {
   let pointsAgainst = 0;
 
   games.forEach(game => {
-    if (game.status !== 'finished' && game.status !== 'ended') return;
+    if (game.status !== 'ended' && game.status !== 'completed') return;
 
     const isHome = game.homeTeam?.id === teamId;
     const teamScore = isHome ? game.homeTeamScore : game.awayTeamScore;
@@ -215,7 +215,7 @@ export default function TeamDetailPage() {
                     <p className={cn(
                       "text-2xl font-bold",
                       teamStats.pointDifferential > 0 ? 'text-emerald-600' :
-                      teamStats.pointDifferential < 0 ? 'text-red-500' : ''
+                        teamStats.pointDifferential < 0 ? 'text-red-500' : ''
                     )}>
                       {teamStats.pointDifferential > 0 ? '+' : ''}{teamStats.pointDifferential}
                     </p>
@@ -386,7 +386,7 @@ export default function TeamDetailPage() {
                     const opponent = isHome ? game.awayTeam : game.homeTeam;
                     const isWin = teamScore > opponentScore;
                     const isLoss = teamScore < opponentScore;
-                    const isFinished = game.status === 'finished' || game.status === 'ended';
+                    const isFinished = game.status === 'ended' || game.status === 'completed';
 
                     return (
                       <Link
@@ -404,8 +404,8 @@ export default function TeamDetailPage() {
                             <div className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
                               isWin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                              isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                              "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                                isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                                  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                             )}>
                               {isWin ? 'W' : isLoss ? 'L' : 'D'}
                             </div>

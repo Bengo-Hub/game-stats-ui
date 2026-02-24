@@ -319,7 +319,7 @@ export default function LiveGameDetailPage() {
       gameId,
       (event: GameStreamEvent) => {
         setIsConnected(true);
-        if (event.type === 'score_updated' || event.type === 'game_started' || event.type === 'game_finished') {
+        if (event.type === 'score_updated' || event.type === 'game_started' || event.type === 'game_ended' || event.type === 'game_completed') {
           queryClient.invalidateQueries({ queryKey: ['game', gameId] });
           queryClient.invalidateQueries({ queryKey: ['game', gameId, 'timeline'] });
           queryClient.invalidateQueries({ queryKey: ['game', gameId, 'scores'] });
@@ -461,7 +461,7 @@ export default function LiveGameDetailPage() {
   }
 
   const isLive = game.status === 'in_progress';
-  const isFinished = game.status === 'finished' || game.status === 'ended';
+  const isFinished = game.status === 'ended' || game.status === 'completed';
   const homeTeamColor = getTeamColor(game.homeTeam?.name || 'Home', game.homeTeam?.primaryColor || '');
   const awayTeamColor = getTeamColor(game.awayTeam?.name || 'Away', game.awayTeam?.primaryColor || '');
 

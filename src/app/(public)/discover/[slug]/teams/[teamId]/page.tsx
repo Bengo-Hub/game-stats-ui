@@ -68,7 +68,7 @@ function calculateTeamStats(games: Game[], teamId: string) {
   let pointsAgainst = 0;
 
   games.forEach(game => {
-    if (game.status !== 'finished' && game.status !== 'ended') return;
+    if (game.status !== 'ended' && game.status !== 'completed') return;
 
     const isHome = game.homeTeam?.id === teamId;
     const teamScore = isHome ? game.homeTeamScore : game.awayTeamScore;
@@ -407,7 +407,7 @@ export default function TeamDetailPage() {
                     const opponent = isHome ? game.awayTeam : game.homeTeam;
                     const isWin = teamScore > opponentScore;
                     const isLoss = teamScore < opponentScore;
-                    const isFinished = game.status === 'finished' || game.status === 'ended';
+                    const isFinished = game.status === 'ended' || game.status === 'completed';
 
                     return (
                       <Link

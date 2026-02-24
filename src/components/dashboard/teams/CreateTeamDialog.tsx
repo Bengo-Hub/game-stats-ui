@@ -52,6 +52,8 @@ type CreateTeamFormData = z.infer<typeof createTeamSchema>;
 interface CreateTeamDialogProps {
   trigger?: React.ReactNode;
   eventId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
@@ -75,8 +77,10 @@ const PRESET_COLORS = [
   { name: 'Rose', value: '#F43F5E' },
 ];
 
-export function CreateTeamDialog({ trigger, eventId, onSuccess }: CreateTeamDialogProps) {
-  const [open, setOpen] = React.useState(false);
+export function CreateTeamDialog({ trigger, eventId, open: controlledOpen, onOpenChange, onSuccess }: CreateTeamDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const queryClient = useQueryClient();
 
   const {

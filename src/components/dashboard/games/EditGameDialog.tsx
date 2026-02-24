@@ -129,7 +129,7 @@ export function EditGameDialog({ game, open, onOpenChange, onSuccess }: EditGame
     updateMutation.mutate(request);
   };
 
-  const isLocked = game.status === 'in_progress' || game.status === 'finished' || game.status === 'ended';
+  const isLocked = game.status === 'in_progress' || game.status === 'ended' || game.status === 'completed';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

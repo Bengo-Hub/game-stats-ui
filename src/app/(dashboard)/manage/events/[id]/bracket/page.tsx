@@ -46,8 +46,8 @@ export default function EventBracketPage() {
     });
 
     // Filter only bracket games
-    const bracketGames = games.filter(g => g.gameRound?.roundType === 'bracket' || g.gameRound?.roundType === 'semifinal' || g.gameRound?.roundType === 'final');
-    const bracketRounds = rounds.filter(r => r.roundType === 'bracket' || r.roundType === 'semifinal' || r.roundType === 'final');
+    const bracketGames = games.filter(g => (g.gameRound?.roundType as string) === 'bracket');
+    const bracketRounds = rounds.filter(r => (r.roundType as string) === 'bracket');
 
     if (isLoadingEvent || isLoadingRounds || isLoadingGames) {
         return (

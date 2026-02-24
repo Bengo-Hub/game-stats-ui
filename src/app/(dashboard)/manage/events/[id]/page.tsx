@@ -2,6 +2,7 @@
 
 import { EditEventDialog } from '@/components/dashboard/events';
 import { BulkTransferPlayersDialog, MassImportPlayersDialog } from '@/components/dashboard/players';
+import { CreateTeamDialog } from '@/components/dashboard/teams';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ export default function EventDetailPage() {
     const [editDialogOpen, setEditDialogOpen] = React.useState(false);
     const [bulkTransferOpen, setBulkTransferOpen] = React.useState(false);
     const [massImportOpen, setMassImportOpen] = React.useState(false);
+    const [registerTeamOpen, setRegisterTeamOpen] = React.useState(false);
 
     const {
         data: event,
@@ -268,6 +270,12 @@ export default function EventDetailPage() {
                         </TabsContent>
 
                         <TabsContent value="teams">
+                            <div className="flex justify-end mb-4">
+                                <Button size="sm" onClick={() => setRegisterTeamOpen(true)}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Register Team
+                                </Button>
+                            </div>
                             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
                                 {event.teamPreview?.map((team: TeamPreview) => (
                                     <Link href={`/manage/teams/${team.id}`} key={team.id}>
@@ -321,6 +329,13 @@ export default function EventDetailPage() {
                     onSuccess={() => refetchEvent()}
                 />
             )}
+
+            <CreateTeamDialog
+                eventId={eventId}
+                open={registerTeamOpen}
+                onOpenChange={setRegisterTeamOpen}
+                onSuccess={() => refetchEvent()}
+            />
 
             <BulkTransferPlayersDialog
                 eventId={eventId}

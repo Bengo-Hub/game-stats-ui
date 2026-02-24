@@ -295,7 +295,7 @@ export default function TeamDetailPage() {
                                                             <div className="text-xl font-bold font-mono">
                                                                 {game.homeTeamScore} - {game.awayTeamScore}
                                                             </div>
-                                                            {game.status === 'finished' && (
+                                                            {game.status === 'ended' && (
                                                                 <div className="text-[10px] items-center gap-1 text-green-600 font-medium">
                                                                     {game.homeTeam?.id === teamId
                                                                         ? (game.homeTeamScore > game.awayTeamScore ? 'WIN' : game.homeTeamScore < game.awayTeamScore ? 'LOSS' : 'DRAW')

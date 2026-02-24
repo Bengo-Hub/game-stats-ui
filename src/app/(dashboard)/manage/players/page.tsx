@@ -1,6 +1,6 @@
 'use client';
 
-import { GlobalAddPlayerDialog, GlobalMassUploadDialog, PlayerDialog, type PlayerFormData } from '@/components/dashboard/players';
+import { BulkTransferPlayersDialog, GlobalAddPlayerDialog, GlobalMassUploadDialog, PlayerDialog, type PlayerFormData } from '@/components/dashboard/players';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +59,7 @@ export default function PlayersPage() {
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = React.useState(false);
 
   // Filters state
   const [selectedTeamId, setSelectedTeamId] = React.useState<string>('all');
@@ -233,6 +234,10 @@ export default function PlayersPage() {
           <Button variant="outline" size="sm" onClick={() => setUploadDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Mass Upload
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setTransferDialogOpen(true)}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Bulk Transfer
           </Button>
           <Button size="sm" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -487,6 +492,12 @@ export default function PlayersPage() {
       <GlobalMassUploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
+        onSuccess={() => refetch()}
+      />
+      <BulkTransferPlayersDialog
+        open={transferDialogOpen}
+        onOpenChange={setTransferDialogOpen}
+        eventId={selectedEventId !== 'all' ? selectedEventId : ''}
         onSuccess={() => refetch()}
       />
       <PlayerDialog

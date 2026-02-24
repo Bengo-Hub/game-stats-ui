@@ -1,5 +1,6 @@
 'use client';
 
+import { AnalyticsTab } from '@/components/dashboard/admin/AnalyticsTab';
 import ScoreApprovalTab from '@/components/dashboard/admin/ScoreApprovalTab';
 import { AssignScopedRoleModal } from '@/components/dashboard/users/AssignScopedRoleModal';
 import { UserModal } from '@/components/dashboard/users/UserModal';
@@ -58,6 +59,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   AlertCircle,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -101,7 +103,7 @@ function getRoleColor(role: string): string {
   return colors[role] || 'bg-muted text-muted-foreground';
 }
 
-function getStatusColor(status: string): 'scheduled' | 'in_progress' | 'finished' | 'canceled' {
+function getStatusColor(status: string): 'scheduled' | 'in_progress' | 'ended' | 'canceled' {
   switch (status) {
     case 'active':
       return 'in_progress';
@@ -112,7 +114,7 @@ function getStatusColor(status: string): 'scheduled' | 'in_progress' | 'finished
     case 'pending':
       return 'scheduled';
     case 'approved':
-      return 'finished';
+      return 'ended';
     case 'rejected':
       return 'canceled';
     default:
@@ -840,6 +842,12 @@ export default function AdminPage() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </TabsTrigger>
+            <PermissionGuard permission="view_analytics">
+              <TabsTrigger value="analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+            </PermissionGuard>
           </TabsList>
 
           <TabsContent value="users">
@@ -856,6 +864,10 @@ export default function AdminPage() {
 
           <TabsContent value="export">
             <ExportTab />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab />
           </TabsContent>
         </Tabs>
       </div>

@@ -129,6 +129,12 @@ export default function ScoreApprovalTab() {
                                                     {req.newAwayScore}
                                                 </span>
                                             </div>
+                                            {req.playerScores && req.playerScores.length > 0 && (
+                                                <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                                    {req.playerScores.length} player stats
+                                                </div>
+                                            )}
                                         </TableCell>
                                         <TableCell className="max-w-xs truncate" title={req.reason}>
                                             {req.reason}
@@ -186,6 +192,20 @@ export default function ScoreApprovalTab() {
                                     "{selectedRequest.reason}"
                                 </p>
                             </div>
+
+                            {selectedRequest.playerScores && selectedRequest.playerScores.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Player Adjustments</Label>
+                                    <div className="border rounded-md divide-y bg-muted/10">
+                                        {selectedRequest.playerScores.map((ps: any, i: number) => (
+                                            <div key={i} className="flex items-center justify-between p-2 text-sm">
+                                                <span className="font-medium">{ps.player_name || ps.player_id}</span>
+                                                <span className="text-primary font-bold">{ps.goals} goals</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <Label htmlFor="rejection-reason">Notes / Rejection Reason</Label>

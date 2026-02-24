@@ -1,2 +1,3 @@
 // Bracket feature components exports
-export { TournamentBracket, SimpleBracket } from './tournament-bracket';
+export { GamesBracket, SimpleBracket, TournamentBracket } from './tournament-bracket';
+

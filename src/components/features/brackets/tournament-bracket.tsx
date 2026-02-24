@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { BracketNode, Bracket, Game, DivisionPool } from '@/types';
+import type { Bracket, BracketNode, DivisionPool, Game } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { Calendar, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import * as React from 'react';
 
 // ============================================
 // Types
@@ -30,10 +30,10 @@ interface BracketRound {
 // ============================================
 
 function GameBracketMatch({ game, isHighlighted }: { game: Game; isHighlighted?: boolean }) {
-  const homeWinner = (game.status === 'finished' || game.status === 'ended') && game.homeTeamScore > game.awayTeamScore;
-  const awayWinner = (game.status === 'finished' || game.status === 'ended') && game.awayTeamScore > game.homeTeamScore;
+  const homeWinner = (game.status === 'ended' || game.status === 'completed') && game.homeTeamScore > game.awayTeamScore;
+  const awayWinner = (game.status === 'ended' || game.status === 'completed') && game.awayTeamScore > game.homeTeamScore;
   const isLive = game.status === 'in_progress';
-  const isEnded = game.status === 'finished' || game.status === 'ended';
+  const isEnded = game.status === 'ended' || game.status === 'completed';
 
   return (
     <Link href={`/live/${game.id}`}>

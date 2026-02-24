@@ -102,9 +102,9 @@ export function UserModal({ user, isOpen, onClose }: UserModalProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
+            <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                    <DialogHeader className="p-6 pb-2">
                         <DialogTitle className="flex items-center gap-2">
                             {isEdit ? <UserCog className="h-5 w-5 text-primary" /> : <UserPlus className="h-5 w-5 text-primary" />}
                             {isEdit ? 'Edit User' : 'Add New User'}
@@ -116,7 +116,7 @@ export function UserModal({ user, isOpen, onClose }: UserModalProps) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 px-6 overflow-y-auto flex-1">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Full Name</Label>
                             <Input
@@ -194,7 +194,7 @@ export function UserModal({ user, isOpen, onClose }: UserModalProps) {
                         )}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="p-6 pt-2">
                         <Button type="button" variant="outline" onClick={onClose} disabled={mutation.isPending}>
                             Cancel
                         </Button>

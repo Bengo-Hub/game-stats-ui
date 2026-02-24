@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { eventsApi } from '@/lib/api/events';
 import { useQuery } from '@tanstack/react-query';
-import { Mail, Plus, ShieldCheck, Users, UserShield } from 'lucide-react';
+import { Mail, Plus, Shield, ShieldCheck, Users } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
 export default function EventCrewPage() {
@@ -57,7 +57,7 @@ export default function EventCrewPage() {
                 <Card className="rounded-2xl shadow-sm border-none outline outline-1 outline-muted">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <div className="flex items-center gap-2">
-                            <UserShield className="h-5 w-5 text-primary" />
+                            <Shield className="h-5 w-5 text-primary" />
                             <CardTitle className="text-lg">Event Administrators</CardTitle>
                         </div>
                         <Badge variant="secondary" className="rounded-lg">{crew?.admins?.length || 0}</Badge>
