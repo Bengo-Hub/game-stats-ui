@@ -225,6 +225,7 @@ export interface Player {
   isSpiritCaptain?: boolean;
   teamId?: string;
   teamName?: string;
+  teams?: Team[];
   participations?: Participation[];
 }
 
@@ -327,13 +328,20 @@ export interface GameSpiritScore {
 export interface TeamSpiritAverage {
   teamId: string;
   teamName: string;
-  averageScore: number;
   gamesPlayed: number;
+  averageTotal: number;
+  rulesKnowledge: number;
+  foulsBodyContact: number;
+  fairMindedness: number;
+  attitude: number;
+  communication: number;
+  mvpNominationsCount?: number;
+  spiritNominationsCount?: number;
+  // Legacy/UI specific fields below (to be reconciled)
+  averageScore?: number;
   gamesRated?: number;
   breakdown?: SpiritBreakdown;
   gameScores?: GameSpiritScore[];
-  mvpNominationsCount?: number;
-  spiritNominationsCount?: number;
 }
 
 // ============================================

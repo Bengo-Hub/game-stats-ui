@@ -327,11 +327,11 @@ export default function TeamDetailPage() {
                                     ) : (
                                         <div className="space-y-6">
                                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                                                <SpiritMetric label="Rules" value={spiritAverage.averageRulesKnowledge} color="bg-blue-500" />
-                                                <SpiritMetric label="Fouls" value={spiritAverage.averageFoulsBodyContact} color="bg-green-500" />
-                                                <SpiritMetric label="Fairness" value={spiritAverage.averageFairMindedness} color="bg-purple-500" />
-                                                <SpiritMetric label="Attitude" value={spiritAverage.averageAttitude} color="bg-orange-500" />
-                                                <SpiritMetric label="Comm." value={spiritAverage.averageCommunication} color="bg-pink-500" />
+                                                <SpiritMetric label="Rules" value={spiritAverage.rulesKnowledge} color="bg-blue-500" />
+                                                <SpiritMetric label="Fouls" value={spiritAverage.foulsBodyContact} color="bg-green-500" />
+                                                <SpiritMetric label="Fairness" value={spiritAverage.fairMindedness} color="bg-purple-500" />
+                                                <SpiritMetric label="Attitude" value={spiritAverage.attitude} color="bg-orange-500" />
+                                                <SpiritMetric label="Comm." value={spiritAverage.communication} color="bg-pink-500" />
                                             </div>
 
                                             <div className="grid gap-4 sm:grid-cols-2">
@@ -358,7 +358,7 @@ export default function TeamDetailPage() {
                                             <div className="p-4 rounded-xl bg-muted/50 border">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Final Spirit Average</span>
-                                                    <span className="text-2xl font-bold">{spiritAverage.averageTotal?.toFixed(2)} / 20</span>
+                                                    <span className="text-2xl font-bold">{(spiritAverage.averageTotal || 0).toFixed(2)} / 20</span>
                                                 </div>
                                                 <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                                                     <div
@@ -379,13 +379,13 @@ export default function TeamDetailPage() {
     );
 }
 
-function SpiritMetric({ label, value, color }: { label: string; value: number; color: string }) {
-    const percentage = (value / 4) * 100; // max 4 per category
+function SpiritMetric({ label, value = 0, color }: { label: string; value?: number; color: string }) {
+    const percentage = ((value || 0) / 4) * 100; // max 4 per category
     return (
         <div className="space-y-2 p-3 rounded-lg bg-card border">
             <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">{label}</span>
-                <span className="text-sm font-bold">{value.toFixed(1)}</span>
+                <span className="text-sm font-bold">{(value || 0).toFixed(1)}</span>
             </div>
             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                 <div className={cn('h-full transition-all', color)} style={{ width: `${percentage}%` }} />

@@ -1552,11 +1552,11 @@ export default function EventDetailPage() {
                                 <td className="p-4 text-center">
                                   <span className={cn(
                                     'px-2 py-1 rounded font-medium',
-                                    score.averageScore >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                      score.averageScore >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                    (score.averageTotal || 0) >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                      (score.averageTotal || 0) >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                                         'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   )}>
-                                    {score.averageScore.toFixed(1)}
+                                    {(score.averageTotal || 0).toFixed(1)}
                                   </span>
                                 </td>
                                 <td className="p-4 text-center">
@@ -1593,7 +1593,7 @@ export default function EventDetailPage() {
                                                   gs.score >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                                                     'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                               )}>
-                                                {gs.score.toFixed(1)}
+                                                {(gs.score || 0).toFixed(1)}
                                               </span>
                                               <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] font-medium rounded">
                                                 RATED

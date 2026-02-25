@@ -6,13 +6,13 @@ import { apiClient } from './client';
 export interface TeamSpiritAverage {
   teamId: string;
   teamName: string;
-  gamesScored: number;
+  gamesPlayed: number;
   averageTotal: number;
-  averageRulesKnowledge: number;
-  averageFoulsBodyContact: number;
-  averageFairMindedness: number;
-  averageAttitude: number;
-  averageCommunication: number;
+  rulesKnowledge: number;
+  foulsBodyContact: number;
+  fairMindedness: number;
+  attitude: number;
+  communication: number;
   mvpNominationsCount?: number;
   spiritNominationsCount?: number;
 }
@@ -22,7 +22,6 @@ export interface CreateTeamRequest {
   name: string;
   eventId: string;
   divisionPoolId: string;
-  initialSeed?: number;
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
@@ -35,8 +34,6 @@ export interface CreateTeamRequest {
 export interface UpdateTeamRequest {
   name?: string;
   divisionPoolId?: string;
-  initialSeed?: number;
-  finalPlacement?: number;
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;

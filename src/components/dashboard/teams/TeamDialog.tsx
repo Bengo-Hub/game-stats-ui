@@ -39,8 +39,6 @@ const teamSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
     eventId: z.string().min(1, 'Please select an event'),
     divisionPoolId: z.string().min(1, 'Please select a division'),
-    initialSeed: z.number().min(0).max(999).optional(),
-    finalPlacement: z.number().min(1).max(999).optional(),
     logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
     primaryColor: z.string().optional(),
     secondaryColor: z.string().optional(),
@@ -112,8 +110,6 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
             name: '',
             eventId: initialEventId || '',
             divisionPoolId: '',
-            initialSeed: 0,
-            finalPlacement: undefined,
             logoUrl: '',
             primaryColor: '#3B82F6',
             secondaryColor: '#FFFFFF',
@@ -134,8 +130,6 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                 name: team.name,
                 eventId: team.eventId || '',
                 divisionPoolId: team.divisionPoolId || '',
-                initialSeed: team.initialSeed ?? 0,
-                finalPlacement: team.finalPlacement,
                 logoUrl: team.logoUrl || '',
                 primaryColor: team.primaryColor || '#3B82F6',
                 secondaryColor: team.secondaryColor || '#FFFFFF',
@@ -148,8 +142,6 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                 name: '',
                 eventId: initialEventId || '',
                 divisionPoolId: '',
-                initialSeed: 0,
-                finalPlacement: undefined,
                 logoUrl: '',
                 primaryColor: '#3B82F6',
                 secondaryColor: '#FFFFFF',
@@ -237,8 +229,6 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
             const request: UpdateTeamRequest = {
                 name: data.name,
                 divisionPoolId: data.divisionPoolId,
-                initialSeed: data.initialSeed,
-                finalPlacement: data.finalPlacement,
                 logoUrl: data.logoUrl || undefined,
                 primaryColor: data.primaryColor,
                 secondaryColor: data.secondaryColor,
@@ -252,7 +242,6 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                 name: data.name,
                 eventId: data.eventId,
                 divisionPoolId: data.divisionPoolId,
-                initialSeed: data.initialSeed || 1,
                 logoUrl: data.logoUrl || undefined,
                 primaryColor: data.primaryColor,
                 secondaryColor: data.secondaryColor,
@@ -374,44 +363,14 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                             </div>
                         </div>
 
-                        {/* Initial Seed & Location */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="initialSeed">Initial Seed</Label>
-                                <Input
-                                    id="initialSeed"
-                                    type="number"
-                                    min={0}
-                                    max={999}
-                                    placeholder="e.g., 0"
-                                    {...register('initialSeed', { valueAsNumber: true })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="locationName">Location/City</Label>
-                                <Input
-                                    id="locationName"
-                                    placeholder="e.g., Hong Kong"
-                                    {...register('locationName')}
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="locationName">Location/City</Label>
+                            <Input
+                                id="locationName"
+                                placeholder="e.g., Hong Kong"
+                                {...register('locationName')}
+                            />
                         </div>
-
-                        {/* Final Placement (Edit only) */}
-                        {isEdit && (
-                            <div className="space-y-2">
-                                <Label htmlFor="finalPlacement">Final Placement</Label>
-                                <Input
-                                    id="finalPlacement"
-                                    type="number"
-                                    min={1}
-                                    max={999}
-                                    placeholder="e.g., 1"
-                                    {...register('finalPlacement', { valueAsNumber: true })}
-                                />
-                                <p className="text-xs text-muted-foreground">The actual rank achieved after the tournament</p>
-                            </div>
-                        )}
                     </div>
 
                     {/* Team Colors */}

@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
 
     // Calculate average spirit from spirit stats
     const avgSpirit = spiritStats.length > 0
-      ? spiritStats.reduce((acc, s) => acc + s.averageScore, 0) / spiritStats.length
+      ? spiritStats.reduce((acc, s) => acc + (s.averageTotal || 0), 0) / spiritStats.length
       : 0;
 
     return {
@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
   const spiritScoresData = React.useMemo(() => {
     return spiritStats.slice(0, 5).map((s) => ({
       team: s.teamName,
-      spirit: s.averageScore,
+      spirit: s.averageTotal,
     }));
   }, [spiritStats]);
 
@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
             <Star className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageSpirit.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{(stats.averageSpirit || 0).toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">Out of 4.0</p>
           </CardContent>
         </Card>
@@ -399,9 +399,9 @@ export default function AnalyticsPage() {
                     className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                   >
                     <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-amber-700 text-white' :
-                            'bg-primary/10 text-primary'
+                      index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-amber-700 text-white' :
+                          'bg-primary/10 text-primary'
                       }`}>
                       {index + 1}
                     </div>
@@ -444,9 +444,9 @@ export default function AnalyticsPage() {
                       className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                     >
                       <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
-                          index === 1 ? 'bg-gray-400 text-white' :
-                            index === 2 ? 'bg-amber-700 text-white' :
-                              'bg-primary/10 text-primary'
+                        index === 1 ? 'bg-gray-400 text-white' :
+                          index === 2 ? 'bg-amber-700 text-white' :
+                            'bg-primary/10 text-primary'
                         }`}>
                         {index + 1}
                       </div>
@@ -484,9 +484,9 @@ export default function AnalyticsPage() {
                     className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50"
                   >
                     <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-amber-700 text-white' :
-                            'bg-primary/10 text-primary'
+                      index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-amber-700 text-white' :
+                          'bg-primary/10 text-primary'
                       }`}>
                       {index + 1}
                     </div>
@@ -496,7 +496,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500" />
-                      <span className="font-bold">{team.averageScore.toFixed(1)}</span>
+                      <span className="font-bold">{(team.averageScore || 0).toFixed(1)}</span>
                     </div>
                   </div>
                 ))
