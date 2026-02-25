@@ -14,6 +14,10 @@ export const geographicKeys = {
       ? ([...geographicKeys.all, 'countries', continentId] as const)
       : ([...geographicKeys.all, 'countries'] as const),
   locations: () => [...geographicKeys.all, 'locations'] as const,
+  fields: (locationId?: string) =>
+    locationId
+      ? ([...geographicKeys.all, 'fields', locationId] as const)
+      : ([...geographicKeys.all, 'fields'] as const),
 };
 
 // Hooks
@@ -54,6 +58,14 @@ export function useLocations() {
   return useQuery({
     queryKey: geographicKeys.locations(),
     queryFn: () => geographicApi.listLocations(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useFields(locationId?: string) {
+  return useQuery({
+    queryKey: geographicKeys.fields(locationId),
+    queryFn: () => geographicApi.listFields(locationId),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

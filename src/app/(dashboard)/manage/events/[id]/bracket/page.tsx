@@ -39,8 +39,8 @@ export default function EventBracketPage() {
     const { data: games = [], isLoading: isLoadingGames, refetch: refetchGames } = useQuery({
         queryKey: ['events', eventId, 'bracket-games', selectedRoundId],
         queryFn: () => gamesApi.list({
-            eventId,
-            roundId: selectedRoundId !== 'all' ? selectedRoundId : undefined,
+            event_id: eventId,
+            game_round_id: selectedRoundId !== 'all' ? selectedRoundId : undefined,
         }),
         enabled: !!eventId,
     });

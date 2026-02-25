@@ -23,14 +23,17 @@ import { gamesApi, type CreateGameRequest } from '@/lib/api/games';
 import { publicApi } from '@/lib/api/public';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
 import { gameKeys } from '@/lib/hooks/useGamesQuery';
+import { useFields } from '@/lib/hooks/useGeographic';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { Calendar, Clock, Loader2, MapPin, Plus, Users } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { FieldDialog } from '../fields/FieldDialog';
 
 // Validation schema
 const scheduleGameSchema = z.object({
@@ -117,9 +120,9 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fields are loaded from event details if available
-  // TODO: Add dedicated fields API endpoint when available
-  const fields: { id: string; name: string }[] = [];
+  // Fetch fields for event location
+  const { data: fieldsData = [] } = useFields(eventDetails?.location?.id);
+  const fields = fieldsData || [];
 
   // Reset dependent fields when event changes
   React.useEffect(() => {
@@ -223,6 +226,14 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
                   ))}
                 </SelectContent>
               </Select>
+              {eventDetails && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    Range: {format(new Date(eventDetails.startDate), 'MMM d, yyyy')} - {format(new Date(eventDetails.endDate), 'MMM d, yyyy')}
+                  </span>
+                </div>
+              )}
               {errors.eventId && (
                 <p className="text-sm text-destructive">{errors.eventId.message}</p>
               )}
@@ -354,6 +365,8 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
                   id="scheduledDate"
                   type="date"
                   {...register('scheduledDate')}
+                  min={eventDetails ? format(new Date(eventDetails.startDate), 'yyyy-MM-dd') : undefined}
+                  max={eventDetails ? format(new Date(eventDetails.endDate), 'yyyy-MM-dd') : undefined}
                   className={errors.scheduledDate ? 'border-destructive' : ''}
                 />
                 {errors.scheduledDate && (
@@ -415,24 +428,35 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
               <MapPin className="h-4 w-4" />
               Field (Optional)
             </Label>
-            <Select onValueChange={(value) => setValue('fieldId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select field (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {fields.length > 0 ? (
-                  fields.map((field: { id: string; name: string }) => (
-                    <SelectItem key={field.id} value={field.id}>
-                      {field.name}
+            <div className="flex items-center gap-2">
+              <Select value={watch('fieldId')} onValueChange={(value) => setValue('fieldId', value)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select field (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fields.length > 0 ? (
+                    fields.map((field) => (
+                      <SelectItem key={field.id} value={field.id}>
+                        {field.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="__none__" disabled>
+                      No fields available
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="__none__" disabled>
-                    No fields available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+                  )}
+                </SelectContent>
+              </Select>
+              <FieldDialog
+                defaultLocationId={eventDetails?.location?.id}
+                onSuccess={(f) => setValue('fieldId', f.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" type="button" className="h-9 w-9">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </div>
           </div>
 
           <DialogFooter>

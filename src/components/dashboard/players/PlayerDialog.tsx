@@ -12,11 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { publicApi } from '@/lib/api/public';
 import type { Player } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Upload } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, Search, Upload } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 // Validation schema for player
@@ -30,6 +33,8 @@ export const playerSchema = z.object({
     isSpiritCaptain: z.boolean(),
     gender: z.enum(['M', 'F', 'X']),
     profileImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+    playerId: z.string().optional(), // For reuse
+    eventId: z.string().optional(), // To ensure participation is created
 });
 
 export type PlayerFormData = z.infer<typeof playerSchema>;
@@ -54,7 +59,11 @@ export function PlayerDialog({
     onSubmit,
     isPending,
     children,
-}: PlayerDialogProps) {
+    eventId, // Add eventId as optional prop
+}: PlayerDialogProps & { eventId?: string }) {
+    const [playerSearch, setPlayerSearch] = React.useState('');
+    const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | null>(null);
+
     const {
         register,
         handleSubmit,
@@ -83,7 +92,14 @@ export function PlayerDialog({
                 isSpiritCaptain: false,
                 gender: 'X',
                 profileImageUrl: '',
+                eventId: eventId,
             },
+    });
+
+    const { data: searchPlayers = [], isLoading: isLoadingSearch } = useQuery({
+        queryKey: ['players', 'search', playerSearch],
+        queryFn: () => publicApi.listPlayers({ search: playerSearch, limit: 10 }),
+        enabled: open && !player && playerSearch.length > 2,
     });
 
     React.useEffect(() => {
@@ -112,7 +128,21 @@ export function PlayerDialog({
                 } as any);
             }
         }
-    }, [open, player, reset]);
+    }, [open, player, reset, eventId]);
+
+    const handleSelectExistingPlayer = (p: any) => {
+        setSelectedPlayerId(p.id);
+        setValue('playerId', p.id);
+        setValue('name', p.name, { shouldDirty: true });
+        setValue('gender', p.gender || 'X', { shouldDirty: true });
+        setValue('jerseyNumber', p.jerseyNumber, { shouldDirty: true });
+        setValue('email', p.email || '', { shouldDirty: true });
+        setValue('phone', p.phone || '', { shouldDirty: true });
+        setValue('position', p.position || '', { shouldDirty: true });
+        setValue('profileImageUrl', p.profileImageUrl || '', { shouldDirty: true });
+        setPlayerSearch('');
+        toast.info(`Selected existing player: ${p.name}`);
+    };
 
     const handleFormSubmit = (data: PlayerFormData) => {
         onSubmit(data);
@@ -138,6 +168,40 @@ export function PlayerDialog({
                         />
                         {errors.name && (
                             <p className="text-sm text-destructive">{errors.name.message}</p>
+                        )}
+
+                        {!player && (
+                            <div className="relative mt-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search existing players..."
+                                            value={playerSearch}
+                                            onChange={(e) => setPlayerSearch(e.target.value)}
+                                            className="text-xs h-8 pl-8"
+                                        />
+                                    </div>
+                                    {isLoadingSearch && <Loader2 className="h-3 w-3 animate-spin" />}
+                                </div>
+                                {searchPlayers.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md overflow-hidden max-h-40 overflow-y-auto">
+                                        {searchPlayers.map((p: any) => (
+                                            <div
+                                                key={p.id}
+                                                className="px-3 py-2 text-xs hover:bg-muted cursor-pointer flex items-center justify-between"
+                                                onClick={() => handleSelectExistingPlayer(p)}
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span>{p.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{p.teamName || 'Free Agent'}</span>
+                                                </div>
+                                                <span className="text-[10px] font-bold uppercase">{p.gender}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 

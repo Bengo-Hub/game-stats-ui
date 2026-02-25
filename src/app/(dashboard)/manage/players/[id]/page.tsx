@@ -273,21 +273,53 @@ export default function PlayerDetailPage() {
                     </Card>
                 </div>
 
-                {/* Recent Performance/Game Log */}
+                {/* Participation History */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="rounded-2xl shadow-sm border-muted/50">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-lg font-bold">Recent Games</CardTitle>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/games?playerId=${playerId}`}>View History</Link>
-                            </Button>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <Calendar className="h-5 w-5 text-primary" />
+                                Participation History
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-10 text-muted-foreground">
-                                <Calendar className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                                <p>Game log functionality is coming soon.</p>
-                                <p className="text-xs">Follow this player's journey match by match.</p>
-                            </div>
+                            {!player.participations || player.participations.length === 0 ? (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <Calendar className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                    <p>No participation history found.</p>
+                                    <p className="text-xs">History will appear once the player is added to events.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {player.participations.map((p) => (
+                                        <div key={p.id} className="flex items-center justify-between p-4 rounded-xl border border-muted/50 hover:bg-muted/10 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center">
+                                                    <Users className="h-6 w-6 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-sm">{p.eventName}</h4>
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                                        <Link href={`/manage/teams/${p.teamId}`} className="hover:text-primary transition-colors font-medium">
+                                                            {p.teamName}
+                                                        </Link>
+                                                        {p.jerseyNumber && <span>• #{p.jerseyNumber}</span>}
+                                                        {p.position && <span>• {p.position}</span>}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <Badge variant={p.role === 'captain' || p.isCaptain ? 'default' : 'secondary'} className="capitalize text-[10px] h-5">
+                                                    {p.role}
+                                                </Badge>
+                                                <p className="text-[10px] text-muted-foreground mt-1">
+                                                    Joined {format(parseISO(p.joinedAt), 'MMM yyyy')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

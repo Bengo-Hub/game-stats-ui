@@ -29,6 +29,7 @@ export interface CreateTeamRequest {
   contactEmail?: string;
   contactPhone?: string;
   locationName?: string;
+  teamId?: string; // For reusing an existing team
 }
 
 export interface UpdateTeamRequest {
@@ -63,6 +64,8 @@ export interface CreatePlayerRequest {
   isSpiritCaptain?: boolean;
   position?: string;
   profileImageUrl?: string;
+  playerId?: string; // For reusing an existing player
+  eventId?: string; // For creating event participation record
 }
 
 export interface UpdatePlayerRequest {

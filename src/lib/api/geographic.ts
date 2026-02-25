@@ -1,4 +1,4 @@
-import type { Continent, Country, Location, World } from '@/types';
+import type { Continent, Country, Field, Location, World } from '@/types';
 import { apiClient } from './client';
 
 export interface CreateLocationRequest {
@@ -46,6 +46,14 @@ export const geographicApi = {
     // Continents
     createContinent: async (data: CreateContinentRequest) => {
         return apiClient.post<Continent>('/geographic/continents', data);
+    },
+
+    // Fields
+    listFields: async (locationId?: string) => {
+        return apiClient.get<Field[]>(`/geographic/fields${locationId ? `?location_id=${locationId}` : ''}`);
+    },
+    createField: async (data: { name: string; location_id: string; capacity?: number; surface_type?: string; metadata?: any }) => {
+        return apiClient.post<Field>('/geographic/fields', data);
     },
 
     // Worlds

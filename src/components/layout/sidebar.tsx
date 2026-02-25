@@ -9,6 +9,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  CircleDot,
   LayoutDashboard,
   Menu,
   Settings,
@@ -32,8 +33,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, permission: 'view_dashboard' },
-  { label: 'Event Categories', href: '/manage/categories', icon: <CalendarDays className="h-5 w-5" />, permission: 'manage_events' },
-  { label: 'Disciplines', href: '/manage/disciplines', icon: <CalendarDays className="h-5 w-5" />, permission: 'manage_events' },
+  { label: 'Event Categories', href: '/manage/categories', icon: <LayoutDashboard className="h-5 w-5" />, permission: 'manage_events' },
+  { label: 'Disciplines', href: '/manage/disciplines', icon: <BarChart3 className="h-5 w-5" />, permission: 'manage_events' },
+  { label: 'Divisions', href: '/manage/divisions', icon: <CircleDot className="h-5 w-5" />, permission: 'manage_events' },
   { label: 'Events', href: '/manage/events', icon: <CalendarDays className="h-5 w-5" />, permission: 'view_events' },
   { label: 'Games', href: '/manage/games', icon: <Trophy className="h-5 w-5" />, permission: 'view_games' },
   { label: 'Teams', href: '/manage/teams', icon: <Users className="h-5 w-5" />, permission: 'view_teams' },

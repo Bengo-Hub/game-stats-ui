@@ -18,14 +18,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { bulkApi } from '@/lib/api/bulk';
+import { eventsApi } from '@/lib/api/events';
 import { teamsApi } from '@/lib/api/teams';
-import { Player, Team } from '@/types';
+import { Event, Player, Team } from '@/types';
 import { Loader2, MoveRight, Users } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
 interface BulkTransferPlayersDialogProps {
-    eventId: string;
+    eventId?: string; // Optional for global context
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
@@ -37,22 +38,50 @@ export function BulkTransferPlayersDialog({
     onOpenChange,
     onSuccess,
 }: BulkTransferPlayersDialogProps) {
+    const [events, setEvents] = React.useState<Event[]>([]);
+    const [selectedEventId, setSelectedEventId] = React.useState<string>(eventId || '');
     const [teams, setTeams] = React.useState<Team[]>([]);
     const [sourceTeamId, setSourceTeamId] = React.useState<string>('');
     const [targetTeamId, setTargetTeamId] = React.useState<string>('');
     const [players, setPlayers] = React.useState<Player[]>([]);
     const [selectedPlayerIds, setSelectedPlayerIds] = React.useState<Set<string>>(new Set());
+    const [isLoadingEvents, setIsLoadingEvents] = React.useState(false);
     const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
     const [isLoadingPlayers, setIsLoadingPlayers] = React.useState(false);
     const [isTransferring, setIsTransferring] = React.useState(false);
 
+    // Sync selectedEventId with eventId prop
+    React.useEffect(() => {
+        if (eventId) {
+            setSelectedEventId(eventId);
+        }
+    }, [eventId]);
+
+    // Fetch events if context is global
+    React.useEffect(() => {
+        if (open && !eventId) {
+            const fetchEvents = async () => {
+                setIsLoadingEvents(true);
+                try {
+                    const data = await eventsApi.list({ temporal: 'all' });
+                    setEvents(data as any); // Cast as Event[]
+                } catch (error) {
+                    toast.error('Failed to load events');
+                } finally {
+                    setIsLoadingEvents(false);
+                }
+            };
+            fetchEvents();
+        }
+    }, [open, eventId]);
+
     // Fetch teams for the event
     React.useEffect(() => {
-        if (open && eventId) {
+        if (open && selectedEventId) {
             const fetchTeams = async () => {
                 setIsLoadingTeams(true);
                 try {
-                    const data = await teamsApi.list({ eventId });
+                    const data = await teamsApi.list({ eventId: selectedEventId });
                     setTeams(data);
                 } catch (error) {
                     toast.error('Failed to load teams');
@@ -61,8 +90,12 @@ export function BulkTransferPlayersDialog({
                 }
             };
             fetchTeams();
+        } else {
+            setTeams([]);
+            setSourceTeamId('');
+            setTargetTeamId('');
         }
-    }, [open, eventId]);
+    }, [open, selectedEventId]);
 
     // Fetch players when source team changes
     React.useEffect(() => {
@@ -97,7 +130,7 @@ export function BulkTransferPlayersDialog({
     };
 
     const handleTransfer = async () => {
-        if (!eventId || selectedPlayerIds.size === 0 || !targetTeamId) return;
+        if (!selectedEventId || selectedPlayerIds.size === 0 || !targetTeamId) return;
 
         setIsTransferring(true);
         try {
@@ -107,7 +140,7 @@ export function BulkTransferPlayersDialog({
             }));
 
             await bulkApi.transferPlayers({
-                eventId,
+                eventId: selectedEventId,
                 transfers,
             });
 
@@ -130,11 +163,29 @@ export function BulkTransferPlayersDialog({
                         Bulk Player Transfer
                     </DialogTitle>
                     <DialogDescription>
-                        Move multiple players from one team to another within this event.
+                        Move multiple players from one team to another.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-6 py-4">
+                    {!eventId && (
+                        <div className="space-y-2">
+                            <Label>Target Event</Label>
+                            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select event..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {events.map((e) => (
+                                        <SelectItem key={e.id} value={e.id}>
+                                            {e.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Source Team</Label>

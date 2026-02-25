@@ -282,6 +282,7 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
         description="Add a new player to the team roster."
         onSubmit={(data) => addMutation.mutate(data as CreatePlayerRequest)}
         isPending={addMutation.isPending}
+        eventId={team.eventId}
       />
 
       {/* Mass Upload Dialog */}
@@ -304,6 +305,7 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
             updateMutation.mutate({ playerId: editingPlayer.id, data })
           }
           isPending={updateMutation.isPending}
+          eventId={team.eventId}
         />
       )}
 

@@ -27,6 +27,7 @@ export interface CreateEventRequest {
   logoUrl?: string;
   bannerUrl?: string;
   status?: 'draft' | 'published';
+  divisions?: CreateDivisionRequest[];
 }
 
 export interface UpdateEventRequest {
@@ -41,6 +42,7 @@ export interface UpdateEventRequest {
   logoUrl?: string;
   bannerUrl?: string;
   status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
+  divisions?: CreateDivisionRequest[];
 }
 
 export interface ListEventsParams {
@@ -63,6 +65,7 @@ export interface Division {
   name: string;
   divisionType: string;
   description?: string;
+  teamsCount?: number;
   createdAt: string;
 }
 

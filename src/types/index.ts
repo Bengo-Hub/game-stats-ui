@@ -197,16 +197,35 @@ export interface GameTimeline {
 // Player Types
 // ============================================
 
+export interface Participation {
+  id: string;
+  eventId: string;
+  eventName: string;
+  teamId: string;
+  teamName: string;
+  jerseyNumber?: number;
+  position?: string;
+  role: string;
+  status: string;
+  isCaptain: boolean;
+  isSpiritCaptain: boolean;
+  joinedAt: string;
+}
+
 export interface Player {
   id: string;
   name: string;
   gender: 'M' | 'F' | 'X';
   jerseyNumber?: number;
+  email?: string;
+  phone?: string;
+  position?: string;
   profileImageUrl?: string;
   isCaptain?: boolean;
   isSpiritCaptain?: boolean;
   teamId?: string;
   teamName?: string;
+  participations?: Participation[];
 }
 
 // ============================================
@@ -380,6 +399,8 @@ export interface Field {
   locationId: string;
   fieldNumber?: number;
   capacity?: number;
+  surfaceType?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Location {

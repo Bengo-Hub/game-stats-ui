@@ -47,6 +47,7 @@ const teamSchema = z.object({
     contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
     contactPhone: z.string().optional(),
     locationName: z.string().optional(),
+    teamId: z.string().optional(), // For reuse
 });
 
 type TeamFormData = z.infer<typeof teamSchema>;
@@ -92,6 +93,8 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
     const [internalOpen, setInternalOpen] = React.useState(false);
     const open = controlledOpen ?? internalOpen;
     const setOpen = onOpenChange ?? setInternalOpen;
+    const [teamSearch, setTeamSearch] = React.useState('');
+    const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
 
     const isEdit = !!team;
     const queryClient = useQueryClient();
@@ -173,12 +176,33 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
         staleTime: 1000 * 60 * 5,
     });
 
+    // Fetch teams for search/reuse
+    const { data: searchTeams = [], isLoading: isLoadingSearch } = useQuery({
+        queryKey: ['teams', 'search', teamSearch],
+        queryFn: () => publicApi.listTeams({ search: teamSearch, limit: 10 }),
+        enabled: open && !isEdit && teamSearch.length > 2,
+    });
+
     // Reset division when event changes in create mode
     React.useEffect(() => {
         if (!isEdit && selectedEventId) {
             setValue('divisionPoolId', '');
         }
     }, [selectedEventId, setValue, isEdit]);
+
+    const handleSelectExistingTeam = (t: Team) => {
+        setSelectedTeamId(t.id);
+        setValue('teamId', t.id);
+        setValue('name', t.name, { shouldDirty: true });
+        setValue('logoUrl', t.logoUrl || '', { shouldDirty: true });
+        setValue('primaryColor', t.primaryColor || '#3B82F6', { shouldDirty: true });
+        setValue('secondaryColor', t.secondaryColor || '#FFFFFF', { shouldDirty: true });
+        setValue('contactEmail', t.contactEmail || '', { shouldDirty: true });
+        setValue('contactPhone', t.contactPhone || '', { shouldDirty: true });
+        setValue('locationName', t.locationName || '', { shouldDirty: true });
+        setTeamSearch('');
+        toast.info(`Selected existing team: ${t.name}`);
+    };
 
     // Mutations
     const createMutation = useMutation({
@@ -235,6 +259,7 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                 contactEmail: data.contactEmail || undefined,
                 contactPhone: data.contactPhone || undefined,
                 locationName: data.locationName || undefined,
+                teamId: data.teamId,
             };
             createMutation.mutate(request);
         }
@@ -268,6 +293,34 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                                 />
                                 {errors.name && (
                                     <p className="text-sm text-destructive">{errors.name.message}</p>
+                                )}
+
+                                {!isEdit && (
+                                    <div className="relative mt-1">
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                placeholder="Search existing teams to reuse..."
+                                                value={teamSearch}
+                                                onChange={(e) => setTeamSearch(e.target.value)}
+                                                className="text-xs h-8"
+                                            />
+                                            {isLoadingSearch && <Loader2 className="h-3 w-3 animate-spin" />}
+                                        </div>
+                                        {searchTeams.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md overflow-hidden max-h-40 overflow-y-auto">
+                                                {searchTeams.map((t) => (
+                                                    <div
+                                                        key={t.id}
+                                                        className="px-3 py-2 text-xs hover:bg-muted cursor-pointer flex items-center justify-between"
+                                                        onClick={() => handleSelectExistingTeam(t)}
+                                                    >
+                                                        <span>{t.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground">{t.locationName || 'Global'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 

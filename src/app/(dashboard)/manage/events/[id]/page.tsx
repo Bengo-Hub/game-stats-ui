@@ -1,5 +1,6 @@
 'use client';
 
+import { DivisionDialog } from '@/components/dashboard/divisions/DivisionDialog';
 import { EventDialog } from '@/components/dashboard/events';
 import { BulkTransferPlayersDialog, MassImportPlayersDialog } from '@/components/dashboard/players';
 import { TeamDialog } from '@/components/dashboard/teams';
@@ -11,7 +12,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { eventsApi } from '@/lib/api/events';
 import type { TeamPreview } from '@/types';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import {
     Calendar,
@@ -34,9 +35,12 @@ import * as React from 'react';
 export default function EventDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const queryClient = useQueryClient();
     const eventId = params.id as string;
 
     const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+    const [divisionDialogOpen, setDivisionDialogOpen] = React.useState(false);
+    const [selectedDivision, setSelectedDivision] = React.useState<any>(null);
     const [bulkTransferOpen, setBulkTransferOpen] = React.useState(false);
     const [massImportOpen, setMassImportOpen] = React.useState(false);
     const [registerTeamOpen, setRegisterTeamOpen] = React.useState(false);
@@ -197,7 +201,13 @@ export default function EventDetailPage() {
                                 <Card className="rounded-2xl shadow-sm">
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <CardTitle className="text-base font-bold">Recent Divisions</CardTitle>
-                                        <Plus className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary" />
+                                        <Plus
+                                            className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary"
+                                            onClick={() => {
+                                                setSelectedDivision(null);
+                                                setDivisionDialogOpen(true);
+                                            }}
+                                        />
                                     </CardHeader>
                                     <CardContent className="space-y-3">
                                         {divisions.slice(0, 3).map(div => (
@@ -250,23 +260,55 @@ export default function EventDetailPage() {
                         </TabsContent>
 
                         <TabsContent value="divisions">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold">Tournament Divisions</h3>
+                                <Button size="sm" onClick={() => {
+                                    setSelectedDivision(null);
+                                    setDivisionDialogOpen(true);
+                                }}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Division
+                                </Button>
+                            </div>
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {divisions.map(div => (
                                     <Card key={div.id} className="rounded-2xl hover:shadow-md transition-shadow">
                                         <CardHeader className="pb-2">
                                             <CardTitle className="text-lg">{div.name}</CardTitle>
-                                            <CardDescription>{div.divisionType}</CardDescription>
+                                            <CardDescription className="capitalize">{div.divisionType}</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button variant="secondary" className="w-full rounded-xl" asChild>
-                                                <Link href={`/manage/events/${eventId}/divisions/${div.id}`}>
-                                                    View Standings
-                                                </Link>
-                                            </Button>
+                                            <div className="flex justify-between mt-4 gap-2">
+                                                <Button variant="secondary" className="flex-1 rounded-xl" asChild>
+                                                    <Link href={`/manage/events/${eventId}/divisions/${div.id}`}>
+                                                        View Standings
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="rounded-xl"
+                                                    onClick={() => {
+                                                        setSelectedDivision(div);
+                                                        setDivisionDialogOpen(true);
+                                                    }}
+                                                >
+                                                    <Settings className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </CardContent>
                                     </Card>
                                 ))}
                             </div>
+                            {divisions.length === 0 && (
+                                <div className="text-center py-12 border-2 border-dashed rounded-2xl">
+                                    <CircleDot className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-20" />
+                                    <p className="text-muted-foreground">No divisions created yet</p>
+                                    <Button variant="link" onClick={() => setDivisionDialogOpen(true)}>
+                                        Create your first division
+                                    </Button>
+                                </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent value="teams">
@@ -321,14 +363,16 @@ export default function EventDetailPage() {
                 </div>
             </div>
 
-            {event && (
-                <EventDialog
-                    event={event}
-                    open={editDialogOpen}
-                    onOpenChange={setEditDialogOpen}
-                    onSuccess={() => refetchEvent()}
-                />
-            )}
+            {
+                event && (
+                    <EventDialog
+                        event={event}
+                        open={editDialogOpen}
+                        onOpenChange={setEditDialogOpen}
+                        onSuccess={() => refetchEvent()}
+                    />
+                )
+            }
 
             <TeamDialog
                 eventId={eventId}
@@ -349,6 +393,17 @@ export default function EventDetailPage() {
                 open={massImportOpen}
                 onOpenChange={setMassImportOpen}
                 onSuccess={() => refetchEvent()}
+            />
+
+            <DivisionDialog
+                eventId={eventId}
+                division={selectedDivision}
+                open={divisionDialogOpen}
+                onOpenChange={setDivisionDialogOpen}
+                onSuccess={() => {
+                    refetchEvent();
+                    queryClient.invalidateQueries({ queryKey: ['events', eventId, 'divisions'] });
+                }}
             />
         </div>
     );

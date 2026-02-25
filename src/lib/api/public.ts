@@ -9,6 +9,7 @@ import type {
   DivisionStandings,
   Event,
   EventCategory,
+  Field,
   Game,
   GameTimeline,
   PaginationParams,
@@ -209,6 +210,7 @@ export interface ListGamesParams extends PaginationParams {
   fieldId?: string;
   startDate?: string;
   endDate?: string;
+  gameStage?: string;
 }
 
 export async function listGames(params?: ListGamesParams): Promise<Game[]> {
@@ -220,6 +222,7 @@ export async function listGames(params?: ListGamesParams): Promise<Game[]> {
       field_id: params?.fieldId,
       start_date: params?.startDate,
       end_date: params?.endDate,
+      game_stage: params?.gameStage,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
     } as QueryParams,
@@ -428,6 +431,12 @@ export async function getContinent(continentId: string): Promise<Continent & { c
   return publicFetch<Continent & { countries?: Country[] }>(`/geographic/continents/${continentId}`);
 }
 
+export async function listFields(locationId?: string): Promise<Field[]> {
+  return publicFetch<Field[]>('/geographic/fields', {
+    params: { location_id: locationId },
+  });
+}
+
 // ============================================
 // Export all as publicApi
 // ============================================
@@ -479,6 +488,7 @@ export const publicApi = {
   listWorlds,
   listCountries,
   getContinent,
+  listFields,
 };
 
 export default publicApi;

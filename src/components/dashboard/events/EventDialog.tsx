@@ -34,7 +34,7 @@ import type { Event } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { CalendarDays, Loader2, Plus } from 'lucide-react';
+import { CalendarDays, CircleDot, Loader2, Plus } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -52,6 +52,10 @@ const eventSchema = z.object({
     categoryIds: z.array(z.string()).optional(),
     logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
     status: z.enum(['draft', 'published', 'in_progress', 'completed', 'canceled']),
+    divisions: z.array(z.object({
+        name: z.string().min(1, 'Name is required'),
+        divisionType: z.enum(['pool', 'bracket', 'mixed'])
+    })).optional(),
 }).refine((data) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
@@ -157,8 +161,11 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
             categoryIds: [],
             logoUrl: '',
             status: 'draft',
+            divisions: [],
         },
     });
+
+    const [nestedDivisions, setNestedDivisions] = React.useState<{ name: string; divisionType: 'pool' | 'bracket' | 'mixed' }[]>([]);
 
     // Sync form with event data when editing
     React.useEffect(() => {
@@ -174,8 +181,10 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                 categoryIds: event.categories?.map(c => c.id) || [],
                 logoUrl: event.logoUrl || '',
                 status: event.status as EventFormData['status'],
+                divisions: event.divisions?.map(d => ({ name: d.name, divisionType: d.divisionType as any })) || [],
             });
             setSelectedCategories(event.categories?.map(c => c.id) || []);
+            setNestedDivisions(event.divisions?.map(d => ({ name: d.name, divisionType: d.divisionType as any })) || []);
         } else if (!event && open) {
             reset({
                 name: '',
@@ -188,8 +197,10 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                 categoryIds: [],
                 logoUrl: '',
                 status: 'draft',
+                divisions: [],
             });
             setSelectedCategories([]);
+            setNestedDivisions([]);
         }
     }, [event, open, reset]);
 
@@ -237,6 +248,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
         const payload = {
             ...data,
             categoryIds: selectedCategories,
+            divisions: nestedDivisions,
             logoUrl: data.logoUrl || undefined,
             slug: data.slug || undefined,
             description: data.description || undefined,
@@ -248,6 +260,18 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
         } else {
             createMutation.mutate(payload as CreateEventRequest);
         }
+    };
+
+    const addNestedDivision = () => {
+        setNestedDivisions(prev => [...prev, { name: '', divisionType: 'pool' }]);
+    };
+
+    const removeNestedDivision = (index: number) => {
+        setNestedDivisions(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const updateNestedDivision = (index: number, field: string, value: string) => {
+        setNestedDivisions(prev => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
     };
 
     const toggleCategory = (categoryId: string) => {
@@ -507,6 +531,62 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                         {errors.logoUrl && (
                             <p className="text-sm text-destructive">{errors.logoUrl.message}</p>
                         )}
+                    </div>
+
+                    {/* Divisions Section */}
+                    <div className="space-y-4 pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                                <CircleDot className="h-4 w-4" />
+                                Divisions & Pools
+                            </h3>
+                            <Button type="button" variant="outline" size="sm" onClick={addNestedDivision}>
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add
+                            </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {nestedDivisions.map((div, index) => (
+                                <div key={index} className="flex gap-3 items-start bg-muted/30 p-3 rounded-xl border group hover:border-primary/30 transition-colors">
+                                    <div className="flex-1 space-y-2">
+                                        <Input
+                                            placeholder="Division Name (e.g. Open, Pool A)"
+                                            value={div.name}
+                                            onChange={(e) => updateNestedDivision(index, 'name', e.target.value)}
+                                            className="h-8 text-sm"
+                                        />
+                                        <Select
+                                            value={div.divisionType}
+                                            onValueChange={(val) => updateNestedDivision(index, 'divisionType', val)}
+                                        >
+                                            <SelectTrigger className="h-8 text-xs">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="pool">Pool / Round Robin</SelectItem>
+                                                <SelectItem value="bracket">Elimination Bracket</SelectItem>
+                                                <SelectItem value="mixed">Mixed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={() => removeNestedDivision(index)}
+                                    >
+                                        <Plus className="h-4 w-4 rotate-45" />
+                                    </Button>
+                                </div>
+                            ))}
+                            {nestedDivisions.length === 0 && (
+                                <p className="text-xs text-center py-2 text-muted-foreground italic">
+                                    Optional: Add initial divisions now or manage them later from the event page.
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <DialogFooter>
