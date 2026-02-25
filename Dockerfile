@@ -1,26 +1,32 @@
+# -----------------------------
 # Base image
+# -----------------------------
 FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
+# Enable pnpm via corepack (DO NOT install globally)
+RUN corepack enable
+
+# -----------------------------
+# Dependencies stage
+# -----------------------------
+FROM base AS deps
+
+RUN apk add --no-cache libc6-compat
 
 # Copy package files and pnpm config
 COPY package.json pnpm-lock.yaml* .npmrc ./
 
-# Install dependencies (honour .npmrc settings like shamefully-hoist)
-# Try frozen lockfile first for deterministic builds; if that fails (missing
-# hoisted packages), fall back to a non-frozen install to allow resolution.
+# Install dependencies
 RUN pnpm install --frozen-lockfile --shamefully-hoist || pnpm install --shamefully-hoist
 
-# Rebuild the source code only when needed
+
+# -----------------------------
+# Builder stage
+# -----------------------------
 FROM base AS builder
 WORKDIR /app
-RUN npm install -g pnpm
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -35,43 +41,37 @@ ENV NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL}
 
 RUN pnpm build
 
-# Ensure expected output directories exist to make later COPY steps idempotent
-# Some Next builds may not produce a `standalone` or `static` folder depending
-# on which pages are prerendered; create them to avoid Docker COPY failures.
-RUN mkdir -p .next/static .next/standalone || true
 
-# Production image, copy all the files and run next
-FROM base AS runner
+# -----------------------------
+# Production stage
+# -----------------------------
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
+# Enable pnpm in runtime image
+RUN corepack enable
+
+# Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy public assets
 COPY --from=builder /app/public ./public
 
-# Set the correct permission for prerender cache
-RUN mkdir -p .next .next/static
-RUN chown nextjs:nodejs .next
-
-# Install pnpm so `pnpm start` is available in the final image
-RUN npm install -g pnpm
-
-# Fallback-friendly copy: prefer standalone output, otherwise copy full .next and node_modules
+# Copy Next standalone output (recommended)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# If standalone is not enabled, fallback:
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Start using the standard Next.js start script. If the standalone server.js exists this will
-# still work because Next will prefer the built standalone files; otherwise `next start` will
-# serve from the copied .next directory.
 CMD ["pnpm", "start"]

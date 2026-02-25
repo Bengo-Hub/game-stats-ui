@@ -24,6 +24,7 @@ import { publicApi } from '@/lib/api/public';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
 import { gameKeys } from '@/lib/hooks/useGamesQuery';
 import { useFields } from '@/lib/hooks/useGeographic';
+import { useRoundsQuery } from '@/lib/hooks/useRoundsQuery';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -112,6 +113,18 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
     staleTime: 1000 * 60 * 5,
   });
 
+
+  // Game rounds - these would typically come from the event structure
+  const {
+    data: gameRounds = [],
+    isLoading: loadingRounds,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = useRoundsQuery(selectedEventId);
+
+
   // Fetch teams for selected division pool
   const { data: teams = [] } = useQuery({
     queryKey: ['teams', 'divisionPool', selectedDivisionPoolId],
@@ -175,16 +188,6 @@ export function ScheduleGameDialog({ trigger, eventId, onSuccess }: ScheduleGame
 
   // Get divisions/pools from event details
   const divisionPools = eventDetails?.divisions || [];
-
-  // Game rounds - these would typically come from the event structure
-  // TODO: Fetch actual rounds from event API when available
-  const gameRounds = [
-    { id: 'pool', name: 'Pool Play' },
-    { id: 'crossover', name: 'Crossover' },
-    { id: 'quarter', name: 'Quarterfinals' },
-    { id: 'semi', name: 'Semifinals' },
-    { id: 'final', name: 'Finals' },
-  ];
 
   const homeTeamId = watch('homeTeamId');
 

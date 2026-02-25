@@ -179,6 +179,19 @@ export interface Game {
   updatedAt: string;
 }
 
+export interface GameRound {
+  id: string;
+  name: string;
+  roundType: string;
+  roundNumber?: number;
+  startDate?: string;
+  endDate?: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  eventId: string;
+  gamesCount: number;
+  totalRounds: number;
+}
+
 export interface GameEvent {
   id: string;
   eventType: string;

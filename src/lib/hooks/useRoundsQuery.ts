@@ -1,5 +1,6 @@
 import { eventsApi } from '@/lib/api/events';
-import { useQuery } from '@tanstack/react-query';
+//import { GameRound } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const roundKeys = {
     all: ['rounds'] as const,
@@ -14,5 +15,25 @@ export function useRoundsQuery(eventId: string) {
         enabled: !!eventId,
         staleTime: 5 * 60 * 1000,
         gcTime: 5 * 60 * 1000,
+    });
+}
+
+export function useRoundDetailQuery(roundId: string) {
+    return useQuery({
+        queryKey: roundKeys.detail(roundId),
+        queryFn: () => eventsApi.getRounds(roundId),
+        enabled: !!roundId,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 5 * 60 * 1000,
+    });
+}
+
+export function useRoundMutation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (eventId: string) => eventsApi.getRounds(eventId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: roundKeys.all });
+        },
     });
 }
