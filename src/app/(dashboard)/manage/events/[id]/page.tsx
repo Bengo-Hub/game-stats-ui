@@ -1,8 +1,8 @@
 'use client';
 
-import { EditEventDialog } from '@/components/dashboard/events';
+import { EventDialog } from '@/components/dashboard/events';
 import { BulkTransferPlayersDialog, MassImportPlayersDialog } from '@/components/dashboard/players';
-import { CreateTeamDialog } from '@/components/dashboard/teams';
+import { TeamDialog } from '@/components/dashboard/teams';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -322,7 +322,7 @@ export default function EventDetailPage() {
             </div>
 
             {event && (
-                <EditEventDialog
+                <EventDialog
                     event={event}
                     open={editDialogOpen}
                     onOpenChange={setEditDialogOpen}
@@ -330,7 +330,7 @@ export default function EventDetailPage() {
                 />
             )}
 
-            <CreateTeamDialog
+            <TeamDialog
                 eventId={eventId}
                 open={registerTeamOpen}
                 onOpenChange={setRegisterTeamOpen}

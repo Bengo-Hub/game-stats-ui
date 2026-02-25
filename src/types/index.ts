@@ -400,6 +400,14 @@ export interface Continent {
   worldId: string;
 }
 
+export interface Country {
+  id: string;
+  name: string;
+  slug: string;
+  code: string;
+  continentId?: string;
+}
+
 export interface World {
   id: string;
   name: string;

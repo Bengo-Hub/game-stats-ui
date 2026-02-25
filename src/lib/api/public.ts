@@ -4,6 +4,7 @@
 import type {
   Bracket,
   Continent,
+  Country,
   DivisionPool,
   DivisionStandings,
   Event,
@@ -407,18 +408,6 @@ export async function getSpiritLeaderboard(params?: LeaderboardParams): Promise<
       offset: params?.offset ?? 0,
     } as QueryParams,
   });
-}
-
-// ============================================
-// Geographic API
-// ============================================
-
-export interface Country {
-  id: string;
-  name: string;
-  code: string;
-  slug: string;
-  continentId?: string;
 }
 
 export async function listContinents(): Promise<Continent[]> {

@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateTeamDialog, EditTeamDialog, ManageRosterDialog } from '@/components/dashboard/teams';
+import { TeamDialog, ManageRosterDialog } from '@/components/dashboard/teams';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -275,7 +275,7 @@ export default function TeamsPage() {
             <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
           {canCreateTeams && (
-            <CreateTeamDialog
+            <TeamDialog
               onSuccess={handleRefresh}
               trigger={
                 <Button size="sm">
@@ -420,7 +420,7 @@ export default function TeamsPage() {
                 Clear filters
               </Button>
             ) : canCreateTeams ? (
-              <CreateTeamDialog
+              <TeamDialog
                 onSuccess={handleRefresh}
                 trigger={
                   <Button>
@@ -620,7 +620,7 @@ export default function TeamsPage() {
           />
         </div>
       )}
-      <EditTeamDialog
+      <TeamDialog
         team={editingTeam}
         open={!!editingTeam}
         onOpenChange={(open: boolean) => !open && setEditingTeam(null)}

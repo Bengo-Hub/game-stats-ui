@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateEventDialog, EditEventDialog } from '@/components/dashboard/events';
+import { EventDialog } from '@/components/dashboard/events';
 import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
 import {
   AlertDialog,
@@ -234,7 +234,7 @@ export default function EventsPage() {
             <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
           {canCreateEvents && (
-            <CreateEventDialog
+            <EventDialog
               onSuccess={handleRefresh}
               trigger={
                 <Button size="sm">
@@ -489,7 +489,7 @@ export default function EventsPage() {
       )}
 
       {editingEvent && (
-        <EditEventDialog
+        <EventDialog
           event={editingEvent}
           open={!!editingEvent}
           onOpenChange={(open) => !open && setEditingEvent(null)}
