@@ -5,18 +5,18 @@ import { usePermissions } from '@/lib/hooks/usePermission';
 import type { Permission } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import {
-    BarChart3,
-    CalendarDays,
-    ChevronLeft,
-    ChevronRight,
-    LayoutDashboard,
-    Menu,
-    Settings,
-    Shield,
-    Trophy,
-    UserCircle,
-    Users,
-    X,
+  BarChart3,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  Menu,
+  Settings,
+  Shield,
+  Trophy,
+  UserCircle,
+  Users,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,9 +32,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, permission: 'view_dashboard' },
-  { label: 'Events', href: '/manage/events', icon: <CalendarDays className="h-5 w-5" />, permission: 'view_events' },
+  { label: 'Event Categories', href: '/manage/categories', icon: <CalendarDays className="h-5 w-5" />, permission: 'manage_events' },
   { label: 'Disciplines', href: '/manage/disciplines', icon: <CalendarDays className="h-5 w-5" />, permission: 'manage_events' },
-  { label: 'Categories', href: '/manage/categories', icon: <CalendarDays className="h-5 w-5" />, permission: 'manage_events' },
+  { label: 'Events', href: '/manage/events', icon: <CalendarDays className="h-5 w-5" />, permission: 'view_events' },
   { label: 'Games', href: '/manage/games', icon: <Trophy className="h-5 w-5" />, permission: 'view_games' },
   { label: 'Teams', href: '/manage/teams', icon: <Users className="h-5 w-5" />, permission: 'view_teams' },
   { label: 'Players', href: '/manage/players', icon: <UserCircle className="h-5 w-5" />, permission: 'view_players' },
