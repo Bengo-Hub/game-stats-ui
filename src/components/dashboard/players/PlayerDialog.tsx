@@ -34,7 +34,7 @@ export const playerSchema = z.object({
     gender: z.enum(['M', 'F', 'X']),
     profileImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
     playerId: z.string().optional(), // For reuse
-    eventId: z.string().optional(), // To ensure participation is created
+    eventId: z.string().uuid('Invalid Event ID').optional().or(z.literal('')), // To ensure participation is created
 });
 
 export type PlayerFormData = z.infer<typeof playerSchema>;
@@ -135,7 +135,7 @@ export function PlayerDialog({
         setValue('playerId', p.id);
         setValue('name', p.name, { shouldDirty: true });
         setValue('gender', p.gender || 'X', { shouldDirty: true });
-        setValue('jerseyNumber', p.jerseyNumber, { shouldDirty: true });
+        setValue('jerseyNumber', p.jerseyNumber ?? undefined, { shouldDirty: true }); // Ensure null becomes undefined for form
         setValue('email', p.email || '', { shouldDirty: true });
         setValue('phone', p.phone || '', { shouldDirty: true });
         setValue('position', p.position || '', { shouldDirty: true });

@@ -2,8 +2,9 @@
 
 import TournamentBracket, { GamesBracket, SimpleBracket } from '@/components/features/brackets/tournament-bracket';
 import { EventCategoryBadge, getCountryFlag } from '@/components/features/events';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -562,7 +563,7 @@ export default function EventDetailPage() {
   const { data: teams = [] } = useEventTeams(event?.id);
   const { data: spiritScores = [] } = useEventSpirit(event?.id);
   const { data: standings } = useEventStandings(event?.id);
-  const { data: eventRounds = [] } = useEventRounds(event?.id);
+  const { data: rounds = [] } = useEventRounds(event?.id);
   const { data: playerStats = [] } = usePlayerLeaderboard(event?.id);
   const { data: crew } = useEventCrew(event?.id);
   const divisions = event?.divisions || [];
@@ -582,16 +583,17 @@ export default function EventDetailPage() {
   // Schedule view state
   const [scheduleView, setScheduleView] = React.useState<'list' | 'group'>('list');
   const [scheduleSortOrder, setScheduleSortOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [selectedRoundId, setSelectedRoundId] = React.useState<string>('all');
 
   // Find bracket rounds from event rounds
   const bracketRounds = React.useMemo(() => {
-    return eventRounds.filter(r =>
+    return rounds.filter(r =>
       r.roundType === 'bracket' ||
       r.roundType === 'playoff' ||
       r.name?.toLowerCase().includes('bracket') ||
       r.name?.toLowerCase().includes('playoff')
     );
-  }, [eventRounds]);
+  }, [rounds]);
 
   // Auto-select first bracket round if available
   React.useEffect(() => {
@@ -616,6 +618,9 @@ export default function EventDetailPage() {
   // Filter games
   const filteredGames = React.useMemo(() => {
     let result = games.filter(g => {
+      // Round filter
+      if (selectedRoundId !== 'all' && g.gameRound?.id !== selectedRoundId) return false;
+
       // Filter by division if we have division info
       if (selectedDivision !== 'all') {
         const divName = divisions.find(d => d.id === selectedDivision)?.name;
@@ -625,7 +630,7 @@ export default function EventDetailPage() {
       }
       // Filter by date
       if (selectedDate && !g.scheduledTime?.startsWith(selectedDate)) return false;
-      // Filter by stage/round type
+      // Filter by stage/round type (historical/fallback)
       if (selectedStage !== 'all') {
         const roundType = g.gameRound?.roundType?.toLowerCase() || '';
         // Handle different stage filters
@@ -672,7 +677,7 @@ export default function EventDetailPage() {
     });
 
     return result;
-  }, [games, selectedDivision, selectedDate, selectedStage, scheduleSortOrder]);
+  }, [games, selectedDivision, selectedDate, selectedStage, selectedRoundId, scheduleSortOrder]);
 
   // Filter teams by search and division
   const filteredTeams = React.useMemo(() => {
@@ -1171,22 +1176,33 @@ export default function EventDetailPage() {
                 </div>
               )}
 
-              {/* Stage filter */}
+              {/* Stage/Round filter */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stage</span>
-                <div className="flex gap-1">
-                  {['all', 'pool', 'crossover', 'bracket', 'final'].map(stage => (
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Round</span>
+                <div className="flex gap-1 overflow-x-auto pb-1">
+                  <button
+                    onClick={() => setSelectedRoundId('all')}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                      selectedRoundId === 'all'
+                        ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                        : 'bg-background hover:bg-muted border'
+                    )}
+                  >
+                    All
+                  </button>
+                  {rounds.map(round => (
                     <button
-                      key={stage}
-                      onClick={() => setSelectedStage(stage)}
+                      key={round.id}
+                      onClick={() => setSelectedRoundId(round.id)}
                       className={cn(
-                        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize',
-                        selectedStage === stage
+                        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                        selectedRoundId === round.id
                           ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                           : 'bg-background hover:bg-muted border'
                       )}
                     >
-                      {stage === 'all' ? 'All' : stage === 'pool' ? 'Group' : stage}
+                      {round.name}
                     </button>
                   ))}
                 </div>
@@ -2152,89 +2168,207 @@ export default function EventDetailPage() {
 
           {/* Crew Tab - Tournament Staff */}
           <TabsContent value="crew" className="space-y-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 p-4 bg-muted/30 rounded-xl border">
+              {/* Division filter */}
+              {divisions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Division</span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setSelectedDivision('all')}
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                        selectedDivision === 'all'
+                          ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                          : 'bg-background hover:bg-muted border'
+                      )}
+                    >
+                      All
+                    </button>
+                    {divisions.map(d => (
+                      <button
+                        key={d.id}
+                        onClick={() => setSelectedDivision(d.id)}
+                        className={cn(
+                          'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                          selectedDivision === d.id
+                            ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                            : 'bg-background hover:bg-muted border'
+                        )}
+                      >
+                        {d.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Round filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Round</span>
+                <div className="flex gap-1 overflow-x-auto pb-1">
+                  <button
+                    onClick={() => setSelectedRoundId('all')}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                      selectedRoundId === 'all'
+                        ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                        : 'bg-background hover:bg-muted border'
+                    )}
+                  >
+                    All
+                  </button>
+                  {rounds.map(round => (
+                    <button
+                      key={round.id}
+                      onClick={() => setSelectedRoundId(round.id)}
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                        selectedRoundId === round.id
+                          ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                          : 'bg-background hover:bg-muted border'
+                      )}
+                    >
+                      {round.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="ml-auto text-xs text-muted-foreground">
+                Showing crew for {selectedDivision === 'all' ? 'all divisions' : divisions.find(d => d.id === selectedDivision)?.name}
+              </div>
+            </div>
+
             {crew && (crew.admins.length > 0 || crew.scorekeepers.length > 0) ? (
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Tournament Admins */}
-                <Card>
-                  <CardHeader>
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Shield className="h-5 w-5 text-indigo-500" />
                       Tournament Admins
                     </CardTitle>
+                    <CardDescription>
+                      Event managers and lead organizers
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {crew.admins.length > 0 ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-3">
                         {crew.admins.map((admin) => (
                           <div
                             key={admin.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                            className="flex items-center gap-4 p-4 rounded-xl border bg-muted/10 hover:bg-muted/30 transition-colors group"
                           >
                             {admin.avatarUrl ? (
                               <img
                                 src={admin.avatarUrl}
                                 alt={admin.name}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-indigo-100 dark:border-indigo-900"
+                                className="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-100 dark:ring-indigo-900"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                              <div className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center text-white text-lg font-bold shadow-sm">
                                 {admin.name.charAt(0).toUpperCase()}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{admin.name}</p>
-                              <p className="text-sm text-muted-foreground capitalize">
-                                {admin.role.replace(/_/g, ' ')}
-                              </p>
+                              <p className="font-bold group-hover:text-indigo-600 transition-colors truncate">{admin.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-700 border-indigo-200 text-[10px] h-4">
+                                  {admin.role.replace(/_/g, ' ')}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-sm">No admins assigned yet.</p>
+                      <p className="text-muted-foreground text-sm italic">No admins assigned.</p>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Scorekeepers */}
-                <Card>
-                  <CardHeader>
+                {/* Active Scorekeepers */}
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <UsersRound className="h-5 w-5 text-emerald-500" />
                       Scorekeepers
                     </CardTitle>
+                    <CardDescription>
+                      Staff recording live match results
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {crew.scorekeepers.length > 0 ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {crew.scorekeepers.map((scorekeeper) => (
-                          <div
-                            key={scorekeeper.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                          >
-                            {scorekeeper.avatarUrl ? (
-                              <img
-                                src={scorekeeper.avatarUrl}
-                                alt={scorekeeper.name}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-emerald-100 dark:border-emerald-900"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold">
-                                {scorekeeper.name.charAt(0).toUpperCase()}
+                    {(() => {
+                      // Logic to track active scorekeepers based on filtered games
+                      const skMap = new Map<string, any>();
+
+                      // Include all from crew but mark as inactive initially
+                      crew.scorekeepers.forEach(sk => skMap.set(sk.id, { ...sk, games: [] }));
+
+                      // Add games they are scoring in the current filtered view
+                      filteredGames.forEach(game => {
+                        if (game.scorekeeper) {
+                          const sk = skMap.get(game.scorekeeper.id) || { ...game.scorekeeper, games: [] };
+                          sk.games.push(game);
+                          skMap.set(game.scorekeeper.id, sk);
+                        }
+                      });
+
+                      const sortedSk = Array.from(skMap.values()).sort((a, b) => b.games.length - a.games.length);
+
+                      if (sortedSk.length === 0) {
+                        return <p className="text-muted-foreground text-sm italic">No scorekeepers found for this selection.</p>;
+                      }
+
+                      return (
+                        <div className="grid gap-3">
+                          {sortedSk.map((sk) => (
+                            <div
+                              key={sk.id}
+                              className={cn(
+                                "flex items-center gap-4 p-4 rounded-xl border transition-all",
+                                sk.games.length > 0 ? "bg-emerald-500/5 border-emerald-500/20 shadow-sm" : "bg-muted/10 opacity-60"
+                              )}
+                            >
+                              {sk.avatarUrl ? (
+                                <img
+                                  src={sk.avatarUrl}
+                                  alt={sk.name}
+                                  className={cn(
+                                    "w-12 h-12 rounded-full object-cover border-2",
+                                    sk.games.length > 0 ? "border-emerald-200" : "border-transparent"
+                                  )}
+                                />
+                              ) : (
+                                <div className={cn(
+                                  "w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-sm",
+                                  sk.games.length > 0 ? "bg-emerald-500" : "bg-gray-400"
+                                )}>
+                                  {sk.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold truncate">{sk.name}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  {sk.games.length > 0 ? (
+                                    <Badge variant="secondary" className="bg-emerald-500 text-white border-none text-[10px] h-4">
+                                      Active: {sk.games.length} Games
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] h-4">
+                                      Idle
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{scorekeeper.name}</p>
-                              <p className="text-sm text-muted-foreground capitalize">
-                                {scorekeeper.role.replace(/_/g, ' ')}
-                              </p>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">No scorekeepers assigned yet.</p>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </div>

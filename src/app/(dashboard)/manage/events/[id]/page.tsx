@@ -3,6 +3,7 @@
 import { DivisionDialog } from '@/components/dashboard/divisions/DivisionDialog';
 import { EventDialog } from '@/components/dashboard/events';
 import { BulkTransferPlayersDialog, MassImportPlayersDialog } from '@/components/dashboard/players';
+import { GameRoundDialog } from '@/components/dashboard/rounds/GameRoundDialog';
 import { TeamDialog } from '@/components/dashboard/teams';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,11 +20,13 @@ import {
     ChevronRight,
     CircleDot,
     Flag,
+    Layers,
     LayoutGrid,
     MapPin,
     Plus,
     RefreshCw,
     Settings,
+    Sparkle,
     Trophy,
     Upload,
     Users,
@@ -44,6 +47,8 @@ export default function EventDetailPage() {
     const [bulkTransferOpen, setBulkTransferOpen] = React.useState(false);
     const [massImportOpen, setMassImportOpen] = React.useState(false);
     const [registerTeamOpen, setRegisterTeamOpen] = React.useState(false);
+    const [gameRoundOpen, setGameRoundOpen] = React.useState(false);
+    const [selectedRound, setSelectedRound] = React.useState<any>(null);
 
     const {
         data: event,
@@ -337,26 +342,66 @@ export default function EventDetailPage() {
                         </TabsContent>
 
                         <TabsContent value="rounds">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold">Event Rounds</h3>
+                                <Button size="sm" onClick={() => {
+                                    setSelectedRound(null);
+                                    setGameRoundOpen(true);
+                                }}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Round
+                                </Button>
+                            </div>
                             <div className="space-y-4">
                                 {rounds.map(round => (
-                                    <div key={round.id} className="flex items-center gap-4 p-4 rounded-2xl border bg-card hover:border-primary/50 transition-colors">
-                                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 font-black">
-                                            {round.roundOrder}
+                                    <div key={round.id} className="flex items-center gap-4 p-4 rounded-2xl border bg-card hover:border-primary/50 transition-all group">
+                                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 font-black shrink-0">
+                                            {round.roundNumber || '-'}
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold">{round.name}</h4>
-                                            <p className="text-sm text-muted-foreground capitalize">{round.roundType} Round</p>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold truncate">{round.name}</h4>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Badge variant="outline" className="capitalize text-[10px] h-4">
+                                                    {round.roundType}
+                                                </Badge>
+                                                {round.autoAdvance && (
+                                                    <Badge variant="secondary" className="bg-green-500/10 text-green-700 border-green-200 text-[10px] h-4 px-1 gap-1">
+                                                        <Sparkle className="h-2 w-2" />
+                                                        Top {round.topNTeams}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="text-right text-xs text-muted-foreground">
-                                            {round.startDate && format(parseISO(round.startDate), 'MMM d')}
+                                        <div className="hidden sm:block text-right text-xs text-muted-foreground">
+                                            <div className="flex items-center gap-1 justify-end">
+                                                <Calendar className="h-3 w-3" />
+                                                {round.startDate ? format(parseISO(round.startDate), 'MMM d, HH:mm') : 'No start'}
+                                            </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <Link href={`/manage/rounds/${round.id}`}>
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" size="icon-sm" onClick={() => {
+                                                setSelectedRound(round);
+                                                setGameRoundOpen(true);
+                                            }}>
+                                                <Settings className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon-sm" asChild>
+                                                <Link href={`/manage/rounds/${round.id}`}>
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
+                                {rounds.length === 0 && (
+                                    <div className="text-center py-12 border-2 border-dashed rounded-2xl">
+                                        <Layers className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-20" />
+                                        <p className="text-muted-foreground">No rounds created for this event yet</p>
+                                        <Button variant="link" onClick={() => setGameRoundOpen(true)}>
+                                            Define your first round
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -403,6 +448,17 @@ export default function EventDetailPage() {
                 onSuccess={() => {
                     refetchEvent();
                     queryClient.invalidateQueries({ queryKey: ['events', eventId, 'divisions'] });
+                }}
+            />
+
+            <GameRoundDialog
+                eventId={eventId}
+                round={selectedRound}
+                open={gameRoundOpen}
+                onOpenChange={setGameRoundOpen}
+                onSuccess={() => {
+                    refetchEvent();
+                    queryClient.invalidateQueries({ queryKey: ['events', eventId, 'rounds'] });
                 }}
             />
         </div>

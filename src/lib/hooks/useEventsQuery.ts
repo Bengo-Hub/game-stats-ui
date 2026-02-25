@@ -1,7 +1,6 @@
 // Events hooks using TanStack Query
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { publicApi, type ListEventsParams, type TemporalFilter } from '@/lib/api/public';
-import type { Event } from '@/types';
+import { publicApi, type ListEventsParams } from '@/lib/api/public';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Query keys
 export const eventKeys = {
@@ -28,6 +27,7 @@ export function useEventsQuery(options?: UseEventsQueryOptions) {
     queryFn: () => publicApi.listEvents(params),
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -37,6 +37,7 @@ export function useUpcomingEvents(limit = 10) {
     queryKey: eventKeys.upcoming(),
     queryFn: () => publicApi.getUpcomingEvents(limit),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
   });
 }
 
@@ -45,6 +46,7 @@ export function usePastEvents(limit = 10) {
     queryKey: eventKeys.past(),
     queryFn: () => publicApi.getPastEvents(limit),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
   });
 }
 
@@ -52,7 +54,8 @@ export function useLiveEvents() {
   return useQuery({
     queryKey: eventKeys.live(),
     queryFn: () => publicApi.getLiveEvents(),
-    staleTime: 1000 * 30, // 30 seconds for live data
+    staleTime: 1000 * 60, // 1 minute for live data
+    gcTime: 1000 * 60, // 1 minute for live data
     refetchInterval: 1000 * 60, // Refetch every minute
   });
 }
@@ -63,7 +66,8 @@ export function useEventDetail(idOrSlug: string | undefined) {
     queryKey: eventKeys.detail(idOrSlug || ''),
     queryFn: () => publicApi.getEvent(idOrSlug!),
     enabled: !!idOrSlug,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -80,10 +84,11 @@ export function useInfiniteEventsQuery(params?: Omit<ListEventsParams, 'limit' |
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: any, allPages: any) => {
       if (lastPage.length < pageSize) return undefined;
       return allPages.flat().length;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }

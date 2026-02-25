@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { analyticsApi } from '@/lib/api/analytics';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { BarChart3, Bot, Layout, Loader2, Play, Search, Sparkles } from 'lucide-react';
+import { BarChart3, Bot, Layout, Loader2, Play, Search, Sparkle } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -40,7 +40,7 @@ export function AnalyticsTab() {
             <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
                     <div className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
+                        <Sparkle className="h-5 w-5 text-primary" />
                         <CardTitle>AI Data Assistant</CardTitle>
                     </div>
                     <CardDescription>

@@ -17,6 +17,7 @@ interface BracketMatchProps {
   game?: Game;
   onMatchClick?: (node: BracketNode) => void;
   isHighlighted?: boolean;
+  matchRefs?: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }
 
 interface BracketRound {
@@ -305,14 +306,19 @@ export function GamesBracket({ games, rounds, className }: GamesBracketProps) {
 // Tree-Based Bracket Match (Original Implementation)
 // ============================================
 
-function BracketMatch({ node, onMatchClick, isHighlighted }: BracketMatchProps) {
+function BracketMatch({ node, onMatchClick, isHighlighted, matchRefs }: BracketMatchProps) {
   const homeWinner = node.status === 'completed' && (node.homeScore ?? 0) > (node.awayScore ?? 0);
   const awayWinner = node.status === 'completed' && (node.awayScore ?? 0) > (node.homeScore ?? 0);
 
   return (
     <Card
+      ref={(el) => {
+        if (el && matchRefs) {
+          matchRefs.current.set(node.id, el);
+        }
+      }}
       className={cn(
-        'w-48 cursor-pointer transition-all hover:shadow-md',
+        'w-48 cursor-pointer transition-all hover:shadow-md relative z-10',
         isHighlighted && 'ring-2 ring-primary',
         node.status === 'in_progress' && 'ring-2 ring-green-500'
       )}
@@ -327,12 +333,6 @@ function BracketMatch({ node, onMatchClick, isHighlighted }: BracketMatchProps) 
           )}
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {node.homeTeam?.primaryColor && (
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: node.homeTeam.primaryColor }}
-              />
-            )}
             <span className="truncate">
               {node.homeTeam?.name || 'TBD'}
             </span>
@@ -350,12 +350,6 @@ function BracketMatch({ node, onMatchClick, isHighlighted }: BracketMatchProps) 
           )}
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {node.awayTeam?.primaryColor && (
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: node.awayTeam.primaryColor }}
-              />
-            )}
             <span className="truncate">
               {node.awayTeam?.name || 'TBD'}
             </span>
@@ -379,6 +373,7 @@ interface TreeBracketColumnProps {
   totalRounds: number;
   onMatchClick?: (node: BracketNode) => void;
   highlightedMatchId?: string;
+  matchRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }
 
 function TreeBracketColumn({
@@ -387,6 +382,7 @@ function TreeBracketColumn({
   totalRounds,
   onMatchClick,
   highlightedMatchId,
+  matchRefs,
 }: TreeBracketColumnProps) {
   const roundNames: Record<number, string> = {
     1: 'Finals',
@@ -415,6 +411,7 @@ function TreeBracketColumn({
             node={node}
             onMatchClick={onMatchClick}
             isHighlighted={highlightedMatchId === node.id}
+            matchRefs={matchRefs}
           />
         ))}
       </div>
@@ -456,6 +453,10 @@ export function TournamentBracket({
   highlightedMatchId,
   className,
 }: TournamentBracketProps) {
+  const matchRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [paths, setPaths] = React.useState<string[]>([]);
+
   const roundsMap = React.useMemo(
     () => flattenBracketByRound(bracket.bracketTree),
     [bracket.bracketTree]
@@ -468,9 +469,63 @@ export function TournamentBracket({
       nodes: nodes.sort((a, b) => a.position - b.position),
     }));
 
+  React.useLayoutEffect(() => {
+    const newPaths: string[] = [];
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+
+    const generatePaths = (node: BracketNode) => {
+      if (!node.children || node.children.length === 0) return;
+
+      const parentEl = matchRefs.current.get(node.id);
+      if (!parentEl) return;
+
+      const parentRect = parentEl.getBoundingClientRect();
+      const parentX = parentRect.left - containerRect.left;
+      const parentY = parentRect.top - containerRect.top + parentRect.height / 2;
+
+      node.children.forEach((child) => {
+        const childEl = matchRefs.current.get(child.id);
+        if (!childEl) return;
+
+        const childRect = childEl.getBoundingClientRect();
+        const childX = childRect.left - containerRect.left + childRect.width;
+        const childY = childRect.top - containerRect.top + childRect.height / 2;
+
+        // Draw a path from child to parent
+        // Straight line with a bend (elbow)
+        const midX = (childX + parentX) / 2;
+        const path = `M ${childX} ${childY} L ${midX} ${childY} L ${midX} ${parentY} L ${parentX} ${parentY}`;
+        newPaths.push(path);
+
+        generatePaths(child);
+      });
+    };
+
+    generatePaths(bracket.bracketTree);
+    setPaths(newPaths);
+  }, [rounds, bracket.bracketTree]);
+
   return (
-    <div className={cn('overflow-x-auto', className)}>
-      <div className="flex items-start gap-8 p-4 min-w-max">
+    <div className={cn('overflow-x-auto relative', className)} ref={containerRef}>
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: '100%', height: '100%', minWidth: 'max-content' }}
+      >
+        {paths.map((path, idx) => (
+          <path
+            key={idx}
+            d={path}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-muted-foreground/30"
+          />
+        ))}
+      </svg>
+      <div className="flex items-start gap-12 p-8 min-w-max relative">
         {rounds.map(({ round, nodes }) => (
           <TreeBracketColumn
             key={round}
@@ -479,6 +534,7 @@ export function TournamentBracket({
             totalRounds={bracket.totalRounds}
             onMatchClick={onMatchClick}
             highlightedMatchId={highlightedMatchId}
+            matchRefs={matchRefs}
           />
         ))}
       </div>

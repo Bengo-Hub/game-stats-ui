@@ -1,6 +1,6 @@
 import { geographicApi } from '@/lib/api/geographic';
 import { publicApi } from '@/lib/api/public';
-import type { Country } from '@/types';
+import type { Continent, Country, Field, World } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 
 // Query keys
@@ -22,35 +22,39 @@ export const geographicKeys = {
 
 // Hooks
 export function useWorlds() {
-  return useQuery({
+  return useQuery<World[]>({
     queryKey: geographicKeys.worlds(),
     queryFn: () => publicApi.listWorlds(),
     staleTime: 24 * 60 * 60 * 1000, // 24 hours - geographic data rarely changes
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 }
 
 export function useContinents() {
-  return useQuery({
+  return useQuery<Continent[]>({
     queryKey: geographicKeys.continents(),
     queryFn: () => publicApi.listContinents(),
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 }
 
 export function useContinent(continentId: string | undefined) {
-  return useQuery({
+  return useQuery<Continent & { countries?: Country[] }>({
     queryKey: geographicKeys.continent(continentId || ''),
     queryFn: () => publicApi.getContinent(continentId!),
     enabled: !!continentId,
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 }
 
 export function useCountries(continentId?: string) {
-  return useQuery({
+  return useQuery<Country[]>({
     queryKey: geographicKeys.countries(continentId),
     queryFn: () => publicApi.listCountries(continentId),
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 }
 
@@ -59,14 +63,16 @@ export function useLocations() {
     queryKey: geographicKeys.locations(),
     queryFn: () => geographicApi.listLocations(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
 export function useFields(locationId?: string) {
-  return useQuery({
+  return useQuery<Field[]>({
     queryKey: geographicKeys.fields(locationId),
     queryFn: () => geographicApi.listFields(locationId),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 

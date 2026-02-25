@@ -7,10 +7,12 @@ export interface GameRound {
   id: string;
   eventId: string;
   name: string;
-  roundType: 'pool' | 'bracket' | 'crossover' | 'placement';
-  roundOrder: number;
+  roundType: 'pool' | 'crossover' | 'bracket' | 'semifinal' | 'final';
+  roundNumber?: number;
   startDate?: string;
   endDate?: string;
+  autoAdvance: boolean;
+  topNTeams?: number;
   createdAt: string;
 }
 
@@ -161,12 +163,20 @@ export const eventsApi = {
   },
 
   /**
-   * Generate bracket for an event
+   * Seed default rounds for an event
    */
+  async seedRounds(eventId: string): Promise<void> {
+    return apiClient.post(`/events/${eventId}/rounds/seed`, {});
+  },
+
   async generateBracket(eventId: string, data: {
     roundId: string;
+    divisionPoolId: string;
     bracketType: 'single_elimination' | 'double_elimination';
     teamSeeds: { teamId: string; seed: number }[];
+    startTime: string;
+    fieldId: string;
+    gameDuration: number;
   }): Promise<{ bracketTree: unknown; gamesCreated: number }> {
     return apiClient.post(`/events/${eventId}/generate-bracket`, data);
   },
@@ -300,12 +310,14 @@ export const roundsApi = {
    * Create a game round
    */
   async create(data: {
-    eventId: string;
+    event_id: string;
     name: string;
-    roundType: 'pool' | 'bracket' | 'crossover' | 'placement';
-    roundOrder: number;
-    startDate?: string;
-    endDate?: string;
+    round_type: string;
+    round_number?: number;
+    start_date?: string;
+    end_date?: string;
+    auto_advance?: boolean;
+    top_n_teams?: number;
   }): Promise<GameRound> {
     return apiClient.post<GameRound>('/rounds', data);
   },
@@ -320,7 +332,15 @@ export const roundsApi = {
   /**
    * Update a game round
    */
-  async update(id: string, data: Partial<GameRound>): Promise<GameRound> {
+  async update(id: string, data: Partial<{
+    name: string;
+    roundType: string;
+    roundNumber: number;
+    startDate: string;
+    endDate: string;
+    autoAdvance: boolean;
+    topNTeams: number;
+  }>): Promise<GameRound> {
     return apiClient.put<GameRound>(`/rounds/${id}`, data);
   },
 

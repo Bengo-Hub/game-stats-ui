@@ -19,7 +19,7 @@ import {
   Title,
   Tooltip
 } from 'chart.js';
-import { AlertCircle, RefreshCw, Search, Sparkles, Star, Target, TrendingUp, Trophy, Users } from 'lucide-react';
+import { AlertCircle, RefreshCw, Search, Sparkle, Star, Target, TrendingUp, Trophy, Users } from 'lucide-react';
 import * as React from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 
@@ -173,7 +173,7 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkle className="h-5 w-5 text-primary" />
             AI Analytics Query
           </CardTitle>
           <CardDescription>

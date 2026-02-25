@@ -280,7 +280,18 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
         onOpenChange={setAddDialogOpen}
         title="Add Player"
         description="Add a new player to the team roster."
-        onSubmit={(data) => addMutation.mutate(data as CreatePlayerRequest)}
+        onSubmit={(data) => {
+          // Clean the payload: remove empty strings and unknown fields
+          const payload = {
+            ...data,
+            eventId: data.eventId || undefined,
+            email: data.email || undefined,
+            phone: data.phone || undefined,
+            position: data.position || undefined,
+            profileImageUrl: data.profileImageUrl || undefined,
+          };
+          addMutation.mutate(payload as CreatePlayerRequest);
+        }}
         isPending={addMutation.isPending}
         eventId={team.eventId}
       />
