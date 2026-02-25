@@ -177,7 +177,7 @@ export function CreateTeamDialog({ trigger, eventId, open: controlledOpen, onOpe
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Team</DialogTitle>
           <DialogDescription>

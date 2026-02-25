@@ -1,35 +1,31 @@
 'use client';
 
-import * as React from 'react';
-import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Trophy,
-  Calendar,
-  AlertCircle,
-  RefreshCw,
-  Sparkles,
-  History,
-  Radio,
-  MapPin,
-  TrendingUp,
-} from 'lucide-react';
-import type { Event, EventCategory } from '@/types';
-import type { ListEventsParams, TemporalFilter, EventSortField, SortOrder } from '@/lib/api/public';
-import { useEventsQuery, useLiveEvents } from '@/lib/hooks';
-import {
-  EventGrid,
-  EventFilters,
   EventCalendar,
+  EventFilters,
+  EventGrid,
   EventListSkeleton,
 } from '@/components/features/events';
 import {
-  HeroWavePattern,
-  FloatingOrbs,
-  EmptyStateCalendar,
+  EmptyStateCalendar
 } from '@/components/illustrations';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { EventSortField, ListEventsParams, SortOrder, TemporalFilter } from '@/lib/api/public';
+import { useEventsQuery, useLiveEvents } from '@/lib/hooks';
+import type { EventCategory } from '@/types';
+import {
+  AlertCircle,
+  Calendar,
+  History,
+  Radio,
+  RefreshCw,
+  Sparkles,
+  TrendingUp
+} from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import * as React from 'react';
+import { Suspense } from 'react';
 
 type TabValue = 'upcoming' | 'past' | 'live';
 
@@ -42,8 +38,8 @@ function DiscoverContent() {
 
   // Filter state
   const [search, setSearch] = React.useState(searchParams.get('search') || '');
-  const [selectedCategories, setSelectedCategories] = React.useState<EventCategory[]>(
-    (searchParams.get('category')?.split(',').filter(Boolean) as EventCategory[]) || []
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
+    (searchParams.get('category')?.split(',').filter(Boolean) as string[]) || []
   );
   const [continentId, setContinentId] = React.useState(searchParams.get('continent') || '');
   const [countryCode, setCountryCode] = React.useState(searchParams.get('country') || '');
@@ -75,7 +71,7 @@ function DiscoverContent() {
     sortOrder,
     limit: 50,
     ...(search && { search }),
-    ...(selectedCategories.length > 0 && { category: selectedCategories }),
+    ...(selectedCategories.length > 0 && { category: selectedCategories as EventCategory[] }),
     ...(countryCode && { country: countryCode }),
   }), [tab, sortBy, sortOrder, search, selectedCategories, countryCode]);
 
@@ -123,7 +119,7 @@ function DiscoverContent() {
     setSearch(value);
   }, []);
 
-  const handleCategoriesChange = React.useCallback((categories: EventCategory[]) => {
+  const handleCategoriesChange = React.useCallback((categories: string[]) => {
     setSelectedCategories(categories);
   }, []);
 
@@ -298,10 +294,10 @@ function DiscoverContent() {
               {search || selectedCategories.length > 0 || countryCode
                 ? 'Try adjusting your search or filters to find events'
                 : tab === 'live'
-                ? 'No events are currently live. Check upcoming events!'
-                : tab === 'past'
-                ? 'No past events match your criteria'
-                : 'Check back later for upcoming events'}
+                  ? 'No events are currently live. Check upcoming events!'
+                  : tab === 'past'
+                    ? 'No past events match your criteria'
+                    : 'Check back later for upcoming events'}
             </p>
             {(search || selectedCategories.length > 0 || countryCode) && (
               <Button

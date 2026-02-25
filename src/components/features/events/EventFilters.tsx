@@ -1,43 +1,32 @@
 'use client';
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import type { EventCategory } from '@/types';
-import type { EventSortField, SortOrder } from '@/lib/api/public';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Search,
-  ChevronDown,
-  X,
-  ArrowUpDown,
-  MapPin,
-  Globe,
-  Filter,
-  Sun,
-  Shuffle,
-  Waves,
-  Building2,
-  Trophy,
-  Check,
-} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import type { EventSortField, SortOrder } from '@/lib/api/public';
+import { useCategories } from '@/lib/hooks/useCategories';
 import { useContinents, useCountries } from '@/lib/hooks/useGeographic';
+import { cn } from '@/lib/utils';
+import {
+    ArrowUpDown,
+    Check,
+    ChevronDown,
+    Filter,
+    Globe,
+    Loader2,
+    MapPin,
+    Search,
+    X,
+} from 'lucide-react';
+import * as React from 'react';
 
-const ALL_CATEGORIES: { value: EventCategory; label: string; icon: React.ElementType; color: string }[] = [
-  { value: 'outdoor', label: 'Outdoor', icon: Sun, color: 'text-emerald-500' },
-  { value: 'hat', label: 'Hat', icon: Shuffle, color: 'text-amber-500' },
-  { value: 'beach', label: 'Beach', icon: Waves, color: 'text-sky-500' },
-  { value: 'indoor', label: 'Indoor', icon: Building2, color: 'text-violet-500' },
-  { value: 'league', label: 'League', icon: Trophy, color: 'text-rose-500' },
-];
 
 const SORT_OPTIONS: { value: EventSortField; label: string; order: SortOrder }[] = [
   { value: 'start_date', label: 'Date (Newest)', order: 'desc' },
@@ -62,8 +51,8 @@ export function getCountryFlag(code: string): string {
 interface EventFiltersProps {
   search: string;
   onSearchChange: (search: string) => void;
-  selectedCategories: EventCategory[];
-  onCategoriesChange: (categories: EventCategory[]) => void;
+  selectedCategories: string[];
+  onCategoriesChange: (categories: string[]) => void;
   continentId: string;
   onContinentChange: (continentId: string) => void;
   countryCode: string;
@@ -93,6 +82,8 @@ export function EventFilters({
   // Fetch geographic data with hierarchy
   const { data: continents = [], isLoading: loadingContinents } = useContinents();
   const { data: countries = [], isLoading: loadingCountries } = useCountries(continentId || undefined);
+  // fetch category metadata
+  const { data: categories = [], isLoading: loadingCategoryMeta } = useCategories();
 
   // Debounced search
   React.useEffect(() => {
@@ -102,11 +93,11 @@ export function EventFilters({
     return () => clearTimeout(timer);
   }, [searchInput, onSearchChange]);
 
-  const toggleCategory = (category: EventCategory) => {
-    if (selectedCategories.includes(category)) {
-      onCategoriesChange(selectedCategories.filter((c) => c !== category));
+  const toggleCategory = (categoryId: string) => {
+    if (selectedCategories.includes(categoryId)) {
+      onCategoriesChange(selectedCategories.filter((c) => c !== categoryId));
     } else {
-      onCategoriesChange([...selectedCategories, category]);
+      onCategoriesChange([...selectedCategories, categoryId]);
     }
   };
 
@@ -296,28 +287,29 @@ export function EventFilters({
           <Filter className="h-4 w-4" />
           <span className="font-medium">Categories:</span>
         </div>
-        {ALL_CATEGORIES.map((category) => {
-          const isSelected = selectedCategories.includes(category.value);
-          const Icon = category.icon;
-
-          return (
-            <button
-              key={category.value}
-              onClick={() => toggleCategory(category.value)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200',
-                'border hover:scale-105 active:scale-95',
-                isSelected
-                  ? 'border-current bg-gradient-to-r from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400'
-                  : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <Icon className={cn('h-4 w-4', isSelected ? category.color : '')} />
-              {category.label}
-              {isSelected && <Check className="h-3 w-3" />}
-            </button>
-          );
-        })}
+        {loadingCategoryMeta ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          categories.map((cat) => {
+            const isSelected = selectedCategories.includes(cat.id);
+            return (
+              <button
+                key={cat.id}
+                onClick={() => toggleCategory(cat.id)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200',
+                  'border hover:scale-105 active:scale-95',
+                  isSelected
+                    ? 'border-current bg-gradient-to-r from-indigo-500/10 to-purple-500/10 text-indigo-600 dark:text-indigo-400'
+                    : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                {cat.name}
+                {isSelected && <Check className="h-3 w-3" />}
+              </button>
+            );
+          })
+        )}
       </div>
 
       {/* Clear filters */}

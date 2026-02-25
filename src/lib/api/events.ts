@@ -1,6 +1,6 @@
 // Events API module
 
-import type { DivisionStandings, Event, EventCategory } from '@/types';
+import type { DivisionStandings, Event } from '@/types';
 import { apiClient } from './client';
 
 export interface GameRound {
@@ -23,7 +23,7 @@ export interface CreateEventRequest {
   endDate: string;
   disciplineId: string;
   locationId?: string;
-  categories?: EventCategory[];
+  categoryIds?: string[];
   logoUrl?: string;
   bannerUrl?: string;
   status?: 'draft' | 'published';
@@ -37,7 +37,7 @@ export interface UpdateEventRequest {
   endDate?: string;
   disciplineId?: string;
   locationId?: string;
-  categories?: EventCategory[];
+  categoryIds?: string[];
   logoUrl?: string;
   bannerUrl?: string;
   status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
@@ -47,7 +47,7 @@ export interface ListEventsParams {
   status?: string;
   year?: number;
   temporal?: 'past' | 'upcoming' | 'live' | 'all';
-  category?: EventCategory[];
+  category?: string[];
   country?: string;
   search?: string;
   sortBy?: 'start_date' | 'name' | 'teams_count';
@@ -244,6 +244,20 @@ export const eventsApi = {
    */
   async getEventCrew(eventId: string): Promise<{ admins: any[]; scorekeepers: any[] }> {
     return apiClient.get<{ admins: any[]; scorekeepers: any[] }>(`/events/${eventId}/crew`);
+  },
+
+  /**
+   * Add a crew member to an event
+   */
+  async addEventCrewMember(eventId: string, data: { userId: string }): Promise<void> {
+    return apiClient.post(`/events/${eventId}/crew`, data);
+  },
+
+  /**
+   * Remove a crew member from an event
+   */
+  async removeEventCrewMember(eventId: string, userId: string): Promise<void> {
+    return apiClient.delete(`/events/${eventId}/crew/${userId}`);
   },
 };
 

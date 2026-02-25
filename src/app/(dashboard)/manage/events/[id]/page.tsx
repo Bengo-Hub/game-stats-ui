@@ -158,8 +158,8 @@ export default function EventDetailPage() {
                         </CardHeader>
                         <CardContent className="flex flex-wrap gap-2">
                             {event.categories?.map(cat => (
-                                <Badge key={cat} variant="secondary" className="capitalize px-3 py-1">
-                                    {cat}
+                                <Badge key={cat.id} variant="secondary" className="capitalize px-3 py-1">
+                                    {cat.name}
                                 </Badge>
                             ))}
                         </CardContent>

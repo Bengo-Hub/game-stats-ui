@@ -1,8 +1,5 @@
 'use client';
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import type { Event, EventCategory } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,7 +8,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ChevronLeft, ChevronRight, X, Check, Square } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { Event, EventCategory } from '@/types';
+import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import * as React from 'react';
 import { EventCategoryBadge } from './EventCategoryBadge';
 import { getCountryFlag } from './EventFilters';
 
@@ -105,7 +105,7 @@ export function EventCalendar({ events, open, onOpenChange, trigger }: EventCale
   // Filter events if hiding leagues
   const filteredEvents = React.useMemo(() => {
     if (!hideLeagues) return events;
-    return events.filter(e => !e.categories?.includes('league'));
+    return events.filter(e => !e.categories?.some(cat => cat.name.toLowerCase() === 'league'));
   }, [events, hideLeagues]);
 
   // Group events by date
@@ -232,7 +232,7 @@ export function EventCalendar({ events, open, onOpenChange, trigger }: EventCale
 
                 // Get unique categories for dots (max 4)
                 const categories = [...new Set(
-                  dayEvents.flatMap(e => e.categories || [])
+                  dayEvents.flatMap(e => (e.categories || []).map(cat => cat.name.toLowerCase() as EventCategory))
                 )].slice(0, 4);
 
                 return (
@@ -324,7 +324,7 @@ export function EventCalendar({ events, open, onOpenChange, trigger }: EventCale
                     {event.categories && event.categories.length > 0 && (
                       <div className="flex gap-1 mt-2 flex-wrap">
                         {event.categories.map((cat) => (
-                          <EventCategoryBadge key={cat} category={cat} size="sm" />
+                          <EventCategoryBadge key={cat.id} category={cat.name.toLowerCase() as EventCategory} size="sm" />
                         ))}
                       </div>
                     )}

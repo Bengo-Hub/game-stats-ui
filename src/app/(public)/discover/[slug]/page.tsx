@@ -15,7 +15,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
-import type { Event, Game } from '@/types';
+import type { Event, EventCategory, Game } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -783,7 +783,7 @@ export default function EventDetailPage() {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <StatusBadge status={event.status} />
                 {event.categories?.map(cat => (
-                  <EventCategoryBadge key={cat} category={cat} size="sm" />
+                  <EventCategoryBadge key={cat.id} category={cat.name.toLowerCase() as EventCategory} size="sm" />
                 ))}
               </div>
 

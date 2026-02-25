@@ -1,5 +1,7 @@
 'use client';
 
+import { CategoryDialog } from '@/components/dashboard/categories/CategoryDialog';
+import { DisciplineDialog } from '@/components/dashboard/disciplines/DisciplineDialog';
 import { FileUploader } from '@/components/shared/FileUploader';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,9 +24,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { eventsApi, type CreateEventRequest } from '@/lib/api/events';
+import { useCategories } from '@/lib/hooks/useCategories';
+import { useDisciplines } from '@/lib/hooks/useDisciplines';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
 import { cn } from '@/lib/utils';
-import type { EventCategory } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Loader2, Plus } from 'lucide-react';
@@ -42,7 +45,7 @@ const createEventSchema = z.object({
   endDate: z.string().min(1, 'End date is required'),
   disciplineId: z.string().min(1, 'Please select a discipline'),
   locationId: z.string().optional(),
-  categories: z.array(z.string()).optional(),
+  categoryIds: z.array(z.string()).optional(),
   logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   status: z.enum(['draft', 'published']),
 }).refine((data) => {
@@ -61,26 +64,16 @@ interface CreateEventDialogProps {
   onSuccess?: () => void;
 }
 
-// Available categories
-const CATEGORIES: { value: EventCategory; label: string }[] = [
-  { value: 'outdoor', label: 'Outdoor' },
-  { value: 'indoor', label: 'Indoor' },
-  { value: 'beach', label: 'Beach' },
-  { value: 'hat', label: 'Hat Tournament' },
-  { value: 'league', label: 'League' },
-];
+// categories come from backend
 
-// Mock disciplines - replace with API call
-const DISCIPLINES = [
-  { id: 'ultimate', name: 'Ultimate' },
-  { id: 'disc-golf', name: 'Disc Golf' },
-  { id: 'freestyle', name: 'Freestyle' },
-];
 
 export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps) {
   const [open, setOpen] = React.useState(false);
-  const [selectedCategories, setSelectedCategories] = React.useState<EventCategory[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
   const queryClient = useQueryClient();
+
+  const { data: disciplines = [], isLoading: loadingDisciplines } = useDisciplines();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
 
   const {
     register,
@@ -99,7 +92,7 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
       endDate: '',
       disciplineId: '',
       locationId: '',
-      categories: [],
+      categoryIds: [],
       logoUrl: '',
       status: 'draft',
     },
@@ -136,7 +129,7 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
   const onSubmit = (data: CreateEventFormData) => {
     const request: CreateEventRequest = {
       ...data,
-      categories: selectedCategories,
+      categoryIds: selectedCategories,
       logoUrl: data.logoUrl || undefined,
       slug: data.slug || undefined,
       description: data.description || undefined,
@@ -145,11 +138,11 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
     createMutation.mutate(request);
   };
 
-  const toggleCategory = (category: EventCategory) => {
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+      prev.includes(categoryId)
+        ? prev.filter(c => c !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
@@ -163,7 +156,7 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Event</DialogTitle>
           <DialogDescription>
@@ -206,16 +199,33 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
               {/* Discipline */}
               <div className="space-y-2">
                 <Label htmlFor="disciplineId">Discipline *</Label>
-                <Select onValueChange={(value) => setValue('disciplineId', value)}>
-                  <SelectTrigger className={errors.disciplineId ? 'border-destructive' : ''}>
-                    <SelectValue placeholder="Select discipline" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DISCIPLINES.map(d => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select onValueChange={(value) => setValue('disciplineId', value)}>
+                    <SelectTrigger className={errors.disciplineId ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Select discipline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingDisciplines ? (
+                        <SelectItem value="" disabled>Loading...</SelectItem>
+                      ) : (
+                        disciplines.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <DisciplineDialog
+                    onSuccess={(d) => setValue('disciplineId', d.id)}
+                    trigger={
+                      <Button size="icon-sm" variant="ghost">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+
                 {errors.disciplineId && (
                   <p className="text-sm text-destructive">{errors.disciplineId.message}</p>
                 )}
@@ -289,22 +299,29 @@ export function CreateEventDialog({ trigger, onSuccess }: CreateEventDialogProps
           {/* Categories */}
           <div className="space-y-4">
             <Label>Categories</Label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => toggleCategory(cat.value)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    selectedCategories.includes(cat.value)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2 items-center">
+              {loadingCategories ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategory(cat.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                      selectedCategories.includes(cat.id)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                    )}
+                  >
+                    {cat.name}
+                  </button>
+                ))
+              )}
+              <CategoryDialog
+                onSuccess={(c) => setSelectedCategories(prev => [...prev, c.id])}
+              />
             </div>
           </div>
 

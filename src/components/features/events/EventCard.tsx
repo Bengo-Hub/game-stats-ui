@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Users, Gamepad2 } from 'lucide-react';
-import { EventCategoryBadge, getCategoryConfig } from './EventCategoryBadge';
+import { Calendar, Gamepad2, Users } from 'lucide-react';
+import Link from 'next/link';
+// categories are dynamic not using static badge
 import { EventLocationBadge } from './EventLocationBadge';
 import { TeamAvatarStack } from './TeamAvatarStack';
 
@@ -17,8 +17,9 @@ interface EventCardProps {
 export function EventCard({ event, className }: EventCardProps) {
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
-  const primaryCategory = event.categories?.[0];
-  const categoryConfig = primaryCategory ? getCategoryConfig(primaryCategory) : null;
+  const primaryCategoryName = event.categories?.[0]?.name;
+  const primaryCategory = primaryCategoryName?.toLowerCase();
+  const categoryConfig = null; // gradient not supported for dynamic categories
 
   // Determine status colors
   const isLive = event.status === 'in_progress';
@@ -39,25 +40,22 @@ export function EventCard({ event, className }: EventCardProps) {
       <div
         className={cn(
           'relative h-24 bg-gradient-to-br',
-          categoryConfig
-            ? `from-${primaryCategory === 'outdoor' ? 'emerald' : primaryCategory === 'hat' ? 'amber' : primaryCategory === 'beach' ? 'sky' : primaryCategory === 'indoor' ? 'violet' : 'rose'}-500/20 to-${primaryCategory === 'outdoor' ? 'emerald' : primaryCategory === 'hat' ? 'amber' : primaryCategory === 'beach' ? 'sky' : primaryCategory === 'indoor' ? 'violet' : 'rose'}-600/10`
-            : 'from-primary/20 to-primary/5'
+          'from-primary/20 to-primary/5'
         )}
         style={
           categoryConfig
             ? {
-                background: `linear-gradient(135deg, ${
-                  primaryCategory === 'outdoor'
-                    ? 'rgb(16 185 129 / 0.2), rgb(5 150 105 / 0.1)'
-                    : primaryCategory === 'hat'
+              background: `linear-gradient(135deg, ${primaryCategory === 'outdoor'
+                  ? 'rgb(16 185 129 / 0.2), rgb(5 150 105 / 0.1)'
+                  : primaryCategory === 'hat'
                     ? 'rgb(245 158 11 / 0.2), rgb(217 119 6 / 0.1)'
                     : primaryCategory === 'beach'
-                    ? 'rgb(14 165 233 / 0.2), rgb(2 132 199 / 0.1)'
-                    : primaryCategory === 'indoor'
-                    ? 'rgb(139 92 246 / 0.2), rgb(124 58 237 / 0.1)'
-                    : 'rgb(244 63 94 / 0.2), rgb(225 29 72 / 0.1)'
+                      ? 'rgb(14 165 233 / 0.2), rgb(2 132 199 / 0.1)'
+                      : primaryCategory === 'indoor'
+                        ? 'rgb(139 92 246 / 0.2), rgb(124 58 237 / 0.1)'
+                        : 'rgb(244 63 94 / 0.2), rgb(225 29 72 / 0.1)'
                 })`,
-              }
+            }
             : undefined
         }
       >
@@ -114,7 +112,12 @@ export function EventCard({ event, className }: EventCardProps) {
         {event.categories && event.categories.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {event.categories.map((cat) => (
-              <EventCategoryBadge key={cat} category={cat} size="sm" />
+              <span
+                key={cat.id}
+                className="rounded-full bg-muted px-2 py-0.5 text-xs"
+              >
+                {cat.name}
+              </span>
             ))}
           </div>
         )}

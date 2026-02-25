@@ -1,5 +1,7 @@
 'use client';
 
+import { CategoryDialog } from '@/components/dashboard/categories/CategoryDialog';
+import { DisciplineDialog } from '@/components/dashboard/disciplines/DisciplineDialog';
 import { FileUploader } from '@/components/shared/FileUploader';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,13 +23,15 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { eventsApi, type UpdateEventRequest } from '@/lib/api/events';
+import { useCategories } from '@/lib/hooks/useCategories';
+import { useDisciplines } from '@/lib/hooks/useDisciplines';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
 import { cn } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays, Loader2, Plus } from 'lucide-react';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -42,7 +46,7 @@ const editEventSchema = z.object({
   endDate: z.string().min(1, 'End date is required'),
   disciplineId: z.string().min(1, 'Please select a discipline'),
   locationId: z.string().optional(),
-  categories: z.array(z.string()).optional(),
+  categoryIds: z.array(z.string()).optional(),
   logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   status: z.enum(['draft', 'published', 'in_progress', 'completed', 'canceled']),
 }).refine((data) => {
@@ -72,12 +76,6 @@ const CATEGORIES: { value: EventCategory; label: string }[] = [
   { value: 'league', label: 'League' },
 ];
 
-// Mock disciplines - replace with API call
-const DISCIPLINES = [
-  { id: 'ultimate', name: 'Ultimate' },
-  { id: 'disc-golf', name: 'Disc Golf' },
-  { id: 'freestyle', name: 'Freestyle' },
-];
 
 // Status options based on current status
 const getStatusOptions = (currentStatus: string) => {
@@ -109,10 +107,13 @@ const getStatusOptions = (currentStatus: string) => {
 };
 
 export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEventDialogProps) {
-  const [selectedCategories, setSelectedCategories] = React.useState<EventCategory[]>(
-    event.categories || []
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
+    event.categories ? event.categories.map(c => c.id) : []
   );
   const queryClient = useQueryClient();
+
+  const { data: disciplines = [], isLoading: loadingDisciplines } = useDisciplines();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
 
   // Format date for input
   const formatDateForInput = (dateStr: string) => {
@@ -140,7 +141,7 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
       endDate: formatDateForInput(event.endDate),
       disciplineId: event.discipline?.id || '',
       locationId: event.location?.id || '',
-      categories: event.categories || [],
+      categoryIds: event.categories ? event.categories.map(c => c.id) : [],
       logoUrl: event.logoUrl || '',
       status: event.status as EditEventFormData['status'],
     },
@@ -156,11 +157,11 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
       endDate: formatDateForInput(event.endDate),
       disciplineId: event.discipline?.id || '',
       locationId: event.location?.id || '',
-      categories: event.categories || [],
+      categoryIds: event.categories ? event.categories.map(c => c.id) : [],
       logoUrl: event.logoUrl || '',
       status: event.status as EditEventFormData['status'],
     });
-    setSelectedCategories(event.categories || []);
+    setSelectedCategories(event.categories ? event.categories.map(c => c.id) : []);
   }, [event, reset]);
 
   // Mutation for updating event
@@ -181,7 +182,7 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
   const onSubmit = (data: EditEventFormData) => {
     const request: UpdateEventRequest = {
       ...data,
-      categories: selectedCategories,
+      categoryIds: selectedCategories,
       logoUrl: data.logoUrl || undefined,
       slug: data.slug || undefined,
       description: data.description || undefined,
@@ -190,7 +191,7 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
     updateMutation.mutate(request);
   };
 
-  const toggleCategory = (category: EventCategory) => {
+  const toggleCategory = (category: string) => {
     setSelectedCategories(prev =>
       prev.includes(category)
         ? prev.filter(c => c !== category)
@@ -202,7 +203,7 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Event</DialogTitle>
           <DialogDescription>
@@ -244,19 +245,33 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
               {/* Discipline */}
               <div className="space-y-2">
                 <Label htmlFor="disciplineId">Discipline *</Label>
-                <Select
-                  onValueChange={(value) => setValue('disciplineId', value)}
-                  defaultValue={event.discipline?.id}
-                >
-                  <SelectTrigger className={errors.disciplineId ? 'border-destructive' : ''}>
-                    <SelectValue placeholder="Select discipline" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DISCIPLINES.map(d => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select
+                    onValueChange={(value) => setValue('disciplineId', value)}
+                    defaultValue={event.discipline?.id}
+                  >
+                    <SelectTrigger className={errors.disciplineId ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Select discipline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingDisciplines ? (
+                        <SelectItem value="" disabled>Loading...</SelectItem>
+                      ) : (
+                        disciplines.map(d => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <DisciplineDialog
+                    onSuccess={(d) => setValue('disciplineId', d.id)}
+                    trigger={
+                      <Button size="icon-sm" variant="ghost">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                </div>
                 {errors.disciplineId && (
                   <p className="text-sm text-destructive">{errors.disciplineId.message}</p>
                 )}
@@ -334,22 +349,29 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
           {/* Categories */}
           <div className="space-y-4">
             <Label>Categories</Label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => toggleCategory(cat.value)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    selectedCategories.includes(cat.value)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2 items-center">
+              {loadingCategories ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategory(cat.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                      selectedCategories.includes(cat.id)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                    )}
+                  >
+                    {cat.name}
+                  </button>
+                ))
+              )}
+              <CategoryDialog
+                onSuccess={(c) => setSelectedCategories(prev => [...prev, c.id])}
+              />
             </div>
           </div>
 

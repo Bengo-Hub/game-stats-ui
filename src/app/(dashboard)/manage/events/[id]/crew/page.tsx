@@ -1,5 +1,6 @@
 'use client';
 
+import { AddCrewMemberDialog } from '@/components/dashboard/events/AddCrewMemberDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,13 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { eventsApi } from '@/lib/api/events';
-import { useQuery } from '@tanstack/react-query';
-import { Mail, Plus, Shield, ShieldCheck, Users } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Mail, Plus, Shield, ShieldCheck, Users } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import * as React from 'react';
+import { toast } from 'sonner';
 
 export default function EventCrewPage() {
     const params = useParams();
     const eventId = params.id as string;
+    const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+    const queryClient = useQueryClient();
 
     const { data: event, isLoading: isLoadingEvent } = useQuery({
         queryKey: ['events', eventId],
@@ -25,6 +30,17 @@ export default function EventCrewPage() {
         queryKey: ['events', eventId, 'crew'],
         queryFn: () => eventsApi.getEventCrew(eventId),
         enabled: !!eventId,
+    });
+
+    const removeMutation = useMutation({
+        mutationFn: (userId: string) => eventsApi.removeEventCrewMember(eventId, userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['events', eventId, 'crew'] });
+            toast.success('Crew member removed successfully');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to remove crew member');
+        },
     });
 
     if (isLoadingEvent || isLoadingCrew) {
@@ -46,7 +62,7 @@ export default function EventCrewPage() {
                     title={`${event?.name || 'Event'} Crew`}
                     description="Manage event administrators and scorekeepers."
                 />
-                <Button className="rounded-xl">
+                <Button className="rounded-xl" onClick={() => setIsAddDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Staff
                 </Button>
@@ -65,7 +81,13 @@ export default function EventCrewPage() {
                     <CardContent>
                         <div className="space-y-4">
                             {crew?.admins?.map((admin: any) => (
-                                <StaffMemberRow key={admin.id} user={admin} role="Event Admin" />
+                                <StaffMemberRow
+                                    key={admin.id}
+                                    user={admin}
+                                    role="Event Admin"
+                                    onRemove={() => removeMutation.mutate(admin.id)}
+                                    isRemoving={removeMutation.isPending && removeMutation.variables === admin.id}
+                                />
                             ))}
                             {(!crew?.admins || crew.admins.length === 0) && (
                                 <EmptyStaffMessage message="No event administrators assigned." />
@@ -86,7 +108,13 @@ export default function EventCrewPage() {
                     <CardContent>
                         <div className="space-y-4">
                             {crew?.scorekeepers?.map((sk: any) => (
-                                <StaffMemberRow key={sk.id} user={sk} role="Scorekeeper" />
+                                <StaffMemberRow
+                                    key={sk.id}
+                                    user={sk}
+                                    role="Scorekeeper"
+                                    onRemove={() => removeMutation.mutate(sk.id)}
+                                    isRemoving={removeMutation.isPending && removeMutation.variables === sk.id}
+                                />
                             ))}
                             {(!crew?.scorekeepers || crew.scorekeepers.length === 0) && (
                                 <EmptyStaffMessage message="No scorekeepers assigned." />
@@ -95,11 +123,17 @@ export default function EventCrewPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <AddCrewMemberDialog
+                eventId={eventId}
+                open={isAddDialogOpen}
+                onOpenChange={setIsAddDialogOpen}
+            />
         </div>
     );
 }
 
-function StaffMemberRow({ user, role }: { user: any; role: string }) {
+function StaffMemberRow({ user, role, onRemove, isRemoving }: { user: any; role: string; onRemove: () => void; isRemoving: boolean }) {
     return (
         <div className="flex items-center justify-between p-3 rounded-xl border bg-card/50 hover:bg-muted/30 transition-colors group">
             <div className="flex items-center gap-3">
@@ -121,8 +155,14 @@ function StaffMemberRow({ user, role }: { user: any; role: string }) {
                 <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider h-5 rounded-md px-1.5 border-primary/20 bg-primary/5 text-primary">
                     {role}
                 </Badge>
-                <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Remove
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={onRemove}
+                    disabled={isRemoving}
+                >
+                    {isRemoving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
                 </Button>
             </div>
         </div>

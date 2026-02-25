@@ -161,7 +161,7 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Edit Team</DialogTitle>
                     <DialogDescription>

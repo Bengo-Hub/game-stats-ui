@@ -40,6 +40,7 @@ import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination
 import { usePermissions } from '@/lib/hooks/usePermission';
 import { cn } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
+// remove duplicate import of Event
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -587,7 +588,7 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
           {event.categories && event.categories.length > 0 && (
             <div className="flex gap-1">
               {event.categories.slice(0, 2).map(cat => (
-                <EventCategoryBadge key={cat} category={cat} size="sm" showIcon={false} />
+                <EventCategoryBadge key={cat.id} category={cat.name.toLowerCase() as EventCategory} size="sm" showIcon={false} />
               ))}
             </div>
           )}
@@ -644,7 +645,7 @@ function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
           <div className="flex items-center gap-2 mb-1">
             <StatusBadge status={event.status} />
             {event.categories?.slice(0, 2).map(cat => (
-              <EventCategoryBadge key={cat} category={cat} size="sm" showIcon={false} />
+              <EventCategoryBadge key={cat.id} category={cat.name.toLowerCase() as EventCategory} size="sm" showIcon={false} />
             ))}
           </div>
           <Link href={`/manage/events/${event.id}`}>

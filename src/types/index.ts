@@ -57,6 +57,16 @@ export interface RefDTO {
   name: string;
 }
 
+// Discipline metadata used in dropdowns and management pages
+export interface Discipline {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  rulesPdfUrl?: string;
+  countryId: string;
+}
+
 export interface TeamSummary {
   id: string;
   name: string;
@@ -86,7 +96,15 @@ export interface UserSummary {
 // Event Types (Tournament)
 // ============================================
 
-export type EventCategory = 'outdoor' | 'hat' | 'beach' | 'indoor' | 'league';
+// category entity stored separately
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export type EventCategory = 'outdoor' | 'indoor' | 'beach' | 'hat' | 'league';
 
 export interface EventCountry {
   id: string;
@@ -123,7 +141,7 @@ export interface Event {
   endDate: string;
   status: 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
   description?: string;
-  categories?: EventCategory[];
+  categories?: RefDTO[];
   logoUrl?: string;
   bannerUrl?: string;
   teamsCount: number;
