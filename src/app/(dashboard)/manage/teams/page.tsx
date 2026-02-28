@@ -121,7 +121,8 @@ export default function TeamsPage() {
     return () => clearTimeout(timer);
   }, [search, pagination]);
 
-  const { data: events = [] } = useEventsQuery();
+  const { data: eventsResponse } = useEventsQuery();
+  const events = eventsResponse || [];
 
   // Reset pagination when filters change
   React.useEffect(() => {

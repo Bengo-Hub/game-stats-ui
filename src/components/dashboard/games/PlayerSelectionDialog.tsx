@@ -42,12 +42,14 @@ export function PlayerSelectionDialog({
   const [step, setStep] = React.useState<'scorer' | 'assist'>('scorer');
 
   // Fetch team roster
-  const { data: roster = [], isLoading: rosterLoading } = useQuery({
+  const { data: rosterData = [], isLoading: rosterLoading } = useQuery({
     queryKey: ['teams', scoringTeam.id, 'roster'],
     queryFn: () => teamsApi.getRoster(scoringTeam.id),
     enabled: !!scoringTeam.id && open,
     staleTime: 1000 * 60 * 5,
   });
+
+  const roster = (Array.isArray(rosterData) ? rosterData : (rosterData as any)?.data || []) as Player[];
 
   // Filter players by search
   const filteredPlayers = React.useMemo(() => {

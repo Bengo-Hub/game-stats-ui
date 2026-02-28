@@ -33,7 +33,10 @@ export function useEvent(eventId: string | undefined) {
 export function useEventRounds(eventId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.events.rounds(eventId!),
-    queryFn: () => publicApi.getEventRounds(eventId!),
+    queryFn: async () => {
+      const response = await publicApi.getEventRounds(eventId!);
+      return response.data || [];
+    },
     enabled: !!eventId,
     staleTime: STALE_TIMES.DIVISIONS,
     gcTime: CACHE_TIMES.DIVISIONS,
@@ -67,7 +70,10 @@ export function useEventBracket(eventId: string | undefined) {
 export function useGames(params?: ListGamesParams) {
   return useQuery({
     queryKey: queryKeys.games.list(params as Record<string, unknown> | undefined),
-    queryFn: () => publicApi.listGames(params),
+    queryFn: async () => {
+      const response = await publicApi.listGames(params);
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.GAMES,
     gcTime: CACHE_TIMES.GAMES,
   });
@@ -76,7 +82,10 @@ export function useGames(params?: ListGamesParams) {
 export function useLiveGames() {
   return useQuery({
     queryKey: queryKeys.games.live(),
-    queryFn: () => publicApi.getLiveGames(),
+    queryFn: async () => {
+      const response = await publicApi.getLiveGames();
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.LIVE,
     gcTime: CACHE_TIMES.LIVE,
     // Live updates come via SSE — no polling needed
@@ -86,7 +95,10 @@ export function useLiveGames() {
 export function useUpcomingGames(limit: number = 10) {
   return useQuery({
     queryKey: queryKeys.games.upcoming(limit),
-    queryFn: () => publicApi.getUpcomingGames(limit),
+    queryFn: async () => {
+      const response = await publicApi.getUpcomingGames(limit);
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.GAMES,
     gcTime: CACHE_TIMES.GAMES,
   });
@@ -140,7 +152,10 @@ export function useGameSpiritScores(gameId: string | undefined) {
 export function useTeams(params?: ListTeamsParams) {
   return useQuery({
     queryKey: queryKeys.teams.list(params as Record<string, unknown> | undefined),
-    queryFn: () => publicApi.listTeams(params),
+    queryFn: async () => {
+      const response = await publicApi.listTeams(params);
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.TEAMS,
     gcTime: CACHE_TIMES.TEAMS,
   });
@@ -211,7 +226,10 @@ export function useRoundBracket(roundId: string | undefined) {
 export function usePlayerLeaderboard(params?: LeaderboardParams) {
   return useQuery({
     queryKey: queryKeys.leaderboards.players(params as Record<string, unknown> | undefined),
-    queryFn: () => publicApi.getPlayerLeaderboard(params),
+    queryFn: async () => {
+      const response = await publicApi.getPlayerLeaderboard(params);
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.LEADERBOARDS,
     gcTime: CACHE_TIMES.LEADERBOARDS,
   });
@@ -220,7 +238,10 @@ export function usePlayerLeaderboard(params?: LeaderboardParams) {
 export function useSpiritLeaderboard(params?: LeaderboardParams) {
   return useQuery({
     queryKey: queryKeys.leaderboards.spirit(params as Record<string, unknown> | undefined),
-    queryFn: () => publicApi.getSpiritLeaderboard(params),
+    queryFn: async () => {
+      const response = await publicApi.getSpiritLeaderboard(params);
+      return response.data || [];
+    },
     staleTime: STALE_TIMES.SPIRIT,
     gcTime: CACHE_TIMES.SPIRIT,
   });
@@ -272,10 +293,10 @@ export function useDashboardStats() {
         activeEvents: eventsData,
         totalTeams: (teamsData as any)?.total || (teamsData as any)?.data?.length || 0,
         stats: {
-          activeEvents: eventsData.length,
-          liveGames: liveData.length,
+          activeEvents: (eventsData as any)?.data ? (eventsData as any).data.length : (Array.isArray(eventsData) ? eventsData.length : 0),
+          liveGames: (liveData as any)?.data ? (liveData as any).data.length : (Array.isArray(liveData) ? liveData.length : 0),
           totalTeams: (teamsData as any)?.total || (teamsData as any)?.data?.length || 0,
-          upcomingGames: upcomingData.length,
+          upcomingGames: (upcomingData as any)?.data ? (upcomingData as any).data.length : (Array.isArray(upcomingData) ? upcomingData.length : 0),
         },
       };
     },

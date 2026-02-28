@@ -82,7 +82,7 @@ export default function PlayerDetailPage() {
         queryKey: ['players', playerId, 'stats'],
         queryFn: async () => {
             const allStats = await publicApi.getPlayerLeaderboard({ limit: 1000 });
-            return allStats.find((s) => s.playerId === playerId);
+            return allStats?.data?.find((s) => s.playerId === playerId) || undefined;
         },
         enabled: !!playerId,
     });

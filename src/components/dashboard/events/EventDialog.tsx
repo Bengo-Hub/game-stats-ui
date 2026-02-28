@@ -32,7 +32,8 @@ import { useLocations } from '@/lib/hooks/useGeographic';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { format, parseISO } from 'date-fns';
 import { CalendarDays, CircleDot, Loader2, Plus } from 'lucide-react';
 import * as React from 'react';
@@ -53,9 +54,12 @@ const eventSchema = z.object({
     logoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
     status: z.enum(['draft', 'published', 'in_progress', 'completed', 'canceled']),
     divisions: z.array(z.object({
+        id: z.string().optional(),
         name: z.string().min(1, 'Name is required'),
         divisionType: z.enum(['pool', 'bracket', 'mixed'])
     })).optional(),
+    gameRoundIds: z.array(z.string()).optional(),
+
 }).refine((data) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
@@ -129,7 +133,19 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
     const { data: categories = [], isLoading: loadingCategories } = useCategories();
     const { data: locations = [], isLoading: loadingLocations } = useLocations();
 
+    const { data: allDivisions = [] } = useQuery({
+        queryKey: ['divisions', 'all'],
+        queryFn: () => eventsApi.listAllDivisions()
+    });
+
+    const { data: allRounds = [] } = useQuery({
+        queryKey: ['rounds', 'all'],
+        queryFn: () => eventsApi.listAllRounds()
+    });
+
     const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
+    const [selectedRoundIds, setSelectedRoundIds] = React.useState<string[]>([]);
+
 
     // Format date for input
     const formatDateForInput = (dateStr: string) => {
@@ -162,10 +178,12 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
             logoUrl: '',
             status: 'draft',
             divisions: [],
+            gameRoundIds: [],
         },
     });
 
-    const [nestedDivisions, setNestedDivisions] = React.useState<{ name: string; divisionType: 'pool' | 'bracket' | 'mixed' }[]>([]);
+    const [nestedDivisions, setNestedDivisions] = React.useState<{ id?: string; name: string; divisionType: 'pool' | 'bracket' | 'mixed' }[]>([]);
+
 
     // Sync form with event data when editing
     React.useEffect(() => {
@@ -181,10 +199,12 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                 categoryIds: event.categories?.map(c => c.id) || [],
                 logoUrl: event.logoUrl || '',
                 status: event.status as EventFormData['status'],
-                divisions: event.divisions?.map(d => ({ name: d.name, divisionType: d.divisionType as any })) || [],
+                divisions: event.divisions?.map(d => ({ id: d.id, name: d.name, divisionType: d.divisionType as any })) || [],
+                gameRoundIds: event.gameRounds?.map(r => r.id) || [],
             });
             setSelectedCategories(event.categories?.map(c => c.id) || []);
-            setNestedDivisions(event.divisions?.map(d => ({ name: d.name, divisionType: d.divisionType as any })) || []);
+            setNestedDivisions(event.divisions?.map(d => ({ id: d.id, name: d.name, divisionType: d.divisionType as any })) || []);
+            setSelectedRoundIds(event.gameRounds?.map(r => r.id) || []);
         } else if (!event && open) {
             reset({
                 name: '',
@@ -249,6 +269,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
             ...data,
             categoryIds: selectedCategories,
             divisions: nestedDivisions,
+            gameRoundIds: selectedRoundIds,
             logoUrl: data.logoUrl || undefined,
             slug: data.slug || undefined,
             description: data.description || undefined,
@@ -261,6 +282,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
             createMutation.mutate(payload as CreateEventRequest);
         }
     };
+
 
     const addNestedDivision = () => {
         setNestedDivisions(prev => [...prev, { name: '', divisionType: 'pool' }]);

@@ -54,11 +54,12 @@ export function RosterManagementPanel({ team }: RosterManagementPanelProps) {
   const [deletingPlayer, setDeletingPlayer] = React.useState<Player | null>(null);
 
   // Fetch team roster
-  const { data: roster = [], isLoading } = useQuery({
+  const { data: rosterData = [], isLoading } = useQuery({
     queryKey: [...teamKeys.detail(team.id), 'roster'],
     queryFn: () => teamsApi.getRoster(team.id),
     staleTime: 1000 * 60 * 5,
   });
+  const roster = (Array.isArray(rosterData) ? rosterData : (rosterData as any)?.data || []) as Player[];
 
   // Filter players by search
   const filteredPlayers = React.useMemo(() => {

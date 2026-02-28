@@ -26,7 +26,7 @@ import { teamsApi, type CreateTeamRequest, type UpdateTeamRequest } from '@/lib/
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
 import { teamKeys } from '@/lib/hooks/useTeamsQuery';
 import { cn } from '@/lib/utils';
-import type { Team } from '@/types';
+import type { Event, Team } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Palette, Upload, Users } from 'lucide-react';
@@ -154,12 +154,13 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
     }, [team, open, reset, initialEventId]);
 
     // Fetch available events
-    const { data: events = [] } = useQuery({
+    const { data: eventsData = [] } = useQuery({
         queryKey: eventKeys.list({ status: isEdit ? undefined : 'published', limit: 100 }),
         queryFn: () => publicApi.listEvents({ status: isEdit ? undefined : 'published', limit: 100 }),
         enabled: open,
         staleTime: 1000 * 60 * 5,
     });
+    const events = (Array.isArray(eventsData) ? eventsData : (eventsData as any)?.data || []) as Event[];
 
     // Fetch selected event details (for divisions)
     const { data: eventDetails } = useQuery({

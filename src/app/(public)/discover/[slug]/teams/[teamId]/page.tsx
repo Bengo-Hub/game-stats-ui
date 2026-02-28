@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
-import type { Game } from '@/types';
+import type { Game, PlayerStat } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -43,9 +43,9 @@ function useTeamGames(teamId: string | undefined, eventId: string | undefined) {
     staleTime: 1000 * 60 * 2,
     select: (games) => {
       // Filter games where this team is home or away
-      return games.filter(g =>
+      return ((games as any)?.data || (Array.isArray(games) ? games : [])).filter((g: any) =>
         g.homeTeam?.id === teamId || g.awayTeam?.id === teamId
-      );
+      ) as Game[];
     },
   });
 }
@@ -112,9 +112,10 @@ export default function TeamDetailPage() {
   const teamId = params?.teamId as string;
 
   const { data: team, isLoading, isError } = useTeamDetail(teamId);
-  const { data: games = [] } = useTeamGames(teamId, team?.eventId);
+  const { data: games = [] as Game[] } = useTeamGames(teamId, team?.eventId);
   const { data: spiritAverage } = useTeamSpiritAverage(teamId);
-  const { data: leaderboardStats = [] } = usePlayerLeaderboard(teamId);
+  const { data: leaderboardStatsData = [] } = usePlayerLeaderboard(teamId);
+  const leaderboardStats = (Array.isArray(leaderboardStatsData) ? leaderboardStatsData : []) as PlayerStat[];
 
   const teamStats = React.useMemo(() => {
     if (!teamId) return null;

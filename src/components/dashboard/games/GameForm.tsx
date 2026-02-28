@@ -18,7 +18,7 @@ import { gameKeys } from '@/lib/hooks/useGamesQuery';
 import { useFields } from '@/lib/hooks/useGeographic';
 import { useRoundsQuery } from '@/lib/hooks/useRoundsQuery';
 import { cn } from '@/lib/utils';
-import type { Game, PaginatedResponse, Team } from '@/types';
+import type { Event, Game, GameRound, PaginatedResponse, Team } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -125,12 +125,13 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     const selectedScorekeeperId = watch('scorekeeperId');
 
     // Fetch available events (only if not editing)
-    const { data: events = [] } = useQuery({
+    const { data: eventsData = [] } = useQuery({
         queryKey: eventKeys.list({ status: 'published' }),
         queryFn: () => publicApi.listEvents({ status: 'published', limit: 100 }),
         staleTime: 1000 * 60 * 5,
         enabled: !isEdit,
     });
+    const events = (Array.isArray(eventsData) ? eventsData : (eventsData as any)?.data || []) as Event[];
 
     // Fetch selected event details
     const { data: eventDetails } = useQuery({
@@ -141,7 +142,8 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     });
 
     // Fetch game rounds
-    const { data: gameRounds = [] } = useRoundsQuery(selectedEventId);
+    const { data: gameRoundsData = [] } = useRoundsQuery(selectedEventId);
+    const gameRounds = (Array.isArray(gameRoundsData) ? gameRoundsData : (gameRoundsData as any)?.data || []) as GameRound[];
 
     // Fetch teams (Paginated)
     const { data: teamsResult } = useQuery({

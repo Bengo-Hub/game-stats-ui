@@ -38,7 +38,7 @@ import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination
 import { usePermissions } from '@/lib/hooks/usePermission';
 import { useRoundsQuery } from '@/lib/hooks/useRoundsQuery';
 import { cn } from '@/lib/utils';
-import type { Game } from '@/types';
+import type { Game, GameRound } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import {
@@ -150,16 +150,18 @@ export default function GamesPage() {
   const eventDivisions = selectedEvent?.divisions || [];
 
   // Fetch rounds for the selected event
-  const { data: rounds = [] } = useRoundsQuery(selectedEventId !== 'all' ? selectedEventId : '');
+  const { data: roundsData = [] } = useRoundsQuery(selectedEventId !== 'all' ? selectedEventId : '');
+  const rounds = (Array.isArray(roundsData) ? roundsData : []) as unknown as GameRound[];
 
   // Fetch games using TanStack Query
   const {
-    data: allGames = [],
+    data: allGamesData = [],
     isLoading,
     isError,
     error,
     isFetching,
   } = useGamesQuery(queryParams);
+  const allGames = (Array.isArray(allGamesData) ? allGamesData : []) as Game[];
 
   // Client-side search filter (since API might not support search)
   const games = React.useMemo(() => {

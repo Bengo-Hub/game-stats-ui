@@ -1,7 +1,6 @@
 // Games hooks using TanStack Query
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { publicApi, type ListGamesParams } from '@/lib/api/public';
-import type { Game } from '@/types';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Query keys
 export const gameKeys = {
@@ -105,8 +104,9 @@ export function useInfiniteGamesQuery(params?: Omit<ListGamesParams, 'limit' | '
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < pageSize) return undefined;
+    getNextPageParam: (lastPage: any, allPages) => {
+      const itemsCount = lastPage?.data ? lastPage.data.length : (lastPage?.length || 0);
+      if (itemsCount < pageSize) return undefined;
       return allPages.flat().length;
     },
     staleTime: 1000 * 60 * 2,

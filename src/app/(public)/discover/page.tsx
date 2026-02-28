@@ -77,25 +77,28 @@ function DiscoverContent() {
 
   // TanStack Query for events
   const {
-    data: events = [],
+    data: eventsData = [],
     isLoading,
     isError,
     error,
     refetch,
     isFetching,
   } = useEventsQuery(queryParams);
+  const events = Array.isArray(eventsData) ? eventsData : [];
 
   // Get live count for badge
-  const { data: liveEvents = [] } = useLiveEvents();
+  const { data: liveEventsData = [] } = useLiveEvents();
+  const liveEvents = Array.isArray(liveEventsData) ? liveEventsData : [];
   const liveCount = tab !== 'live' ? liveEvents.length : 0;
 
   // Fetch ALL events for calendar view (not filtered by temporal)
-  const { data: allEventsForCalendar = [] } = useEventsQuery({
+  const { data: allEventsData = [] } = useEventsQuery({
     temporal: 'all',
     limit: 200,
     sortBy: 'start_date',
     sortOrder: 'asc',
   });
+  const allEventsForCalendar = Array.isArray(allEventsData) ? allEventsData : [];
 
   // Handle tab change
   const handleTabChange = (value: string) => {

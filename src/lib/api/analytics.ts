@@ -72,8 +72,8 @@ export const analyticsApi = {
   /**
    * Get event statistics
    */
-  async getEventStatistics(eventId: string): Promise<EventStatistics> {
-    return apiClient.get<EventStatistics>(`/analytics/events/${eventId}/statistics`);
+  async getEventStatistics(eventId: string, params?: { division_id?: string; team_id?: string }): Promise<EventStatistics> {
+    return apiClient.get<EventStatistics>(`/analytics/events/${eventId}/statistics`, params as Record<string, string | number | boolean | undefined>);
   },
 
   /**

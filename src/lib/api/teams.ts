@@ -1,6 +1,6 @@
 // Teams API module
 
-import type { Player, SpiritScore, Team } from '@/types';
+import type { PaginatedResponse, Player, SpiritScore, Team } from '@/types';
 import { apiClient } from './client';
 
 export interface TeamSpiritAverage {
@@ -85,8 +85,8 @@ export const teamsApi = {
   /**
    * List teams with filters
    */
-  async list(params?: ListTeamsParams): Promise<Team[]> {
-    return apiClient.get<Team[]>('/teams', params as Record<string, string | number | boolean | undefined>);
+  async list(params?: ListTeamsParams): Promise<PaginatedResponse<Team>> {
+    return apiClient.get<PaginatedResponse<Team>>('/teams', params as Record<string, string | number | boolean | undefined>);
   },
 
   /**
@@ -124,8 +124,8 @@ export const teamsApi = {
   /**
    * Get team roster (players)
    */
-  async getRoster(teamId: string): Promise<Player[]> {
-    return apiClient.get<Player[]>(`/teams/${teamId}/players`);
+  async getRoster(teamId: string): Promise<PaginatedResponse<Player>> {
+    return apiClient.get<PaginatedResponse<Player>>(`/teams/${teamId}/players`);
   },
 
   /**

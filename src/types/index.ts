@@ -149,8 +149,10 @@ export interface Event {
   discipline?: RefDTO;
   location?: EventLocation;
   divisions?: EventDivision[];
+  gameRounds?: GameRoundSummary[];
   teamPreview?: TeamPreview[];
 }
+
 
 // ============================================
 // Game Types

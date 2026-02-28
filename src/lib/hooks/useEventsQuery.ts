@@ -24,7 +24,10 @@ export function useEventsQuery(options?: UseEventsQueryOptions) {
 
   return useQuery({
     queryKey: eventKeys.list(params),
-    queryFn: () => publicApi.listEvents(params),
+    queryFn: async () => {
+      const response = await publicApi.listEvents(params);
+      return response.data || [];
+    },
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -35,7 +38,10 @@ export function useEventsQuery(options?: UseEventsQueryOptions) {
 export function useUpcomingEvents(limit = 10) {
   return useQuery({
     queryKey: eventKeys.upcoming(),
-    queryFn: () => publicApi.getUpcomingEvents(limit),
+    queryFn: async () => {
+      const response = await publicApi.getUpcomingEvents(limit);
+      return response.data || [];
+    },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
   });
@@ -44,7 +50,10 @@ export function useUpcomingEvents(limit = 10) {
 export function usePastEvents(limit = 10) {
   return useQuery({
     queryKey: eventKeys.past(),
-    queryFn: () => publicApi.getPastEvents(limit),
+    queryFn: async () => {
+      const response = await publicApi.getPastEvents(limit);
+      return response.data || [];
+    },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
   });
@@ -53,7 +62,10 @@ export function usePastEvents(limit = 10) {
 export function useLiveEvents() {
   return useQuery({
     queryKey: eventKeys.live(),
-    queryFn: () => publicApi.getLiveEvents(),
+    queryFn: async () => {
+      const response = await publicApi.getLiveEvents();
+      return response.data || [];
+    },
     staleTime: 1000 * 60, // 1 minute for live data
     gcTime: 1000 * 60, // 1 minute for live data
     refetchInterval: 1000 * 60, // Refetch every minute
@@ -77,12 +89,14 @@ export function useInfiniteEventsQuery(params?: Omit<ListEventsParams, 'limit' |
 
   return useInfiniteQuery({
     queryKey: [...eventKeys.lists(), 'infinite', params],
-    queryFn: ({ pageParam = 0 }) =>
-      publicApi.listEvents({
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await publicApi.listEvents({
         ...params,
         limit: pageSize,
         offset: pageParam,
-      }),
+      });
+      return response.data || [];
+    },
     initialPageParam: 0,
     getNextPageParam: (lastPage: any, allPages: any) => {
       if (lastPage.length < pageSize) return undefined;

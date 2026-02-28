@@ -100,21 +100,24 @@ export default function LeaderboardsPage() {
 
   // Transform data with ranks
   const topScorers: DisplayPlayerStat[] = React.useMemo(() => {
-    return (results[0].data || []).map((player: PlayerStat, index: number) => ({
+    const data = (results[0].data as any)?.data || (Array.isArray(results[0].data) ? results[0].data : []);
+    return data.map((player: PlayerStat, index: number) => ({
       ...player,
       rank: index + 1,
     }));
   }, [results[0].data]);
 
   const topAssists: DisplayPlayerStat[] = React.useMemo(() => {
-    return (results[1].data || []).map((player: PlayerStat, index: number) => ({
+    const data = (results[1].data as any)?.data || (Array.isArray(results[1].data) ? results[1].data : []);
+    return data.map((player: PlayerStat, index: number) => ({
       ...player,
       rank: index + 1,
     }));
   }, [results[1].data]);
 
   const spiritLeaders: DisplaySpiritStat[] = React.useMemo(() => {
-    return (results[2].data || []).map((team: TeamSpiritAverage, index: number) => ({
+    const data = (results[2].data as any)?.data || (Array.isArray(results[2].data) ? results[2].data : []);
+    return data.map((team: TeamSpiritAverage, index: number) => ({
       ...team,
       rank: index + 1,
     }));

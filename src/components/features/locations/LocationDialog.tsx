@@ -149,27 +149,29 @@ export function LocationDialog({
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Address Search (Google Maps)</Label>
-                        {isLoaded ? (
-                            <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+                    {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
+                        <div className="space-y-2">
+                            <Label>Address Search (Google Maps)</Label>
+                            {isLoaded ? (
+                                <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search for a location..."
+                                            className="pl-9"
+                                            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                                        />
+                                    </div>
+                                </Autocomplete>
+                            ) : (
                                 <div className="relative">
                                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search for a location..."
-                                        className="pl-9"
-                                        onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                                    />
+                                    <Input disabled placeholder={loadError ? "Maps Error" : "Loading Google Maps..."} className="pl-9" />
                                 </div>
-                            </Autocomplete>
-                        ) : (
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input disabled placeholder={loadError ? "Maps Error" : "Loading Google Maps..."} className="pl-9" />
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">Search and select a place to auto-fill details.</p>
-                    </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">Search and select a place to auto-fill details.</p>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label htmlFor="name">Location Name *</Label>

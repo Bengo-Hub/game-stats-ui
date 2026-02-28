@@ -36,17 +36,19 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
     const [reason, setReason] = React.useState('');
 
     // Fetch rosters
-    const { data: homeRoster = [], isLoading: homeLoading } = useQuery({
+    const { data: homeRosterData = [], isLoading: homeLoading } = useQuery({
         queryKey: ['teams', game.homeTeam?.id, 'roster'],
         queryFn: () => teamsApi.getRoster(game.homeTeam?.id!),
         enabled: !!game.homeTeam?.id,
     });
+    const homeRoster = (Array.isArray(homeRosterData) ? homeRosterData : (homeRosterData as any)?.data || []) as Player[];
 
-    const { data: awayRoster = [], isLoading: awayLoading } = useQuery({
+    const { data: awayRosterData = [], isLoading: awayLoading } = useQuery({
         queryKey: ['teams', game.awayTeam?.id, 'roster'],
         queryFn: () => teamsApi.getRoster(game.awayTeam?.id!),
         enabled: !!game.awayTeam?.id,
     });
+    const awayRoster = (Array.isArray(awayRosterData) ? awayRosterData : (awayRosterData as any)?.data || []) as Player[];
 
     // Fetch existing scores
     const { data: existingScores = [], isLoading: scoresLoading } = useQuery({

@@ -59,8 +59,12 @@ function StatCard({ title, value, description, icon, loading }: StatCardProps) {
   );
 }
 
+import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
+// ... other imports
+
 export default function DashboardPage() {
   const user = useUser();
+  const [filters, setFilters] = React.useState<{ eventId?: string; divisionId?: string; teamId?: string }>({});
   const [stats, setStats] = React.useState<DashboardStats>({
     activeEvents: 0,
     liveGames: 0,
@@ -79,22 +83,23 @@ export default function DashboardPage() {
 
     try {
       // Fetch all data in parallel
-      const [liveData, upcomingData, eventsData, teamsData] = await Promise.all([
-        publicApi.getLiveGames().catch(() => []),
-        publicApi.getUpcomingGames(5).catch(() => []),
-        publicApi.listEvents({ status: 'in_progress' }).catch(() => []),
-        publicApi.listTeams({ limit: 100 }).catch(() => []),
+      const [liveDataResponse, upcomingDataResponse, eventsDataResponse, teamsDataResponse] = await Promise.all([
+        publicApi.getLiveGames({ eventId: filters.eventId, divisionPoolId: filters.divisionId }).catch(() => ({ data: [] })),
+        publicApi.getUpcomingGames(5, { eventId: filters.eventId, divisionPoolId: filters.divisionId }).catch(() => ({ data: [] })),
+        publicApi.listEvents({ status: 'in_progress' }).catch(() => ({ data: [] })),
+        publicApi.listTeams({ eventId: filters.eventId, division: filters.divisionId, limit: 100 }).catch(() => ({ data: [], total: 0 })),
       ]);
 
-      setLiveGames(liveData);
-      setUpcomingGames(upcomingData);
+      setLiveGames((liveDataResponse as any).data || []);
+      setUpcomingGames((upcomingDataResponse as any).data || []);
+      const eventsData = (eventsDataResponse as any).data || [];
       setRecentEvents(eventsData.slice(0, 3));
 
       setStats({
-        activeEvents: eventsData.length,
-        liveGames: liveData.length,
-        totalTeams: (teamsData as any)?.total || 0,
-        upcomingGames: upcomingData.length,
+        activeEvents: (eventsDataResponse as any).total || eventsData.length,
+        liveGames: (liveDataResponse as any).total || ((liveDataResponse as any).data || []).length,
+        totalTeams: (teamsDataResponse as any).total || 0,
+        upcomingGames: (upcomingDataResponse as any).total || ((upcomingDataResponse as any).data || []).length,
       });
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -102,7 +107,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   React.useEffect(() => {
     fetchDashboardData();
@@ -138,6 +143,13 @@ export default function DashboardPage() {
           Refresh
         </Button>
       </div>
+
+      <AnalyticsFilters
+        selectedEventId={filters.eventId}
+        selectedDivisionId={filters.divisionId}
+        selectedTeamId={filters.teamId}
+        onFilterChange={setFilters}
+      />
 
       {/* Error State */}
       {error && (

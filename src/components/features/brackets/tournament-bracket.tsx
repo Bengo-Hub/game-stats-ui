@@ -518,8 +518,9 @@ export function TournamentBracket({
     };
 
     generatePaths(bracket.bracketTree);
-    setPaths(newPaths);
-  }, [rounds, bracket.bracketTree]);
+    // Only update state if paths actually changed to prevent any React feedback loops
+    setPaths(prev => JSON.stringify(prev) === JSON.stringify(newPaths) ? prev : newPaths);
+  }, [bracket.bracketTree]);
 
   return (
     <div className={cn('overflow-x-auto relative', className)} ref={containerRef}>

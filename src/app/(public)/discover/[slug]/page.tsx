@@ -16,7 +16,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
-import type { Event, EventCategory, Game, PaginatedResponse, Team } from '@/types';
+import type { DivisionPool, Event, EventCategory, Game, PaginatedResponse, PlayerStat, Team, TeamSpiritAverage } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -559,13 +559,17 @@ export default function EventDetailPage() {
 
   // Query hooks
   const { data: event, isLoading, isError, error } = useEventDetail(slug);
-  const { data: games = [] } = useEventGames(event?.id);
+  const { data: gamesData = [] } = useEventGames(event?.id);
+  const games = (Array.isArray(gamesData) ? gamesData : []) as Game[];
   const { data: teamsResult } = useEventTeams(event?.id);
   const teams = (teamsResult as PaginatedResponse<Team>)?.data || [];
-  const { data: spiritScores = [] } = useEventSpirit(event?.id);
+  const { data: spiritScoresData = [] } = useEventSpirit(event?.id);
+  const spiritScores = (Array.isArray(spiritScoresData) ? spiritScoresData : []) as TeamSpiritAverage[];
   const { data: standings } = useEventStandings(event?.id);
-  const { data: rounds = [] } = useEventRounds(event?.id);
-  const { data: playerStats = [] } = usePlayerLeaderboard(event?.id);
+  const { data: roundsData = [] } = useEventRounds(event?.id);
+  const rounds = (Array.isArray(roundsData) ? roundsData : []) as DivisionPool[];
+  const { data: playerStatsData = [] } = usePlayerLeaderboard(event?.id);
+  const playerStats = (Array.isArray(playerStatsData) ? playerStatsData : []) as PlayerStat[];
   const divisions = event?.divisions || [];
 
   // Local state
@@ -1611,7 +1615,7 @@ export default function EventDetailPage() {
                                           Recent Game Scores
                                         </div>
                                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                          {score.gameScores.map((gs, gIdx) => (
+                                          {score.gameScores.map((gs: any, gIdx: number) => (
                                             <div
                                               key={gIdx}
                                               className="flex items-center justify-between p-2 rounded bg-background border"
@@ -2077,13 +2081,13 @@ export default function EventDetailPage() {
                       </thead>
                       <tbody>
                         {playerStats
-                          .sort((a, b) => {
+                          .sort((a: PlayerStat, b: PlayerStat) => {
                             if (statFilter === 'goals') return b.goals - a.goals;
                             if (statFilter === 'assists') return b.assists - a.assists;
                             return (b.goals + b.assists) - (a.goals + a.assists);
                           })
                           .slice(0, 20)
-                          .map((player, idx) => (
+                          .map((player: PlayerStat, idx: number) => (
                             <tr key={player.playerId} className="border-b last:border-0 hover:bg-muted/30">
                               <td className="p-4 text-center">
                                 <span className={cn(

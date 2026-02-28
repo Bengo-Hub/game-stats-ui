@@ -29,11 +29,13 @@ export default function EventBracketPage() {
         enabled: !!eventId,
     });
 
-    const { data: rounds = [], isLoading: isLoadingRounds } = useQuery({
+    const { data: roundsResponse, isLoading: isLoadingRounds } = useQuery({
         queryKey: ['events', eventId, 'rounds'],
         queryFn: () => eventsApi.getRounds(eventId),
         enabled: !!eventId,
     });
+
+    const rounds = roundsResponse?.data || [];
 
     const { data: bracket, isLoading: isLoadingBracket, refetch: refetchBracket } = useQuery({
         queryKey: ['events', eventId, 'bracket-tree', selectedRoundId],

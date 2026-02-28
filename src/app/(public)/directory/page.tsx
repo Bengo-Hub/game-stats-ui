@@ -80,7 +80,7 @@ export default function PublicTeamsPage() {
     const fetchEvents = async () => {
       try {
         const data = await publicApi.listEvents({ limit: 100 });
-        setEvents(data);
+        setEvents(data.data || []);
       } catch (err) {
         console.error('Failed to fetch events:', err);
       }

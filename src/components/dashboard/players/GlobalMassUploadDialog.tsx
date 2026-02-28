@@ -17,11 +17,13 @@ export function GlobalMassUploadDialog({ open, onOpenChange, onSuccess }: Global
     const queryClient = useQueryClient();
     const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
 
-    const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
+    const { data: teamsResponse, isLoading: isLoadingTeams } = useQuery({
         queryKey: ['teams', 'list', 'global-upload'],
         queryFn: () => publicApi.listTeams({ limit: 100 }),
         enabled: open,
     });
+
+    const teams = teamsResponse?.data || [];
 
     return (
         <MassUploadPlayersDialog
@@ -44,7 +46,7 @@ export function GlobalMassUploadDialog({ open, onOpenChange, onSuccess }: Global
                         <SelectValue placeholder={isLoadingTeams ? "Loading teams..." : "Select team"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {((teams as any)?.data || []).map((team: any) => (
+                        {teams.map((team) => (
                             <SelectItem key={team.id} value={team.id}>
                                 {team.name}
                             </SelectItem>

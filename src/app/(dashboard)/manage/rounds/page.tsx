@@ -79,13 +79,14 @@ export default function RoundsPage() {
 
     // Fetch rounds for selected event
     const {
-        data: rounds = [],
+        data: roundsData = [],
         isLoading: loadingRounds,
         isError,
         error,
         isFetching,
         refetch,
     } = useRoundsQuery(eventFilter);
+    const rounds = (Array.isArray(roundsData) ? roundsData : []) as unknown as any[];
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => roundsApi.delete(id),

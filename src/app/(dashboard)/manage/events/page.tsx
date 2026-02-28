@@ -140,16 +140,18 @@ export default function EventsPage() {
 
   // Fetch events using TanStack Query
   const {
-    data: events = [],
+    data: eventsResponse,
     isLoading,
     isError,
     error,
     isFetching,
   } = useEventsQuery(queryParams);
 
-  // Calculate total pages (estimate based on current page results)
-  const hasMorePages = events.length === pagination.pageSize;
-  const totalPages = hasMorePages ? pagination.page + 1 : pagination.page;
+  const events = Array.isArray(eventsResponse) ? eventsResponse : [];
+
+  // Calculate total pages
+  const total = events.length || 0;
+  const totalPages = Math.ceil(total / pagination.pageSize) || 1;
 
   // Refresh events
   const handleRefresh = () => {
@@ -432,7 +434,7 @@ export default function EventsPage() {
       ) : viewMode === 'grid' ? (
         /* Grid View */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
+          {events.map((event: Event) => (
             <EventGridCard
               key={event.id}
               event={event}
@@ -447,7 +449,7 @@ export default function EventsPage() {
       ) : (
         /* List View */
         <div className="flex flex-col gap-2">
-          {events.map((event) => (
+          {events.map((event: Event) => (
             <EventListCard
               key={event.id}
               event={event}
@@ -549,7 +551,8 @@ function EventGridCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                title="Event options"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -684,7 +687,7 @@ function EventListCard({ event, formatDateRange, canEdit, canDelete, onDelete, o
         {(canEdit || canDelete) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

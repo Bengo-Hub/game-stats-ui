@@ -67,11 +67,13 @@ export default function EventDetailPage() {
         enabled: !!eventId,
     });
 
-    const { data: rounds = [], isLoading: isLoadingRounds } = useQuery({
+    const { data: roundsResponse, isLoading: isLoadingRounds } = useQuery({
         queryKey: ['events', eventId, 'rounds'],
         queryFn: () => eventsApi.getRounds(eventId),
         enabled: !!eventId,
     });
+
+    const rounds = roundsResponse?.data || [];
 
     if (isLoadingEvent) {
         return (

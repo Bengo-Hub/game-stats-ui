@@ -33,51 +33,83 @@ ChartJS.register(
   ArcElement
 );
 
+import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
+// ... other imports
+
 export default function AnalyticsPage() {
+  const [filters, setFilters] = React.useState<{ eventId?: string; divisionId?: string; teamId?: string }>({});
   const [query, setQuery] = React.useState('');
   const { user } = useAuthStore();
 
+  // Fetch event statistics (new endpoint)
+  const { data: eventStats, isLoading: isLoadingEventStats } = useQuery({
+    queryKey: ['analytics', 'event-stats', filters.eventId, filters.divisionId, filters.teamId],
+    queryFn: () => filters.eventId ? analyticsApi.getEventStatistics(filters.eventId, {
+      division_id: filters.divisionId,
+      team_id: filters.teamId
+    }) : Promise.resolve(null),
+    enabled: !!filters.eventId,
+  });
+
   // Fetch player leaderboard for top scorers
   const {
-    data: playerStats = [],
+    data: playerStatsResponse,
     isLoading: isLoadingPlayers,
     refetch: refetchPlayers,
     isFetching: isFetchingPlayers,
   } = useQuery({
-    queryKey: ['analytics', 'players'],
-    queryFn: () => publicApi.getPlayerLeaderboard({ limit: 10 }),
+    queryKey: ['analytics', 'players', filters.eventId, filters.divisionId, filters.teamId],
+    queryFn: () => publicApi.getPlayerLeaderboard({
+      eventId: filters.eventId,
+      divisionPoolId: filters.divisionId,
+      teamId: filters.teamId,
+      limit: 10
+    }),
     staleTime: 1000 * 60 * 5,
   });
+  const playerStats = playerStatsResponse?.data || [];
 
   // Fetch spirit leaderboard
   const {
-    data: spiritStats = [],
+    data: spiritStatsResponse,
     isLoading: isLoadingSpirit,
   } = useQuery({
-    queryKey: ['analytics', 'spirit'],
-    queryFn: () => publicApi.getSpiritLeaderboard({ limit: 10 }),
+    queryKey: ['analytics', 'spirit', filters.eventId, filters.divisionId],
+    queryFn: () => publicApi.getSpiritLeaderboard({
+      eventId: filters.eventId,
+      divisionPoolId: filters.divisionId,
+      limit: 10
+    }),
     staleTime: 1000 * 60 * 5,
   });
+  const spiritStats = spiritStatsResponse?.data || [];
 
   // Fetch teams for division distribution
   const {
-    data: teams = [],
+    data: teamsResponse,
     isLoading: isLoadingTeams,
   } = useQuery({
-    queryKey: ['analytics', 'teams'],
-    queryFn: () => publicApi.listTeams({ limit: 100 }),
+    queryKey: ['analytics', 'teams', filters.eventId, filters.divisionId],
+    queryFn: () => publicApi.listTeams({
+      eventId: filters.eventId,
+      division: filters.divisionId,
+      limit: 100
+    }),
     staleTime: 1000 * 60 * 5,
   });
+  const teams = teamsResponse?.data || [];
+  const teamsTotal = teamsResponse?.total || 0;
 
   // Fetch live events count
   const {
-    data: liveEvents = [],
+    data: liveEventsResponse,
     isLoading: isLoadingLive,
   } = useQuery({
     queryKey: ['analytics', 'liveEvents'],
     queryFn: () => publicApi.getLiveEvents(),
     staleTime: 1000 * 30,
   });
+  const liveEvents = liveEventsResponse?.data || [];
 
   // AI Query mutation
   const queryMutation = useMutation({
@@ -85,6 +117,7 @@ export default function AnalyticsPage() {
       analyticsApi.query({
         question,
         userId: user?.id || 'anonymous',
+        eventId: filters.eventId,
       }),
   });
 
@@ -95,13 +128,22 @@ export default function AnalyticsPage() {
 
   // Calculate stats from fetched data
   const stats = React.useMemo(() => {
+    if (filters.eventId && eventStats) {
+      return {
+        totalTeams: eventStats.totalTeams,
+        totalPlayers: eventStats.totalPlayers,
+        activeEvents: liveEvents.length, // Keep global live events count or filter if needed
+        averageSpirit: eventStats.averageSpiritScore,
+      };
+    }
+
     const totalPlayers = playerStats.length;
-    const totalTeams = (teams as any)?.total || 0;
+    const totalTeams = teamsTotal;
     const activeEvents = liveEvents.length;
 
     // Calculate average spirit from spirit stats
     const avgSpirit = spiritStats.length > 0
-      ? spiritStats.reduce((acc, s) => acc + (s.averageTotal || 0), 0) / spiritStats.length
+      ? spiritStats.reduce((acc, s) => acc + (s.averageScore || 0), 0) / spiritStats.length
       : 0;
 
     return {
@@ -110,7 +152,7 @@ export default function AnalyticsPage() {
       activeEvents,
       averageSpirit: avgSpirit,
     };
-  }, [playerStats, teams, liveEvents, spiritStats]);
+  }, [playerStats, teamsTotal, liveEvents, spiritStats, eventStats, filters.eventId]);
 
   // Process data for charts
   const topScorersData = React.useMemo(() => {
@@ -123,22 +165,21 @@ export default function AnalyticsPage() {
   const spiritScoresData = React.useMemo(() => {
     return spiritStats.slice(0, 5).map((s) => ({
       team: s.teamName,
-      spirit: s.averageTotal,
+      spirit: s.averageScore,
     }));
   }, [spiritStats]);
 
   // Division distribution from teams
   const divisionDistribution = React.useMemo(() => {
     const divisionMap = new Map<string, number>();
-    const teamsList = (teams as any)?.data || [];
-    teamsList.forEach((team: any) => {
+    teams.forEach((team: any) => {
       const division = team.divisionName || 'Unassigned';
       divisionMap.set(division, (divisionMap.get(division) || 0) + 1);
     });
     return Array.from(divisionMap.entries()).map(([name, value]) => ({ name, value }));
   }, [teams]);
 
-  const isLoading = isLoadingPlayers || isLoadingSpirit || isLoadingTeams || isLoadingLive;
+  const isLoading = isLoadingPlayers || isLoadingSpirit || isLoadingTeams || isLoadingLive || isLoadingEventStats;
 
   if (isLoading) {
     return (
@@ -169,6 +210,13 @@ export default function AnalyticsPage() {
           Refresh
         </Button>
       </PageHeader>
+
+      <AnalyticsFilters
+        selectedEventId={filters.eventId}
+        selectedDivisionId={filters.divisionId}
+        selectedTeamId={filters.teamId}
+        onFilterChange={setFilters}
+      />
 
       {/* AI Query Section */}
       <Card>

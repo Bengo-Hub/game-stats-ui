@@ -45,9 +45,9 @@ function useTeamGames(teamId: string | undefined) {
     staleTime: 1000 * 60 * 2,
     select: (games) => {
       // Filter games where this team is home or away
-      return games.filter(g =>
+      return ((games as any)?.data || (Array.isArray(games) ? games : [])).filter((g: any) =>
         g.homeTeam?.id === teamId || g.awayTeam?.id === teamId
-      );
+      ) as Game[];
     },
   });
 }
@@ -104,7 +104,7 @@ export default function TeamDetailPage() {
   const teamId = params?.id as string;
 
   const { data: team, isLoading, isError } = useTeamDetail(teamId);
-  const { data: games = [] } = useTeamGames(teamId);
+  const { data: games = [] as Game[] } = useTeamGames(teamId);
   const { data: spiritAverage } = useTeamSpiritAverage(teamId);
 
   const teamStats = React.useMemo(() => {
@@ -379,7 +379,7 @@ export default function TeamDetailPage() {
             <CardContent>
               {games.length > 0 ? (
                 <div className="space-y-3">
-                  {games.map((game) => {
+                  {games.map((game: any) => {
                     const isHome = game.homeTeam?.id === teamId;
                     const teamScore = isHome ? game.homeTeamScore : game.awayTeamScore;
                     const opponentScore = isHome ? game.awayTeamScore : game.homeTeamScore;

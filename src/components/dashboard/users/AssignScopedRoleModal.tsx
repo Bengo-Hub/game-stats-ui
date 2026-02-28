@@ -41,17 +41,19 @@ export function AssignScopedRoleModal({ user, isOpen, onClose }: AssignScopedRol
     const [role, setRole] = React.useState<string>('scorekeeper');
 
     // Fetch options based on scope type
-    const { data: events, isLoading: isLoadingEvents } = useQuery({
+    const { data: eventsData, isLoading: isLoadingEvents } = useQuery({
         queryKey: ['events', 'list'],
         queryFn: () => eventsApi.list(),
         enabled: scopeType === 'event' && isOpen,
     });
+    const events = (Array.isArray(eventsData) ? eventsData : (eventsData as any)?.data || []);
 
-    const { data: games, isLoading: isLoadingGames } = useQuery({
+    const { data: gamesData, isLoading: isLoadingGames } = useQuery({
         queryKey: ['games', 'list'],
         queryFn: () => publicApi.listGames({}),
         enabled: scopeType === 'game' && isOpen,
     });
+    const games = (Array.isArray(gamesData) ? gamesData : (gamesData as any)?.data || []);
 
     const assignMutation = useMutation({
         mutationFn: (data: { userId: string; role: string; scopeType: string; scopeId: string }) =>

@@ -1,20 +1,20 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { publicApi } from '@/lib/api';
+import type { Game } from '@/types';
 import {
-  Trophy,
+  AlertCircle,
+  ChevronRight,
   Clock,
   Radio,
   RefreshCw,
-  ChevronRight,
-  AlertCircle,
+  Trophy,
 } from 'lucide-react';
-import { publicApi } from '@/lib/api';
-import type { Game } from '@/types';
+import Link from 'next/link';
+import * as React from 'react';
 
 // Extended game type for display with team colors
 interface DisplayGame extends Game {
@@ -46,7 +46,8 @@ export default function LiveGamesPage() {
       ]);
 
       // Transform live games for display
-      const transformedLive: DisplayGame[] = liveData.map((game) => ({
+      const liveGamesArray = (liveData as any)?.data || (Array.isArray(liveData) ? liveData : []);
+      const transformedLive: DisplayGame[] = liveGamesArray.map((game: Game) => ({
         ...game,
         eventName: game.homeTeam?.name ? `${game.homeTeam.name} Event` : 'Unknown Event',
         timeElapsed: calculateTimeElapsed(game.actualStartTime),
@@ -54,7 +55,8 @@ export default function LiveGamesPage() {
       }));
 
       // Transform upcoming games for display
-      const transformedUpcoming: DisplayGame[] = upcomingData.map((game) => ({
+      const upcomingGamesArray = (upcomingData as any)?.data || (Array.isArray(upcomingData) ? upcomingData : []);
+      const transformedUpcoming: DisplayGame[] = upcomingGamesArray.map((game: Game) => ({
         ...game,
         eventName: game.homeTeam?.name ? `${game.homeTeam.name} Event` : 'Unknown Event',
       }));

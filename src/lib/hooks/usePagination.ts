@@ -238,8 +238,9 @@ export function useInfiniteEvents(options?: UseEventsOptions) {
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < DEFAULT_PAGE_SIZE) {
+    getNextPageParam: (lastPage: any, allPages) => {
+      const itemsCount = lastPage?.data ? lastPage.data.length : (lastPage?.length || 0);
+      if (itemsCount < DEFAULT_PAGE_SIZE) {
         return undefined; // No more pages
       }
       return allPages.length * DEFAULT_PAGE_SIZE;
@@ -258,8 +259,9 @@ export function useInfiniteGames(options?: UseGamesOptions) {
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < DEFAULT_PAGE_SIZE) {
+    getNextPageParam: (lastPage: any, allPages) => {
+      const itemsCount = lastPage?.data ? lastPage.data.length : (lastPage?.length || 0);
+      if (itemsCount < DEFAULT_PAGE_SIZE) {
         return undefined;
       }
       return allPages.length * DEFAULT_PAGE_SIZE;

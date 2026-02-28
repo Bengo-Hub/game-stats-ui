@@ -51,7 +51,7 @@ export function MassImportPlayersDialog({
                 setIsLoadingTeams(true);
                 try {
                     const data = await teamsApi.list({ eventId });
-                    setTeams(data);
+                    setTeams(Array.isArray(data) ? data : (data as any)?.data || []);
                 } catch (error) {
                     toast.error('Failed to load teams');
                 } finally {

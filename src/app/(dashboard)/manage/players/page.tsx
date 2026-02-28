@@ -84,12 +84,12 @@ export default function PlayersPage() {
   const teams = teamsData?.data || [];
 
   // Fetch events for filter
-  const { data: eventsData } = useQuery({
+  const { data: eventsResponse } = useQuery({
     queryKey: ['events', 'list', 'filter'],
     queryFn: () => publicApi.listEvents({ limit: 100 }),
     staleTime: 5 * 60 * 1000,
   });
-  const events = eventsData || [];
+  const events = eventsResponse?.data || [];
 
   React.useEffect(() => {
     const timer = setTimeout(() => {

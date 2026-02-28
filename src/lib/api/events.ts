@@ -1,6 +1,6 @@
 // Events API module
 
-import type { DivisionStandings, Event } from '@/types';
+import type { DivisionStandings, Event, PaginatedResponse } from '@/types';
 import { apiClient } from './client';
 
 export interface GameRound {
@@ -30,9 +30,11 @@ export interface CreateEventRequest {
   bannerUrl?: string;
   status?: 'draft' | 'published';
   divisions?: CreateDivisionRequest[];
+  gameRoundIds?: string[];
 }
 
 export interface UpdateEventRequest {
+  id?: string;
   name?: string;
   slug?: string;
   description?: string;
@@ -45,6 +47,7 @@ export interface UpdateEventRequest {
   bannerUrl?: string;
   status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'canceled';
   divisions?: CreateDivisionRequest[];
+  gameRoundIds?: string[];
 }
 
 export interface ListEventsParams {
@@ -72,6 +75,7 @@ export interface Division {
 }
 
 export interface CreateDivisionRequest {
+  id?: string;
   name: string;
   divisionType: string;
   description?: string;
@@ -105,8 +109,8 @@ export const eventsApi = {
   /**
    * List events with filters
    */
-  async list(params?: ListEventsParams): Promise<Event[]> {
-    return apiClient.get<Event[]>('/events', params as Record<string, string | number | boolean | undefined>);
+  async list(params?: ListEventsParams): Promise<PaginatedResponse<Event>> {
+    return apiClient.get<PaginatedResponse<Event>>('/events', params as Record<string, string | number | boolean | undefined>);
   },
 
   /**
@@ -158,8 +162,8 @@ export const eventsApi = {
   /**
    * Get event rounds
    */
-  async getRounds(eventId: string): Promise<GameRound[]> {
-    return apiClient.get<GameRound[]>(`/events/${eventId}/rounds`);
+  async getRounds(eventId: string): Promise<PaginatedResponse<GameRound>> {
+    return apiClient.get<PaginatedResponse<GameRound>>(`/events/${eventId}/rounds`);
   },
 
   /**
@@ -272,6 +276,20 @@ export const eventsApi = {
   async removeEventCrewMember(eventId: string, userId: string): Promise<void> {
     return apiClient.delete(`/events/${eventId}/crew/${userId}`);
   },
+
+  /**
+   * List all divisions in the system
+   */
+  async listAllDivisions(): Promise<PaginatedResponse<Division>> {
+    return divisionsApi.listAllDivisions();
+  },
+
+  /**
+   * List all game rounds in the system
+   */
+  async listAllRounds(): Promise<PaginatedResponse<GameRound>> {
+    return roundsApi.listAllRounds();
+  },
 };
 
 export const divisionsApi = {
@@ -280,6 +298,13 @@ export const divisionsApi = {
    */
   async getStandings(divisionId: string): Promise<DivisionStandings> {
     return apiClient.get<DivisionStandings>(`/divisions/${divisionId}/standings`);
+  },
+
+  /**
+   * List all divisions in the system
+   */
+  async listAllDivisions(): Promise<PaginatedResponse<Division>> {
+    return apiClient.get<PaginatedResponse<Division>>('/public/divisions');
   },
 
   /**
@@ -352,11 +377,12 @@ export const roundsApi = {
   },
 
   /**
-   * Get round bracket
+   * List all game rounds in the system
    */
-  async getBracket(id: string): Promise<unknown> {
-    return apiClient.get(`/rounds/${id}/bracket`);
+  async listAllRounds(): Promise<PaginatedResponse<GameRound>> {
+    return apiClient.get<PaginatedResponse<GameRound>>('/public/rounds');
   },
 };
+
 
 export default eventsApi;

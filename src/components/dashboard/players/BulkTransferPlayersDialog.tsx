@@ -39,32 +39,36 @@ export function BulkTransferPlayersDialog({
     onSuccess,
 }: BulkTransferPlayersDialogProps) {
     const [events, setEvents] = React.useState<Event[]>([]);
-    const [selectedEventId, setSelectedEventId] = React.useState<string>(eventId || '');
-    const [teams, setTeams] = React.useState<Team[]>([]);
+    const [sourceEventId, setSourceEventId] = React.useState<string>('');
+    const [targetEventId, setTargetEventId] = React.useState<string>(eventId || '');
+    const [sourceTeams, setSourceTeams] = React.useState<Team[]>([]);
+    const [targetTeams, setTargetTeams] = React.useState<Team[]>([]);
     const [sourceTeamId, setSourceTeamId] = React.useState<string>('');
     const [targetTeamId, setTargetTeamId] = React.useState<string>('');
     const [players, setPlayers] = React.useState<Player[]>([]);
     const [selectedPlayerIds, setSelectedPlayerIds] = React.useState<Set<string>>(new Set());
     const [isLoadingEvents, setIsLoadingEvents] = React.useState(false);
-    const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
+    const [isLoadingSourceTeams, setIsLoadingSourceTeams] = React.useState(false);
+    const [isLoadingTargetTeams, setIsLoadingTargetTeams] = React.useState(false);
     const [isLoadingPlayers, setIsLoadingPlayers] = React.useState(false);
     const [isTransferring, setIsTransferring] = React.useState(false);
 
-    // Sync selectedEventId with eventId prop
+    // Sync targetEventId with eventId prop
     React.useEffect(() => {
         if (eventId) {
-            setSelectedEventId(eventId);
+            setTargetEventId(eventId);
         }
     }, [eventId]);
 
-    // Fetch events if context is global
+    // Fetch all events for source/target selection
     React.useEffect(() => {
-        if (open && !eventId) {
+        if (open) {
             const fetchEvents = async () => {
                 setIsLoadingEvents(true);
                 try {
-                    const data = await eventsApi.list({ temporal: 'all' });
-                    setEvents(data as any); // Cast as Event[]
+                    const response = await eventsApi.list({ temporal: 'all', limit: 100 });
+                    const eventList = (response as any).data || (Array.isArray(response) ? response : []);
+                    setEvents(eventList);
                 } catch (error) {
                     toast.error('Failed to load events');
                 } finally {
@@ -73,29 +77,49 @@ export function BulkTransferPlayersDialog({
             };
             fetchEvents();
         }
-    }, [open, eventId]);
+    }, [open]);
 
-    // Fetch teams for the event
+    // Fetch teams for the source event
     React.useEffect(() => {
-        if (open && selectedEventId) {
+        if (open && sourceEventId) {
             const fetchTeams = async () => {
-                setIsLoadingTeams(true);
+                setIsLoadingSourceTeams(true);
                 try {
-                    const data = await teamsApi.list({ eventId: selectedEventId });
-                    setTeams(data);
+                    const response = await teamsApi.list({ eventId: sourceEventId });
+                    setSourceTeams((response as any).data || (Array.isArray(response) ? response : []));
                 } catch (error) {
-                    toast.error('Failed to load teams');
+                    toast.error('Failed to load source teams');
                 } finally {
-                    setIsLoadingTeams(false);
+                    setIsLoadingSourceTeams(false);
                 }
             };
             fetchTeams();
         } else {
-            setTeams([]);
+            setSourceTeams([]);
             setSourceTeamId('');
+        }
+    }, [open, sourceEventId]);
+
+    // Fetch teams for the target event
+    React.useEffect(() => {
+        if (open && targetEventId) {
+            const fetchTeams = async () => {
+                setIsLoadingTargetTeams(true);
+                try {
+                    const response = await teamsApi.list({ eventId: targetEventId });
+                    setTargetTeams((response as any).data || (Array.isArray(response) ? response : []));
+                } catch (error) {
+                    toast.error('Failed to load target teams');
+                } finally {
+                    setIsLoadingTargetTeams(false);
+                }
+            };
+            fetchTeams();
+        } else {
+            setTargetTeams([]);
             setTargetTeamId('');
         }
-    }, [open, selectedEventId]);
+    }, [open, targetEventId]);
 
     // Fetch players when source team changes
     React.useEffect(() => {
@@ -103,8 +127,8 @@ export function BulkTransferPlayersDialog({
             const fetchPlayers = async () => {
                 setIsLoadingPlayers(true);
                 try {
-                    const data = await teamsApi.getRoster(sourceTeamId);
-                    setPlayers(data);
+                    const response = await teamsApi.getRoster(sourceTeamId);
+                    setPlayers((response as any).data || (Array.isArray(response) ? response : []));
                     setSelectedPlayerIds(new Set()); // Reset selection
                 } catch (error) {
                     toast.error('Failed to load roster');
@@ -130,7 +154,11 @@ export function BulkTransferPlayersDialog({
     };
 
     const handleTransfer = async () => {
-        if (!selectedEventId || selectedPlayerIds.size === 0 || !targetTeamId) return;
+        if (!targetEventId || selectedPlayerIds.size === 0 || !targetTeamId) return;
+        if (sourceEventId === targetEventId) {
+            toast.error('Source and target events must be different');
+            return;
+        }
 
         setIsTransferring(true);
         try {
@@ -140,7 +168,7 @@ export function BulkTransferPlayersDialog({
             }));
 
             await bulkApi.transferPlayers({
-                eventId: selectedEventId,
+                eventId: targetEventId,
                 transfers,
             });
 
@@ -156,69 +184,87 @@ export function BulkTransferPlayersDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
                         Bulk Player Transfer
                     </DialogTitle>
                     <DialogDescription>
-                        Move multiple players from one team to another.
+                        Move multiple players from one event to another. Source and target events must be different.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-6 py-4">
-                    {!eventId && (
-                        <div className="space-y-2">
-                            <Label>Target Event</Label>
-                            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select event..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {events.map((e) => (
-                                        <SelectItem key={e.id} value={e.id}>
-                                            {e.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
+                    <div className="grid grid-cols-2 gap-6">
+                        {/* Source Selection */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Source Event</Label>
+                                <Select value={sourceEventId} onValueChange={setSourceEventId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select source event..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {events.map((e) => (
+                                            <SelectItem key={e.id} value={e.id}>
+                                                {e.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Source Team</Label>
-                            <Select value={sourceTeamId} onValueChange={setSourceTeamId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select team..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {teams.map((t) => (
-                                        <SelectItem key={t.id} value={t.id}>
-                                            {t.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Target Team</Label>
-                            <Select value={targetTeamId} onValueChange={setTargetTeamId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select team..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {teams
-                                        .filter((t) => t.id !== sourceTeamId)
-                                        .map((t) => (
+                            <div className="space-y-2">
+                                <Label>Source Team</Label>
+                                <Select value={sourceTeamId} onValueChange={setSourceTeamId} disabled={!sourceEventId || isLoadingSourceTeams}>
+                                    <SelectTrigger>
+                                        {isLoadingSourceTeams ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Select team..." />}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {sourceTeams.map((t) => (
                                             <SelectItem key={t.id} value={t.id}>
                                                 {t.name}
                                             </SelectItem>
                                         ))}
-                                </SelectContent>
-                            </Select>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {/* Target Selection */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Target Event</Label>
+                                <Select value={targetEventId} onValueChange={setTargetEventId} disabled={!!eventId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select target event..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {events.map((e) => (
+                                            <SelectItem key={e.id} value={e.id} disabled={e.id === sourceEventId}>
+                                                {e.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Target Team</Label>
+                                <Select value={targetTeamId} onValueChange={setTargetTeamId} disabled={!targetEventId || isLoadingTargetTeams}>
+                                    <SelectTrigger>
+                                        {isLoadingTargetTeams ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Select team..." />}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {targetTeams.map((t) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                {t.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
 
@@ -242,7 +288,7 @@ export function BulkTransferPlayersDialog({
                                 </Button>
                             )}
                         </div>
-                        <div className="border rounded-md max-h-[200px] overflow-y-auto p-2 space-y-1">
+                        <div className="border rounded-md max-h-[300px] overflow-y-auto p-2 space-y-1">
                             {isLoadingPlayers ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -285,7 +331,8 @@ export function BulkTransferPlayersDialog({
                         disabled={
                             !targetTeamId ||
                             selectedPlayerIds.size === 0 ||
-                            isTransferring
+                            isTransferring ||
+                            sourceEventId === targetEventId
                         }
                     >
                         {isTransferring ? (

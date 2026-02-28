@@ -9,6 +9,7 @@ import type {
   DivisionStandings,
   Event,
   EventCategory,
+  EventDivision,
   Field,
   Game,
   GameTimeline,
@@ -132,8 +133,8 @@ export interface ListEventsParams extends PaginationParams {
   sortOrder?: SortOrder;
 }
 
-export async function listEvents(params?: ListEventsParams): Promise<Event[]> {
-  return publicFetch<Event[]>('/events', {
+export async function listEvents(params?: ListEventsParams): Promise<PaginatedResponse<Event>> {
+  return publicFetch<PaginatedResponse<Event>>('/events', {
     params: {
       status: params?.status,
       year: params?.year,
@@ -151,15 +152,15 @@ export async function listEvents(params?: ListEventsParams): Promise<Event[]> {
   });
 }
 
-export async function getUpcomingEvents(limit: number = 50): Promise<Event[]> {
+export async function getUpcomingEvents(limit: number = 50): Promise<PaginatedResponse<Event>> {
   return listEvents({ temporal: 'upcoming', limit, sortBy: 'start_date', sortOrder: 'asc' });
 }
 
-export async function getPastEvents(limit: number = 50): Promise<Event[]> {
+export async function getPastEvents(limit: number = 50): Promise<PaginatedResponse<Event>> {
   return listEvents({ temporal: 'past', limit, sortBy: 'start_date', sortOrder: 'desc' });
 }
 
-export async function getLiveEvents(): Promise<Event[]> {
+export async function getLiveEvents(): Promise<PaginatedResponse<Event>> {
   return listEvents({ temporal: 'live', sortBy: 'start_date', sortOrder: 'asc' });
 }
 
@@ -167,8 +168,13 @@ export async function getEvent(eventId: string): Promise<Event> {
   return publicFetch<Event>(`/events/${eventId}`);
 }
 
-export async function getEventRounds(eventId: string): Promise<DivisionPool[]> {
-  return publicFetch<DivisionPool[]>(`/events/${eventId}/rounds`);
+export async function getEventRounds(eventId: string): Promise<PaginatedResponse<DivisionPool>> {
+  return publicFetch<PaginatedResponse<DivisionPool>>(`/events/${eventId}/rounds`);
+}
+
+export async function getEventDivisions(eventId: string): Promise<EventDivision[]> {
+  const response = await publicFetch<EventDivision[]>(`/events/${eventId}/divisions`);
+  return response;
 }
 
 export async function getEventBracket(eventId: string, roundId?: string): Promise<Bracket> {
@@ -216,8 +222,8 @@ export interface ListGamesParams extends PaginationParams {
   gameStage?: string;
 }
 
-export async function listGames(params?: ListGamesParams): Promise<Game[]> {
-  const data = await publicFetch<any[]>('/games', {
+export async function listGames(params?: ListGamesParams): Promise<PaginatedResponse<Game>> {
+  return publicFetch<PaginatedResponse<Game>>('/games', {
     params: {
       event_id: params?.eventId,
       status: params?.status,
@@ -230,24 +236,14 @@ export async function listGames(params?: ListGamesParams): Promise<Game[]> {
       offset: params?.offset ?? 0,
     } as QueryParams,
   });
-  return Array.isArray(data) ? data.map(mapGameResponse) : [];
 }
 
-export async function getLiveGames(): Promise<Game[]> {
-  const data = await publicFetch<any[]>('/games', {
-    params: { status: 'in_progress', limit: DEFAULT_LIMIT },
-  });
-  return Array.isArray(data) ? data.map(mapGameResponse) : [];
+export async function getLiveGames(params?: { eventId?: string; divisionPoolId?: string }): Promise<PaginatedResponse<Game>> {
+  return listGames({ status: 'in_progress', ...params, limit: DEFAULT_LIMIT });
 }
 
-export async function getUpcomingGames(limit: number = 50): Promise<Game[]> {
-  const data = await publicFetch<any[]>('/games', {
-    params: {
-      status: 'scheduled',
-      limit,
-    },
-  });
-  return Array.isArray(data) ? data.map(mapGameResponse) : [];
+export async function getUpcomingGames(limit: number = 50, params?: { eventId?: string; divisionPoolId?: string }): Promise<PaginatedResponse<Game>> {
+  return listGames({ status: 'scheduled', ...params, limit });
 }
 
 export async function getGame(gameId: string): Promise<Game> {
@@ -393,8 +389,8 @@ export interface LeaderboardParams extends PaginationParams {
   gender?: string;
 }
 
-export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<PlayerStat[]> {
-  return publicFetch<PlayerStat[]>('/leaderboards/players', {
+export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<PaginatedResponse<PlayerStat>> {
+  return publicFetch<PaginatedResponse<PlayerStat>>('/leaderboards/players', {
     params: {
       eventId: params?.eventId,
       divisionPoolId: params?.divisionPoolId,
@@ -407,8 +403,8 @@ export async function getPlayerLeaderboard(params?: LeaderboardParams): Promise<
   });
 }
 
-export async function getSpiritLeaderboard(params?: LeaderboardParams): Promise<TeamSpiritAverage[]> {
-  return publicFetch<TeamSpiritAverage[]>('/leaderboards/spirit', {
+export async function getSpiritLeaderboard(params?: LeaderboardParams): Promise<PaginatedResponse<TeamSpiritAverage>> {
+  return publicFetch<PaginatedResponse<TeamSpiritAverage>>('/leaderboards/spirit', {
     params: {
       eventId: params?.eventId,
       divisionPoolId: params?.divisionPoolId,
@@ -454,6 +450,7 @@ export const publicApi = {
   getLiveEvents,
   getEvent,
   getEventRounds,
+  getEventDivisions,
   getEventBracket,
   getEventStandings,
   getEventCrew,
