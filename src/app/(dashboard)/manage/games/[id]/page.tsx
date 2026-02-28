@@ -3,6 +3,7 @@
 import { UnifiedScoreForm } from '@/components/dashboard/games/UnifiedScoreForm';
 import { ConnectionStatus } from '@/components/features/games/connection-status';
 import { CompactTimer, GameTimer } from '@/components/features/games/game-timer';
+import SpiritScoreForm, { type SpiritScoreData } from '@/components/features/spirit/spirit-score-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +39,6 @@ import {
   Timer,
   Trophy
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { toast } from 'sonner';
@@ -54,6 +54,7 @@ export default function GameDetailPage() {
   const [loading, setLoading] = React.useState(true);
   const [showOverrideDialog, setShowOverrideDialog] = React.useState(false);
   const [showCancelDialog, setShowCancelDialog] = React.useState(false);
+  const [showSpiritDialog, setShowSpiritDialog] = React.useState(false);
   const [spiritScores, setSpiritScores] = React.useState<any[]>([]);
   const [cancelling, setCancelling] = React.useState(false);
   const user = useUser();
@@ -473,11 +474,13 @@ export default function GameDetailPage() {
             )}
 
             <div className="pt-4 border-t space-y-2">
-              <Button variant="outline" className="w-full h-10 rounded-xl" asChild>
-                <Link href={`/manage/games/${gameId}/spirit`}>
-                  <Trophy className="h-4 w-4 mr-2 text-amber-500" />
-                  Submit Spirit Score
-                </Link>
+              <Button
+                variant="outline"
+                className="w-full h-10 rounded-xl"
+                onClick={() => setShowSpiritDialog(true)}
+              >
+                <Trophy className="h-4 w-4 mr-2 text-amber-500" />
+                Submit Spirit Score
               </Button>
               {!isCancelled && !isCompleted && (
                 <Button
@@ -651,6 +654,83 @@ export default function GameDetailPage() {
               }}
               onCancel={() => setShowOverrideDialog(false)}
             />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showSpiritDialog && game && (
+        <Dialog open={showSpiritDialog} onOpenChange={setShowSpiritDialog}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="flex items-center gap-2 text-2xl font-black">
+                <Heart className="h-6 w-6 text-rose-500" />
+                Submit Spirit Score
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                Rate the opposing team&apos;s spirit of the game.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Tabs defaultValue="home" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="home">
+                  Score {game.homeTeam?.name || 'Home Team'}
+                </TabsTrigger>
+                <TabsTrigger value="away">
+                  Score {game.awayTeam?.name || 'Away Team'}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="home">
+                <SpiritScoreForm
+                  gameId={gameId}
+                  teamId={game.homeTeam?.id || ''}
+                  teamName={game.homeTeam?.name || 'Home Team'}
+                  onSubmit={async (data: SpiritScoreData) => {
+                    await gamesApi.submitSpiritScore(gameId, {
+                      scored_by_team_id: game.awayTeam?.id || '',
+                      team_id: data.teamId,
+                      rules_knowledge: data.rulesKnowledge,
+                      fouls_body_contact: data.foulsBodyContact,
+                      fair_mindedness: data.fairMindedness,
+                      attitude: data.attitude,
+                      communication: data.communication,
+                      comments: data.comments,
+                      mvp_nomination: data.mvpNomination,
+                      spirit_nomination: data.spiritNomination,
+                    });
+                    toast.success('Spirit score submitted!');
+                    loadSpiritScores();
+                    setShowSpiritDialog(false);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="away">
+                <SpiritScoreForm
+                  gameId={gameId}
+                  teamId={game.awayTeam?.id || ''}
+                  teamName={game.awayTeam?.name || 'Away Team'}
+                  onSubmit={async (data: SpiritScoreData) => {
+                    await gamesApi.submitSpiritScore(gameId, {
+                      scored_by_team_id: game.homeTeam?.id || '',
+                      team_id: data.teamId,
+                      rules_knowledge: data.rulesKnowledge,
+                      fouls_body_contact: data.foulsBodyContact,
+                      fair_mindedness: data.fairMindedness,
+                      attitude: data.attitude,
+                      communication: data.communication,
+                      comments: data.comments,
+                      mvp_nomination: data.mvpNomination,
+                      spirit_nomination: data.spiritNomination,
+                    });
+                    toast.success('Spirit score submitted!');
+                    loadSpiritScores();
+                    setShowSpiritDialog(false);
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       )}
