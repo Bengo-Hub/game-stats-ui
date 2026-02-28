@@ -266,7 +266,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     // Crossover Logic: Get selected round type
     const selectedRoundId = watch('gameRoundId');
     const selectedRound = gameRounds.find(r => r.id === selectedRoundId);
-    const isCrossover = selectedRound?.type?.toLowerCase() === 'crossover';
+    const isCrossover = selectedRound?.roundType?.toLowerCase() === 'crossover';
 
     // Game status locked check
     const isStarted = game && (game.status !== 'scheduled');
