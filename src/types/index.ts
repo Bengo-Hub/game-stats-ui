@@ -92,6 +92,14 @@ export interface UserSummary {
   email: string;
 }
 
+export interface PlayerSummary {
+  id: string;
+  name: string;
+  gender: string;
+  jerseyNumber?: number;
+  role?: string;
+}
+
 // ============================================
 // Event Types (Tournament)
 // ============================================
@@ -323,6 +331,10 @@ export interface SpiritScore {
   communication: number;
   totalScore: number;
   comments?: string;
+  mvpMaleNomination?: PlayerSummary;
+  mvpFemaleNomination?: PlayerSummary;
+  spiritMaleNomination?: PlayerSummary;
+  spiritFemaleNomination?: PlayerSummary;
   createdAt: string;
   updatedAt: string;
 }

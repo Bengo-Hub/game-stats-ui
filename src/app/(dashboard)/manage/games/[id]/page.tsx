@@ -599,6 +599,49 @@ export default function GameDetailPage() {
                             <span>Attitude:</span> <span className="font-medium text-foreground">{score.attitude}</span>
                           </div>
                         </div>
+
+                        {/* Nominations */}
+                        <div className="mt-3 pt-3 border-t border-muted-foreground/10 space-y-2">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">MVP Nominations</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {score.mvpMaleNomination ? (
+                                <div className="text-[10px] bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md truncate">
+                                  M: {score.mvpMaleNomination.name}
+                                </div>
+                              ) : (
+                                <div className="text-[10px] bg-muted px-2 py-1 rounded-md text-muted-foreground italic">M: None</div>
+                              )}
+                              {score.mvpFemaleNomination ? (
+                                <div className="text-[10px] bg-pink-500/10 text-pink-600 px-2 py-1 rounded-md truncate">
+                                  F: {score.mvpFemaleNomination.name}
+                                </div>
+                              ) : (
+                                <div className="text-[10px] bg-muted px-2 py-1 rounded-md text-muted-foreground italic">F: None</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Spirit Nominations</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {score.spiritMaleNomination ? (
+                                <div className="text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-md truncate">
+                                  M: {score.spiritMaleNomination.name}
+                                </div>
+                              ) : (
+                                <div className="text-[10px] bg-muted px-2 py-1 rounded-md text-muted-foreground italic">M: None</div>
+                              )}
+                              {score.spiritFemaleNomination ? (
+                                <div className="text-[10px] bg-purple-500/10 text-purple-600 px-2 py-1 rounded-md truncate">
+                                  F: {score.spiritFemaleNomination.name}
+                                </div>
+                              ) : (
+                                <div className="text-[10px] bg-muted px-2 py-1 rounded-md text-muted-foreground italic">F: None</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
                         {score.comments && (
                           <p className="text-xs italic border-l-2 border-primary pl-2 mt-2 truncate">
                             &quot;{score.comments}&quot;
@@ -715,8 +758,10 @@ export default function GameDetailPage() {
                       attitude: data.attitude,
                       communication: data.communication,
                       comments: data.comments,
-                      mvp_nomination: data.mvpNomination,
-                      spirit_nomination: data.spiritNomination,
+                      mvp_male_id: data.mvpMaleNomination,
+                      mvp_female_id: data.mvpFemaleNomination,
+                      spirit_male_id: data.spiritMaleNomination,
+                      spirit_female_id: data.spiritFemaleNomination,
                     });
                     toast.success('Spirit score submitted!');
                     loadSpiritScores();
@@ -740,8 +785,10 @@ export default function GameDetailPage() {
                       attitude: data.attitude,
                       communication: data.communication,
                       comments: data.comments,
-                      mvp_nomination: data.mvpNomination,
-                      spirit_nomination: data.spiritNomination,
+                      mvp_male_id: data.mvpMaleNomination,
+                      mvp_female_id: data.mvpFemaleNomination,
+                      spirit_male_id: data.spiritMaleNomination,
+                      spirit_female_id: data.spiritFemaleNomination,
                     });
                     toast.success('Spirit score submitted!');
                     loadSpiritScores();

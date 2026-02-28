@@ -261,7 +261,12 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     };
 
     const isPending = createMutation.isPending || updateMutation.isPending;
-    const divisionPools = eventDetails?.divisions || [];
+    const divisionPools = (eventDetails?.divisions || []) as any[];
+
+    // Crossover Logic: Get selected round type
+    const selectedRoundId = watch('gameRoundId');
+    const selectedRound = gameRounds.find(r => r.id === selectedRoundId);
+    const isCrossover = selectedRound?.type?.toLowerCase() === 'crossover';
 
     // Game status locked check
     const isStarted = game && (game.status !== 'scheduled');
@@ -346,11 +351,14 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                                         <SelectValue placeholder="Select home team" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {teams.map((team: Team) => (
-                                            <SelectItem key={team.id} value={team.id}>
-                                                {team.name}
-                                            </SelectItem>
-                                        ))}
+                                        {teams.map((team: Team) => {
+                                            const poolName = (team as any).divisionPool?.name || 'Unknown Pool';
+                                            return (
+                                                <SelectItem key={team.id} value={team.id}>
+                                                    {team.name} ({poolName})
+                                                </SelectItem>
+                                            );
+                                        })}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -366,12 +374,23 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                                     </SelectTrigger>
                                     <SelectContent>
                                         {teams
-                                            .filter((team: Team) => team.id !== homeTeamId)
-                                            .map((team: Team) => (
-                                                <SelectItem key={team.id} value={team.id}>
-                                                    {team.name}
-                                                </SelectItem>
-                                            ))}
+                                            .filter((team: Team) => {
+                                                if (team.id === homeTeamId) return false;
+                                                if (isCrossover) {
+                                                    const homeTeam = teams.find(t => t.id === homeTeamId);
+                                                    // Ensure Away team is from a different pool
+                                                    return (team as any).divisionPoolId !== (homeTeam as any)?.divisionPoolId;
+                                                }
+                                                return true;
+                                            })
+                                            .map((team: Team) => {
+                                                const poolName = (team as any).divisionPool?.name || 'Unknown Pool';
+                                                return (
+                                                    <SelectItem key={team.id} value={team.id}>
+                                                        {team.name} ({poolName})
+                                                    </SelectItem>
+                                                );
+                                            })}
                                     </SelectContent>
                                 </Select>
                             </div>

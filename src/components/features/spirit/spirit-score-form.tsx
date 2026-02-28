@@ -43,8 +43,10 @@ export interface SpiritScoreData {
   attitude: number;
   communication: number;
   comments?: string;
-  mvpNomination?: string;
-  spiritNomination?: string;
+  mvpMaleNomination?: string;
+  mvpFemaleNomination?: string;
+  spiritMaleNomination?: string;
+  spiritFemaleNomination?: string;
 }
 
 // ============================================
@@ -214,8 +216,10 @@ export function SpiritScoreForm({
   ]);
 
   const [comments, setComments] = React.useState('');
-  const [mvpNomination, setMvpNomination] = React.useState<string>('');
-  const [spiritNomination, setSpiritNomination] = React.useState<string>('');
+  const [mvpMaleNomination, setMvpMaleNomination] = React.useState<string>('');
+  const [mvpFemaleNomination, setMvpFemaleNomination] = React.useState<string>('');
+  const [spiritMaleNomination, setSpiritMaleNomination] = React.useState<string>('');
+  const [spiritFemaleNomination, setSpiritFemaleNomination] = React.useState<string>('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Fetch team roster for nominations
@@ -249,8 +253,10 @@ export function SpiritScoreForm({
       attitude: categories.find((c) => c.id === 'attitude')?.value ?? 2,
       communication: categories.find((c) => c.id === 'communication')?.value ?? 2,
       comments: comments || undefined,
-      mvpNomination: mvpNomination || undefined,
-      spiritNomination: spiritNomination || undefined,
+      mvpMaleNomination: mvpMaleNomination || undefined,
+      mvpFemaleNomination: mvpFemaleNomination || undefined,
+      spiritMaleNomination: spiritMaleNomination || undefined,
+      spiritFemaleNomination: spiritFemaleNomination || undefined,
     };
 
     try {
@@ -340,23 +346,23 @@ export function SpiritScoreForm({
 
           {/* Nominations */}
           <div className="px-4 sm:px-6 py-4 border-t">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* MVP Nomination */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* MVP Male Nomination */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm font-semibold">
                   <TrophyIcon className="h-4 w-4 text-amber-500" />
-                  MVP Nomination
+                  MVP Nomination (Male)
                 </Label>
                 <Select
-                  value={mvpNomination}
-                  onValueChange={setMvpNomination}
+                  value={mvpMaleNomination}
+                  onValueChange={setMvpMaleNomination}
                   disabled={disabled || isSubmitting || players.length === 0}
                 >
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder={isLoadingTeam ? 'Loading...' : (players.length === 0 ? 'No players' : 'Select player')} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {players.map((player: any) => (
+                    {players.filter((p: any) => p.gender === 'M').map((player: any) => (
                       <SelectItem key={player.id} value={player.id}>
                         {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
                       </SelectItem>
@@ -365,22 +371,70 @@ export function SpiritScoreForm({
                 </Select>
               </div>
 
-              {/* Spirit Nomination */}
+              {/* MVP Female Nomination */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm font-semibold">
-                  <Heart className="h-4 w-4 text-rose-500" />
-                  Spirit Nomination
+                  <TrophyIcon className="h-4 w-4 text-amber-500" />
+                  MVP Nomination (Female)
                 </Label>
                 <Select
-                  value={spiritNomination}
-                  onValueChange={setSpiritNomination}
+                  value={mvpFemaleNomination}
+                  onValueChange={setMvpFemaleNomination}
                   disabled={disabled || isSubmitting || players.length === 0}
                 >
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder={isLoadingTeam ? 'Loading...' : (players.length === 0 ? 'No players' : 'Select player')} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {players.map((player: any) => (
+                    {players.filter((p: any) => p.gender === 'F').map((player: any) => (
+                      <SelectItem key={player.id} value={player.id}>
+                        {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Spirit Male Nomination */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-semibold">
+                  <Heart className="h-4 w-4 text-rose-500" />
+                  Spirit Nomination (Male)
+                </Label>
+                <Select
+                  value={spiritMaleNomination}
+                  onValueChange={setSpiritMaleNomination}
+                  disabled={disabled || isSubmitting || players.length === 0}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder={isLoadingTeam ? 'Loading...' : (players.length === 0 ? 'No players' : 'Select player')} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {players.filter((p: any) => p.gender === 'M').map((player: any) => (
+                      <SelectItem key={player.id} value={player.id}>
+                        {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Spirit Female Nomination */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-semibold">
+                  <Heart className="h-4 w-4 text-rose-500" />
+                  Spirit Nomination (Female)
+                </Label>
+                <Select
+                  value={spiritFemaleNomination}
+                  onValueChange={setSpiritFemaleNomination}
+                  disabled={disabled || isSubmitting || players.length === 0}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder={isLoadingTeam ? 'Loading...' : (players.length === 0 ? 'No players' : 'Select player')} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {players.filter((p: any) => p.gender === 'F').map((player: any) => (
                       <SelectItem key={player.id} value={player.id}>
                         {player.name} {player.jerseyNumber ? `#${player.jerseyNumber}` : ''}
                       </SelectItem>

@@ -56,8 +56,10 @@ export default function GameSpiritScorePage() {
             attitude: data.attitude,
             communication: data.communication,
             comments: data.comments,
-            mvp_nomination: data.mvpNomination,
-            spirit_nomination: data.spiritNomination,
+            mvp_male_id: data.mvpMaleNomination,
+            mvp_female_id: data.mvpFemaleNomination,
+            spirit_male_id: data.spiritMaleNomination,
+            spirit_female_id: data.spiritFemaleNomination,
             team_id: data.teamId,
             scored_by_team_id: scoredByTeamId
         });

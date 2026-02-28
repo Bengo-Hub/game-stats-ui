@@ -192,8 +192,10 @@ export const gamesApi = {
     attitude: number;
     communication: number;
     comments?: string;
-    mvp_nomination?: string;
-    spirit_nomination?: string;
+    mvp_male_id?: string;
+    mvp_female_id?: string;
+    spirit_male_id?: string;
+    spirit_female_id?: string;
   }): Promise<any> {
     return apiClient.post(`/games/${gameId}/spirit`, data);
   },

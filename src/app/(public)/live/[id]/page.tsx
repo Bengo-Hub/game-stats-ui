@@ -251,6 +251,64 @@ function SpiritDisplay({ spiritScores, homeTeamId, awayTeamId }: SpiritDisplayPr
             ))}
           </div>
 
+          {/* Nominations */}
+          <div className="mt-4 pt-4 border-t border-muted-foreground/10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">MVP Nominations</p>
+              <div className="flex flex-col gap-1.5">
+                {score.mvpMaleNomination ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-4 h-4 rounded bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-[10px]">M</span>
+                    <span className="font-medium">{score.mvpMaleNomination.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                    <span className="w-4 h-4 rounded bg-muted flex items-center justify-center font-bold text-[10px]">M</span>
+                    <span>None</span>
+                  </div>
+                )}
+                {score.mvpFemaleNomination ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-4 h-4 rounded bg-pink-500/10 text-pink-600 flex items-center justify-center font-bold text-[10px]">F</span>
+                    <span className="font-medium">{score.mvpFemaleNomination.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                    <span className="w-4 h-4 rounded bg-muted flex items-center justify-center font-bold text-[10px]">F</span>
+                    <span>None</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Spirit Nominations</p>
+              <div className="flex flex-col gap-1.5">
+                {score.spiritMaleNomination ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-4 h-4 rounded bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-[10px]">M</span>
+                    <span className="font-medium">{score.spiritMaleNomination.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                    <span className="w-4 h-4 rounded bg-muted flex items-center justify-center font-bold text-[10px]">M</span>
+                    <span>None</span>
+                  </div>
+                )}
+                {score.spiritFemaleNomination ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-4 h-4 rounded bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-[10px]">F</span>
+                    <span className="font-medium">{score.spiritFemaleNomination.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                    <span className="w-4 h-4 rounded bg-muted flex items-center justify-center font-bold text-[10px]">F</span>
+                    <span>None</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {score.comments && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-xs text-muted-foreground italic">&ldquo;{score.comments}&rdquo;</p>
