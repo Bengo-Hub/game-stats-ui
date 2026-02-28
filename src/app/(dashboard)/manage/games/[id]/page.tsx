@@ -103,15 +103,18 @@ export default function GameDetailPage() {
     }
   }, [gameId, setStoreGame, loadSpiritScores]);
 
-  // SSE connection for live updates
+  // Use a stable ref for loadGame so SSE doesn't cause re-render cascades
+  const loadGameRef = React.useRef(loadGame);
+  React.useEffect(() => { loadGameRef.current = loadGame; }, [loadGame]);
+
+  // SSE connection for live updates — use stable ref to prevent reconnect loops
   const sseOptions = React.useMemo(() => ({
     onEvent: (event: any) => {
       if (event.type === 'score_updated' || event.type === 'goal_scored') {
-        // Refresh game data on score changes
-        loadGame();
+        loadGameRef.current();
       }
     },
-  }), [loadGame]);
+  }), []); // empty deps — stable forever
 
   const {
     isConnected,
@@ -420,8 +423,8 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Quick Actions for Live Game Only */}
-            {isLive && (
+            {/* Quick Actions for Live/Ended Game */}
+            {(isLive || isEnded) && (
               <div className="mt-6 pt-6 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <Button
@@ -526,7 +529,7 @@ export default function GameDetailPage() {
                 <TabsTrigger value="spirit">Spirit Scores</TabsTrigger>
                 <TabsTrigger value="audit">Audit Trail</TabsTrigger>
               </TabsList>
-              {(canOverride || canRecordDetailed) && game.status !== 'completed' && (
+              {(canOverride || canRecordDetailed) && (
                 <Button
                   variant="outline"
                   size="sm"
