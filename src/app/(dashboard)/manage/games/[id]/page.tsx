@@ -56,6 +56,7 @@ export default function GameDetailPage() {
   const [showCancelDialog, setShowCancelDialog] = React.useState(false);
   const [showSpiritDialog, setShowSpiritDialog] = React.useState(false);
   const [spiritScores, setSpiritScores] = React.useState<any[]>([]);
+  const [eventCrew, setEventCrew] = React.useState<any | null>(null);
   const [cancelling, setCancelling] = React.useState(false);
   const user = useUser();
 
@@ -96,6 +97,13 @@ export default function GameDetailPage() {
       setStoreGame(gameData);
       setEvents(timelineData.events || []);
       setAuditLogs(auditData || []);
+
+      // Fetch event crew if gameData has eventId
+      if (gameData.eventId) {
+        publicApi.getEventCrew(gameData.eventId)
+          .then(setEventCrew)
+          .catch(e => console.error('Failed to load event crew:', e));
+      }
     } catch (error) {
       console.error('Failed to load game:', error);
     } finally {
@@ -250,9 +258,14 @@ export default function GameDetailPage() {
   const isCancelled = game.status === 'canceled';
   const isLiveOrEnded = isLive || isEnded;
   const isAdmin = user?.role === 'admin' || user?.role === 'event_manager';
-  const isScorekeeper = user?.id === game.scorekeeper?.id;
-  const canOverride = isAdmin;
-  const canRecordDetailed = isScorekeeper || isAdmin;
+
+  // Check event-specific permissions
+  const isEventCrewScorekeeper = eventCrew?.scorekeepers?.some((s: any) => s.id === user?.id);
+  const isEventCrewAdmin = eventCrew?.admins?.some((a: any) => a.id === user?.id);
+
+  const isScorekeeper = user?.id === game.scorekeeper?.id || isEventCrewScorekeeper;
+  const canOverride = isAdmin || isEventCrewAdmin;
+  const canRecordDetailed = isScorekeeper || isAdmin || isEventCrewAdmin;
 
   return (
     <div className="space-y-6">

@@ -179,6 +179,7 @@ export interface Game {
   gameRound?: GameRoundSummary;
   divisionPool?: RefDTO;
   scorekeeper?: UserSummary;
+  eventId: string;
   createdAt: string;
   updatedAt: string;
 }
