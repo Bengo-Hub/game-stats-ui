@@ -174,6 +174,7 @@ export interface Game {
   awayTeam?: TeamSummary;
   fieldLocation?: FieldSummary;
   gameRound?: GameRoundSummary;
+  divisionPool?: RefDTO;
   scorekeeper?: UserSummary;
   createdAt: string;
   updatedAt: string;
@@ -342,18 +343,17 @@ export interface TeamSpiritAverage {
   teamId: string;
   teamName: string;
   gamesPlayed: number;
-  averageTotal: number;
-  rulesKnowledge: number;
-  foulsBodyContact: number;
-  fairMindedness: number;
-  attitude: number;
-  communication: number;
+  averageScore: number;
+  breakdown: SpiritBreakdown;
+  averageTotal?: number; // Keep as optional for backward compatibility if needed
+  rulesKnowledge?: number;
+  foulsBodyContact?: number;
+  fairMindedness?: number;
+  attitude?: number;
+  communication?: number;
   mvpNominationsCount?: number;
   spiritNominationsCount?: number;
-  // Legacy/UI specific fields below (to be reconciled)
-  averageScore?: number;
   gamesRated?: number;
-  breakdown?: SpiritBreakdown;
   gameScores?: GameSpiritScore[];
 }
 
@@ -392,11 +392,20 @@ export interface BracketNode {
   game?: Game;
   round: number;
   position: number;
-  homeTeam?: Team;
-  awayTeam?: Team;
-  homeScore?: number;
-  awayScore?: number;
-  status: 'pending' | 'in_progress' | 'completed';
+  team1Id?: string;
+  team1Name: string;
+  team1Seed?: number;
+  team1Score?: number;
+  team2Id?: string;
+  team2Name: string;
+  team2Seed?: number;
+  team2Score?: number;
+  winnerId?: string;
+  scheduledTime?: string;
+  status: 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'canceled';
+  leftChild?: BracketNode;
+  rightChild?: BracketNode;
+  // Legacy support for children array if needed during transition
   children?: BracketNode[];
 }
 

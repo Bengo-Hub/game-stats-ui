@@ -3,10 +3,9 @@
  * Custom hooks for data fetching with proper caching
  */
 
-import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
-import { publicApi, type ListEventsParams, type ListGamesParams, type ListTeamsParams, type LeaderboardParams, type TeamSpiritAverage } from '@/lib/api';
-import type { Event, Game, Team, PlayerStat, DivisionPool, Bracket, DivisionStandings } from '@/types';
-import { queryKeys, CACHE_TIMES, STALE_TIMES } from './client';
+import { publicApi, type LeaderboardParams, type ListEventsParams, type ListGamesParams, type ListTeamsParams } from '@/lib/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CACHE_TIMES, queryKeys, STALE_TIMES } from './client';
 
 // ============================================
 // Event Hooks
@@ -80,7 +79,7 @@ export function useLiveGames() {
     queryFn: () => publicApi.getLiveGames(),
     staleTime: STALE_TIMES.LIVE,
     gcTime: CACHE_TIMES.LIVE,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    // Live updates come via SSE — no polling needed
   });
 }
 
@@ -110,7 +109,7 @@ export function useGameTimeline(gameId: string | undefined) {
     enabled: !!gameId,
     staleTime: STALE_TIMES.LIVE,
     gcTime: CACHE_TIMES.LIVE,
-    refetchInterval: 10000, // Auto-refresh every 10 seconds for live updates
+    // Live updates come via SSE — no polling needed
   });
 }
 
@@ -271,11 +270,11 @@ export function useDashboardStats() {
         liveGames: liveData,
         upcomingGames: upcomingData,
         activeEvents: eventsData,
-        totalTeams: teamsData.length,
+        totalTeams: (teamsData as any)?.total || (teamsData as any)?.data?.length || 0,
         stats: {
           activeEvents: eventsData.length,
           liveGames: liveData.length,
-          totalTeams: teamsData.length,
+          totalTeams: (teamsData as any)?.total || (teamsData as any)?.data?.length || 0,
           upcomingGames: upcomingData.length,
         },
       };

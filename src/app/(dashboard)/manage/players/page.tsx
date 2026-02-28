@@ -76,16 +76,20 @@ export default function PlayersPage() {
   const queryClient = useQueryClient();
 
   // Fetch teams for filter
-  const { data: teams = [] } = useQuery({
+  const { data: teamsData } = useQuery({
     queryKey: ['teams', 'list', 'filter'],
     queryFn: () => publicApi.listTeams({ limit: 100 }),
+    staleTime: 5 * 60 * 1000,
   });
+  const teams = teamsData?.data || [];
 
   // Fetch events for filter
-  const { data: events = [] } = useQuery({
+  const { data: eventsData } = useQuery({
     queryKey: ['events', 'list', 'filter'],
     queryFn: () => publicApi.listEvents({ limit: 100 }),
+    staleTime: 5 * 60 * 1000,
   });
+  const events = eventsData || [];
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -98,7 +102,7 @@ export default function PlayersPage() {
   // Fetch players logically
   const queryKey = ['dashboard', 'players', 'list', debouncedSearch, selectedTeamId, selectedEventId, selectedGender, pagination.pageSize, pagination.offset];
   const {
-    data: players = [],
+    data: playersData,
     isLoading,
     isError,
     error,
@@ -114,12 +118,15 @@ export default function PlayersPage() {
       limit: pagination.pageSize,
       offset: pagination.offset,
     }),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
+  const players = playersData?.data || [];
+  const totalCount = playersData?.total || 0;
+
   // Calculate total pages for UI
-  const hasMorePages = players.length === pagination.pageSize;
-  const totalPages = hasMorePages ? pagination.page + 1 : pagination.page;
+  const totalPages = Math.ceil(totalCount / pagination.pageSize) || 1;
 
   // Edit Player Mutation
   const updatePlayerMutation = useMutation({

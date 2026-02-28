@@ -12,6 +12,7 @@ import type {
   Field,
   Game,
   GameTimeline,
+  PaginatedResponse,
   PaginationParams,
   Player,
   PlayerStat,
@@ -195,8 +196,10 @@ export interface EventCrew {
   scorekeepers: CrewMember[];
 }
 
-export async function getEventCrew(eventId: string): Promise<EventCrew> {
-  return publicFetch<EventCrew>(`/events/${eventId}/crew`);
+export async function getEventCrew(eventId: string, divisionPoolId?: string): Promise<EventCrew> {
+  return publicFetch<EventCrew>(`/events/${eventId}/crew`, {
+    params: { division_pool_id: divisionPoolId },
+  });
 }
 
 // ============================================
@@ -330,14 +333,16 @@ export async function getRoundBracket(roundId: string): Promise<Bracket> {
 export interface ListTeamsParams extends PaginationParams {
   divisionPoolId?: string;
   eventId?: string;
+  division?: string;
   search?: string;
 }
 
-export async function listTeams(params?: ListTeamsParams): Promise<Team[]> {
-  return publicFetch<Team[]>('/teams', {
+export async function listTeams(params?: ListTeamsParams): Promise<PaginatedResponse<Team>> {
+  return publicFetch<PaginatedResponse<Team>>('/teams', {
     params: {
       divisionPoolId: params?.divisionPoolId,
       eventId: params?.eventId,
+      division: params?.division,
       search: params?.search,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
@@ -368,8 +373,8 @@ export interface ListPlayersParams extends PaginationParams {
   gender?: string;
 }
 
-export async function listPlayers(params?: ListPlayersParams): Promise<Player[]> {
-  return publicFetch<Player[]>('/players', {
+export async function listPlayers(params?: ListPlayersParams): Promise<PaginatedResponse<Player>> {
+  return publicFetch<PaginatedResponse<Player>>('/players', {
     params: {
       search: params?.search,
       teamId: params?.teamId,

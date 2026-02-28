@@ -3,7 +3,7 @@
 import { SpiritScoreData, SpiritScoreForm } from '@/components/features/spirit/spirit-score-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { gamesApi } from '@/lib/api';
+import { gamesApi, publicApi } from '@/lib/api';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -18,7 +18,7 @@ export default function GameSpiritScorePage() {
 
     const { data: game, isLoading: isLoadingGame } = useQuery({
         queryKey: ['games', gameId],
-        queryFn: () => gamesApi.get(gameId),
+        queryFn: () => publicApi.getGame(gameId),
     });
 
     React.useEffect(() => {

@@ -16,7 +16,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
-import type { Event, EventCategory, Game } from '@/types';
+import type { Event, EventCategory, Game, PaginatedResponse, Team } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -123,10 +123,10 @@ function usePlayerLeaderboard(eventId: string | undefined) {
   });
 }
 
-function useEventCrew(eventId: string | undefined) {
+function useEventCrew(eventId: string | undefined, divisionPoolId?: string) {
   return useQuery({
-    queryKey: ['events', eventId, 'crew'],
-    queryFn: () => publicApi.getEventCrew(eventId!),
+    queryKey: ['events', eventId, 'crew', divisionPoolId],
+    queryFn: () => publicApi.getEventCrew(eventId!, divisionPoolId),
     enabled: !!eventId,
     staleTime: 1000 * 60 * 10,
   });
@@ -560,12 +560,12 @@ export default function EventDetailPage() {
   // Query hooks
   const { data: event, isLoading, isError, error } = useEventDetail(slug);
   const { data: games = [] } = useEventGames(event?.id);
-  const { data: teams = [] } = useEventTeams(event?.id);
+  const { data: teamsResult } = useEventTeams(event?.id);
+  const teams = (teamsResult as PaginatedResponse<Team>)?.data || [];
   const { data: spiritScores = [] } = useEventSpirit(event?.id);
   const { data: standings } = useEventStandings(event?.id);
   const { data: rounds = [] } = useEventRounds(event?.id);
   const { data: playerStats = [] } = usePlayerLeaderboard(event?.id);
-  const { data: crew } = useEventCrew(event?.id);
   const divisions = event?.divisions || [];
 
   // Local state
@@ -584,6 +584,10 @@ export default function EventDetailPage() {
   const [scheduleView, setScheduleView] = React.useState<'list' | 'group'>('list');
   const [scheduleSortOrder, setScheduleSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [selectedRoundId, setSelectedRoundId] = React.useState<string>('all');
+
+  // Crew filtering logic (moved here to avoid ReferenceError)
+  const crewFilterId = selectedRoundId !== 'all' ? selectedRoundId : (selectedDivision !== 'all' ? selectedDivision : undefined);
+  const { data: crew } = useEventCrew(event?.id, crewFilterId);
 
   // Find bracket rounds from event rounds
   const bracketRounds = React.useMemo(() => {
@@ -1178,7 +1182,7 @@ export default function EventDetailPage() {
 
               {/* Stage/Round filter */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Round</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">STAGE</span>
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   <button
                     onClick={() => setSelectedRoundId('all')}
@@ -1568,11 +1572,11 @@ export default function EventDetailPage() {
                                 <td className="p-4 text-center">
                                   <span className={cn(
                                     'px-2 py-1 rounded font-medium',
-                                    (score.averageTotal || 0) >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                      (score.averageTotal || 0) >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                    (score.averageScore || score.averageTotal || 0) >= 12 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                      (score.averageScore || score.averageTotal || 0) >= 8 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                                         'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   )}>
-                                    {(score.averageTotal || 0).toFixed(1)}
+                                    {(score.averageScore || score.averageTotal || 0).toFixed(1)}
                                   </span>
                                 </td>
                                 <td className="p-4 text-center">
@@ -1586,42 +1590,52 @@ export default function EventDetailPage() {
                               {isExpanded && (
                                 <tr className="bg-muted/10">
                                   <td colSpan={7} className="p-4">
-                                    <div className="text-sm text-muted-foreground mb-2 font-medium">
-                                      Per-Game Spirit Breakdown
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2">
+                                      {[
+                                        { label: 'Rules', value: score.breakdown?.rulesKnowledge ?? score.rulesKnowledge },
+                                        { label: 'Fouls', value: score.breakdown?.foulsBodyContact ?? score.foulsBodyContact },
+                                        { label: 'Fairness', value: score.breakdown?.fairMindedness ?? score.fairMindedness },
+                                        { label: 'Attitude', value: score.breakdown?.attitude ?? score.attitude },
+                                        { label: 'Comm.', value: score.breakdown?.communication ?? score.communication },
+                                      ].map((item, i) => (
+                                        <div key={i} className="flex flex-col items-center p-2 rounded bg-muted/20 border border-muted/30">
+                                          <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{item.label}</span>
+                                          <span className="text-sm font-bold mt-1">{(item.value ?? 0).toFixed(1)}</span>
+                                        </div>
+                                      ))}
                                     </div>
-                                    {score.gameScores && score.gameScores.length > 0 ? (
-                                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        {score.gameScores.map((gs, gIdx) => (
-                                          <div
-                                            key={gIdx}
-                                            className="flex items-center justify-between p-2 rounded bg-background border"
-                                          >
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-xs text-muted-foreground">vs</span>
-                                              <span className="text-sm font-medium truncate max-w-[120px]">
-                                                {gs.opponentName || 'Opponent'}
-                                              </span>
+
+                                    {score.gameScores && score.gameScores.length > 0 && (
+                                      <div className="mt-4">
+                                        <div className="text-[11px] text-muted-foreground mb-2 font-medium uppercase tracking-wide">
+                                          Recent Game Scores
+                                        </div>
+                                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                          {score.gameScores.map((gs, gIdx) => (
+                                            <div
+                                              key={gIdx}
+                                              className="flex items-center justify-between p-2 rounded bg-background border"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground">vs</span>
+                                                <span className="text-sm font-medium truncate max-w-[120px]">
+                                                  {gs.opponentName || 'Opponent'}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                  'px-2 py-0.5 rounded text-sm font-bold',
+                                                  gs.score >= 12 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                                    gs.score >= 8 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                )}>
+                                                  {(gs.score || 0).toFixed(1)}
+                                                </span>
+                                              </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                              <span className={cn(
-                                                'px-2 py-0.5 rounded text-sm font-bold',
-                                                gs.score >= 9 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                                  gs.score >= 7 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                              )}>
-                                                {(gs.score || 0).toFixed(1)}
-                                              </span>
-                                              <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] font-medium rounded">
-                                                RATED
-                                              </span>
-                                            </div>
-                                          </div>
-                                        ))}
+                                          ))}
+                                        </div>
                                       </div>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground italic">
-                                        No per-game breakdown available
-                                      </p>
                                     )}
                                   </td>
                                 </tr>

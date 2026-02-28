@@ -192,7 +192,7 @@ export default function LeaderboardsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.map((team: Team) => (
+                {((teams as any)?.data || []).map((team: Team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
                   </SelectItem>

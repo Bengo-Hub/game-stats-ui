@@ -1,6 +1,6 @@
 'use client';
 
-import { TeamDialog, ManageRosterDialog } from '@/components/dashboard/teams';
+import { ManageRosterDialog, TeamDialog } from '@/components/dashboard/teams';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,12 +138,15 @@ export default function TeamsPage() {
 
   // Fetch teams using TanStack Query
   const {
-    data: allTeams = [],
+    data: teamsData,
     isLoading,
     isError,
     error,
     isFetching,
   } = useTeamsQuery(queryParams);
+
+  const allTeams = teamsData?.data || [];
+  const totalCount = teamsData?.total || 0;
 
   // Extract unique divisions for filter
   const divisions = React.useMemo(() => {
@@ -161,7 +164,7 @@ export default function TeamsPage() {
   }, [allTeams, divisionFilter]);
 
   // Calculate total pages
-  const totalPages = Math.ceil((allTeams.length || 0) / pagination.pageSize) || 1;
+  const totalPages = Math.ceil(totalCount / pagination.pageSize) || 1;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => teamsApi.delete(id),

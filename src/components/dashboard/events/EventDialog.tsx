@@ -2,7 +2,7 @@
 
 import { CategoryDialog } from '@/components/dashboard/categories/CategoryDialog';
 import { DisciplineDialog } from '@/components/dashboard/disciplines/DisciplineDialog';
-import { LocationDialog } from '@/components/dashboard/locations/LocationDialog';
+import { LocationSelector } from '@/components/features/locations/LocationSelector';
 import { FileUploader } from '@/components/shared/FileUploader';
 import { Button } from '@/components/ui/button';
 import {
@@ -385,35 +385,11 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                             {/* Location */}
                             <div className="space-y-2 sm:col-span-2 md:col-span-1">
                                 <Label htmlFor="locationId">Location *</Label>
-                                <div className="flex items-center gap-2">
-                                    <Select
-                                        value={watch('locationId')}
-                                        onValueChange={(value) => setValue('locationId', value, { shouldDirty: true })}
-                                    >
-                                        <SelectTrigger className={errors.locationId ? 'border-destructive' : ''}>
-                                            <SelectValue placeholder="Select location" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {loadingLocations ? (
-                                                <SelectItem value="loading" disabled>Loading...</SelectItem>
-                                            ) : (
-                                                locations.map((l) => (
-                                                    <SelectItem key={l.id} value={l.id}>
-                                                        {l.name} {l.city ? `(${l.city})` : ''}
-                                                    </SelectItem>
-                                                ))
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <LocationDialog
-                                        onSuccess={(l) => setValue('locationId', l.id, { shouldDirty: true })}
-                                        trigger={
-                                            <Button size="icon-sm" variant="ghost" type="button">
-                                                <Plus className="h-4 w-4" />
-                                            </Button>
-                                        }
-                                    />
-                                </div>
+                                <LocationSelector
+                                    value={watch('locationId')}
+                                    onValueChange={(value) => setValue('locationId', value, { shouldDirty: true })}
+                                    className={errors.locationId ? 'border-destructive' : ''}
+                                />
                                 {errors.locationId && (
                                     <p className="text-sm text-destructive">{errors.locationId.message}</p>
                                 )}

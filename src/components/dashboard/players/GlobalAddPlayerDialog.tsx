@@ -72,7 +72,7 @@ export function GlobalAddPlayerDialog({ open, onOpenChange, onSuccess }: GlobalA
                         <SelectValue placeholder={isLoadingTeams ? "Loading teams..." : "Select team"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {teams.map((team) => (
+                        {((teams as any)?.data || []).map((team: any) => (
                             <SelectItem key={team.id} value={team.id}>
                                 {team.name}
                             </SelectItem>

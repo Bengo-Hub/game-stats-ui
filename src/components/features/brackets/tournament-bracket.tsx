@@ -307,8 +307,8 @@ export function GamesBracket({ games, rounds, className }: GamesBracketProps) {
 // ============================================
 
 function BracketMatch({ node, onMatchClick, isHighlighted, matchRefs }: BracketMatchProps) {
-  const homeWinner = node.status === 'completed' && (node.homeScore ?? 0) > (node.awayScore ?? 0);
-  const awayWinner = node.status === 'completed' && (node.awayScore ?? 0) > (node.homeScore ?? 0);
+  const team1Winner = node.status === 'completed' && (node.team1Score ?? 0) > (node.team2Score ?? 0);
+  const team2Winner = node.status === 'completed' && (node.team2Score ?? 0) > (node.team1Score ?? 0);
 
   return (
     <Card
@@ -325,37 +325,47 @@ function BracketMatch({ node, onMatchClick, isHighlighted, matchRefs }: BracketM
       onClick={() => onMatchClick?.(node)}
     >
       <CardContent className="p-2 space-y-1">
-        {/* Home Team */}
+        {/* Team 1 */}
         <div
           className={cn(
             'flex items-center justify-between px-2 py-1.5 rounded text-sm',
-            homeWinner ? 'bg-primary/10 font-semibold' : 'bg-muted/50'
+            team1Winner ? 'bg-primary/10 font-semibold' : 'bg-muted/50'
           )}
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="truncate">
-              {node.homeTeam?.name || 'TBD'}
+              {node.team1Name || 'TBD'}
             </span>
+            {node.team1Seed && (
+              <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                #{node.team1Seed}
+              </span>
+            )}
           </div>
-          <span className={cn('font-mono ml-2', homeWinner && 'text-primary')}>
-            {node.homeScore ?? '-'}
+          <span className={cn('font-mono ml-2', team1Winner && 'text-primary')}>
+            {node.team1Score ?? '-'}
           </span>
         </div>
 
-        {/* Away Team */}
+        {/* Team 2 */}
         <div
           className={cn(
             'flex items-center justify-between px-2 py-1.5 rounded text-sm',
-            awayWinner ? 'bg-primary/10 font-semibold' : 'bg-muted/50'
+            team2Winner ? 'bg-primary/10 font-semibold' : 'bg-muted/50'
           )}
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="truncate">
-              {node.awayTeam?.name || 'TBD'}
+              {node.team2Name || 'TBD'}
             </span>
+            {node.team2Seed && (
+              <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                #{node.team2Seed}
+              </span>
+            )}
           </div>
-          <span className={cn('font-mono ml-2', awayWinner && 'text-primary')}>
-            {node.awayScore ?? '-'}
+          <span className={cn('font-mono ml-2', team2Winner && 'text-primary')}>
+            {node.team2Score ?? '-'}
           </span>
         </div>
       </CardContent>
@@ -438,10 +448,11 @@ function flattenBracketByRound(
   roundNodes.push(node);
   result.set(node.round, roundNodes);
 
-  if (node.children) {
-    for (const child of node.children) {
-      flattenBracketByRound(child, result);
-    }
+  if (node.leftChild) {
+    flattenBracketByRound(node.leftChild, result);
+  }
+  if (node.rightChild) {
+    flattenBracketByRound(node.rightChild, result);
   }
 
   return result;
@@ -477,7 +488,7 @@ export function TournamentBracket({
     const containerRect = container.getBoundingClientRect();
 
     const generatePaths = (node: BracketNode) => {
-      if (!node.children || node.children.length === 0) return;
+      if (!node.leftChild && !node.rightChild) return;
 
       const parentEl = matchRefs.current.get(node.id);
       if (!parentEl) return;
@@ -486,7 +497,9 @@ export function TournamentBracket({
       const parentX = parentRect.left - containerRect.left;
       const parentY = parentRect.top - containerRect.top + parentRect.height / 2;
 
-      node.children.forEach((child) => {
+      const children = [node.leftChild, node.rightChild].filter(Boolean) as BracketNode[];
+
+      children.forEach((child) => {
         const childEl = matchRefs.current.get(child.id);
         if (!childEl) return;
 

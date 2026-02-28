@@ -1,16 +1,8 @@
 // Pagination hooks for public API endpoints using TanStack Query
-import { useQuery, useInfiniteQuery, UseQueryOptions, UseInfiniteQueryOptions } from '@tanstack/react-query';
-import { useState, useCallback, useMemo } from 'react';
+import type { LeaderboardParams, ListEventsParams, ListGamesParams, ListTeamsParams } from '@/lib/api/public';
 import { publicApi } from '@/lib/api/public';
-import type {
-  Event,
-  Game,
-  Team,
-  PlayerStat,
-  TeamSpiritAverage,
-  PaginationParams,
-} from '@/types';
-import type { ListEventsParams, ListGamesParams, ListTeamsParams, LeaderboardParams } from '@/lib/api/public';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 
 // Default pagination settings
 export const DEFAULT_PAGE_SIZE = 50;
@@ -286,8 +278,10 @@ export function useInfiniteTeams(options?: UseTeamsOptions) {
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < DEFAULT_PAGE_SIZE) {
+    getNextPageParam: (lastPage: any, allPages) => {
+      // Handle both array and PaginatedResponse structures
+      const itemsCount = lastPage.data ? lastPage.data.length : (lastPage.length || 0);
+      if (itemsCount < DEFAULT_PAGE_SIZE) {
         return undefined;
       }
       return allPages.length * DEFAULT_PAGE_SIZE;

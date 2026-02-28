@@ -1,5 +1,6 @@
 'use client';
 
+import { UnifiedScoreForm } from '@/components/dashboard/games/UnifiedScoreForm';
 import { ConnectionStatus } from '@/components/features/games/connection-status';
 import { CompactTimer, GameTimer } from '@/components/features/games/game-timer';
 import { Badge } from '@/components/ui/badge';
@@ -13,20 +14,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { adminApi, gamesApi, publicApi } from '@/lib/api';
 import { useGameStream } from '@/lib/hooks/useGameStream';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/stores/auth';
 import { useGameStore } from '@/stores/game';
 import type { Game, GameEvent } from '@/types';
 import {
   AlertCircle,
-  AlertTriangle,
   ArrowLeft,
   Clock,
   Heart,
@@ -35,12 +33,11 @@ import {
   MapPin,
   Play,
   Plus,
-  Save,
   ShieldCheck,
   Square,
   Star,
   Timer,
-  Trophy,
+  Trophy
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -60,23 +57,11 @@ export default function GameDetailPage() {
   const [showCancelDialog, setShowCancelDialog] = React.useState(false);
   const [spiritScores, setSpiritScores] = React.useState<any[]>([]);
   const [cancelling, setCancelling] = React.useState(false);
+  const user = useUser();
 
   // Real-time state from store
   const { timer, setGame: setStoreGame, incrementTimer, startTimer, pauseTimer, startStoppage, endStoppage, addStoppageTime, setElapsedTime } = useGameStore();
 
-  // SSE connection for live updates
-  const {
-    isConnected,
-    connectionStatus,
-    lastUpdate,
-  } = useGameStream(game?.status === 'in_progress' ? gameId : null, {
-    onEvent: (event) => {
-      if (event.type === 'score_updated' || event.type === 'goal_scored') {
-        // Refresh game data on score changes
-        loadGame();
-      }
-    },
-  });
 
   // Timer interval for live games
   React.useEffect(() => {
@@ -102,8 +87,8 @@ export default function GameDetailPage() {
     setLoading(true);
     try {
       const [gameData, timelineData, auditData] = await Promise.all([
-        gamesApi.get(gameId),
-        gamesApi.getTimeline(gameId).catch(() => ({ events: [] })),
+        publicApi.getGame(gameId),
+        publicApi.getGameTimeline(gameId).catch(() => ({ events: [] })),
         adminApi.getGameAuditHistory(gameId).catch(() => []),
         loadSpiritScores(),
       ]);
@@ -117,6 +102,22 @@ export default function GameDetailPage() {
       setLoading(false);
     }
   }, [gameId, setStoreGame, loadSpiritScores]);
+
+  // SSE connection for live updates
+  const sseOptions = React.useMemo(() => ({
+    onEvent: (event: any) => {
+      if (event.type === 'score_updated' || event.type === 'goal_scored') {
+        // Refresh game data on score changes
+        loadGame();
+      }
+    },
+  }), [loadGame]);
+
+  const {
+    isConnected,
+    connectionStatus,
+    lastUpdate,
+  } = useGameStream(game?.status === 'in_progress' ? gameId : null, sseOptions);
 
   React.useEffect(() => {
     if (gameId) {
@@ -255,7 +256,13 @@ export default function GameDetailPage() {
 
   const isLive = game.status === 'in_progress';
   const isEnded = game.status === 'ended';
+  const isCompleted = game.status === 'completed';
+  const isCancelled = game.status === 'canceled';
   const isLiveOrEnded = isLive || isEnded;
+  const isAdmin = user?.role === 'admin' || user?.role === 'event_manager';
+  const isScorekeeper = user?.id === game.scorekeeper?.id;
+  const canOverride = isAdmin;
+  const canRecordDetailed = isScorekeeper || isAdmin;
 
   return (
     <div className="space-y-6">
@@ -413,8 +420,8 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Quick Actions for Live/Finished Game */}
-            {isLiveOrEnded && (
+            {/* Quick Actions for Live Game Only */}
+            {isLive && (
               <div className="mt-6 pt-6 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <Button
@@ -494,7 +501,7 @@ export default function GameDetailPage() {
                   Submit Spirit Score
                 </Link>
               </Button>
-              {game.status !== 'canceled' && (
+              {!isCancelled && !isCompleted && (
                 <Button
                   variant="outline"
                   className="w-full h-10 rounded-xl text-rose-600 border-rose-100 hover:bg-rose-50"
@@ -519,15 +526,18 @@ export default function GameDetailPage() {
                 <TabsTrigger value="spirit">Spirit Scores</TabsTrigger>
                 <TabsTrigger value="audit">Audit Trail</TabsTrigger>
               </TabsList>
-              {game.status !== 'completed' && (
+              {(canOverride || canRecordDetailed) && game.status !== 'completed' && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                  className={cn(
+                    "rounded-xl",
+                    canOverride ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-primary border-primary/20 hover:bg-primary/5"
+                  )}
                   onClick={() => setShowOverrideDialog(true)}
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />
-                  Score Override
+                  {canOverride ? 'Score Override' : 'Record Detailed Scores'}
                 </Button>
               )}
             </div>
@@ -640,12 +650,31 @@ export default function GameDetailPage() {
       </Card>
 
       {showOverrideDialog && (
-        <ScoreOverrideDialog
-          open={showOverrideDialog}
-          onOpenChange={setShowOverrideDialog}
-          game={game}
-          onSuccess={loadGame}
-        />
+        <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="flex items-center gap-2 text-2xl font-black">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                {isAdmin ? 'Administrative Score Override' : 'Record Detailed Match Scores'}
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                {isAdmin
+                  ? 'Update individual player statistics and the final game score. All changes require a reason and will be audited.'
+                  : 'Enter precise player statistics for both teams. Total scores will be calculated automatically.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <UnifiedScoreForm
+              game={game}
+              isAdmin={isAdmin}
+              onSuccess={() => {
+                setShowOverrideDialog(false);
+                loadGame();
+              }}
+              onCancel={() => setShowOverrideDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {showCancelDialog && (
@@ -679,87 +708,3 @@ export default function GameDetailPage() {
   );
 }
 
-// Internal Score Override Dialog
-function ScoreOverrideDialog({ open, onOpenChange, game, onSuccess }: { open: boolean; onOpenChange: (o: boolean) => void; game: any; onSuccess: () => void }) {
-  const [homeScore, setHomeScore] = React.useState(game.homeTeamScore);
-  const [awayScore, setAwayScore] = React.useState(game.awayTeamScore);
-  const [reason, setReason] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const handleSubmit = async () => {
-    if (!reason) {
-      toast.error('Please provide a reason for the override');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await adminApi.overrideGameScore(game.id, {
-        homeTeamScore: homeScore,
-        awayTeamScore: awayScore,
-        reason: reason,
-      });
-      toast.success('Score overridden successfully');
-      onSuccess();
-      onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to override score');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] rounded-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Administrative Override
-          </DialogTitle>
-          <DialogDescription>
-            Manually set the final score for this game. This action will be logged in the audit trail.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-2">
-              <Label>{game.homeTeam?.name} (Home)</Label>
-              <Input
-                type="number"
-                value={homeScore}
-                onChange={(e) => setHomeScore(Number(e.target.value))}
-                className="text-2xl font-black text-center h-14 rounded-xl"
-              />
-            </div>
-            <div className="text-xl font-bold pt-6">-</div>
-            <div className="flex-1 space-y-2">
-              <Label>{game.awayTeam?.name} (Away)</Label>
-              <Input
-                type="number"
-                value={awayScore}
-                onChange={(e) => setAwayScore(Number(e.target.value))}
-                className="text-2xl font-black text-center h-14 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Reason for Adjustment</Label>
-            <Textarea
-              placeholder="e.g., Correcting scorecard error, disputed point resolution..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="rounded-xl min-h-[100px]"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} className="rounded-xl bg-amber-600 hover:bg-amber-700">
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Apply Override
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}

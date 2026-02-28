@@ -184,9 +184,9 @@ export function PlayerDialog({
                                     </div>
                                     {isLoadingSearch && <Loader2 className="h-3 w-3 animate-spin" />}
                                 </div>
-                                {searchPlayers.length > 0 && (
+                                {((searchPlayers as any)?.data || []).length > 0 && (
                                     <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md overflow-hidden max-h-40 overflow-y-auto">
-                                        {searchPlayers.map((p: any) => (
+                                        {((searchPlayers as any)?.data || []).map((p: any) => (
                                             <div
                                                 key={p.id}
                                                 className="px-3 py-2 text-xs hover:bg-muted cursor-pointer flex items-center justify-between"

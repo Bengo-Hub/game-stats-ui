@@ -5,7 +5,7 @@ import { hasPermission, isRoleEqualOrHigher, type Role } from '@/lib/permissions
 import { findRouteConfig, isDashboardRoute } from '@/lib/permissions/routes';
 import { useAuthStore } from '@/stores/auth';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 // Static public paths (exact matches and prefixes)
 const PUBLIC_PATHS = [
@@ -56,7 +56,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, fetchUser, accessToken, user } = useAuthStore();
+  const { isAuthenticated, isLoading, fetchUser, accessToken, user, _hasHydrated } = useAuthStore();
 
   const isPublicPath = useMemo(() => isPublicRoute(pathname), [pathname]);
   const isAuthOnlyPath = useMemo(() => isAuthOnlyRoute(pathname), [pathname]);
@@ -96,15 +96,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { hasAccess: true, redirectTo: null };
   }, [pathname, isPublicPath, isAuthenticated, isDashboardPath, user?.role]);
 
+  // Track whether we are in the middle of validating the token
+  const isValidating = useRef(false);
+
   useEffect(() => {
-    // If we have a token but no user, fetch the user
-    if (accessToken && isAuthenticated) {
-      fetchUser().catch(() => {
-        // Token might be expired, redirect to login
-        router.push('/login');
-      });
+    // If we have a token but no user, fetch the user to validate the token
+    if (accessToken && isAuthenticated && !user) {
+      isValidating.current = true;
+      fetchUser()
+        .catch(() => {
+          // Token is expired/invalid — clear auth state entirely to break the loop
+          useAuthStore.getState().logout();
+        })
+        .finally(() => {
+          isValidating.current = false;
+        });
     }
-  }, [accessToken, isAuthenticated, fetchUser, router]);
+  }, [accessToken, isAuthenticated, user, fetchUser]);
 
   // Sync token with API client synchronously to prevent race conditions 
   // with initial API calls from child components
@@ -113,20 +121,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [accessToken]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated && !isPublicPath) {
-        // Redirect to login if not authenticated and not on public path
-        router.push('/login');
-      } else if (isAuthenticated && isAuthOnlyPath) {
-        // Only redirect from auth pages (login/register) when authenticated
-        // Allow authenticated users to view public pages
-        router.push('/dashboard');
-      } else if (isAuthenticated && !routeAccessResult.hasAccess && routeAccessResult.redirectTo) {
-        // Redirect if user lacks permission for the current route
-        router.push(routeAccessResult.redirectTo);
-      }
+    // Never redirect on public pages — they are always accessible
+    if (isPublicPath) return;
+
+    // Don't redirect while still validating the token
+    // needsValidation: we have a token + isAuthenticated but user hasn't loaded yet
+    const needsValidation = isAuthenticated && accessToken && !user;
+    if (isLoading || !_hasHydrated || isValidating.current || needsValidation) return;
+
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated and not on public path
+      router.push('/login');
+    } else if (isAuthOnlyPath) {
+      // Only redirect from auth pages (login/register) when authenticated
+      // Allow authenticated users to view public pages
+      router.push('/dashboard');
+    } else if (!routeAccessResult.hasAccess && routeAccessResult.redirectTo) {
+      // Redirect if user lacks permission for the current route
+      router.push(routeAccessResult.redirectTo);
     }
-  }, [isAuthenticated, isLoading, isPublicPath, isAuthOnlyPath, routeAccessResult, router]);
+  }, [isAuthenticated, isLoading, isPublicPath, isAuthOnlyPath, routeAccessResult, router, accessToken, user]);
 
   // Show loading only for protected routes (not public pages)
   if (isLoading && !isPublicPath) {

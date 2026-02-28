@@ -93,7 +93,7 @@ export default function DashboardPage() {
       setStats({
         activeEvents: eventsData.length,
         liveGames: liveData.length,
-        totalTeams: teamsData.length,
+        totalTeams: (teamsData as any)?.total || 0,
         upcomingGames: upcomingData.length,
       });
     } catch (err) {

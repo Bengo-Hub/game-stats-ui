@@ -1,29 +1,31 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { SearchInput } from '@/components/ui/search-input';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Users,
-  MapPin,
-  ChevronDown,
-  Filter,
-  RefreshCw,
-  AlertCircle,
-  Crown,
-  Heart,
-} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SearchInput } from '@/components/ui/search-input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { publicApi, type ListTeamsParams } from '@/lib/api';
-import type { Team } from '@/types';
+import type { Event, Team } from '@/types';
+import {
+  AlertCircle,
+  ChevronDown,
+  Crown,
+  Filter,
+  Heart,
+  MapPin,
+  RefreshCw,
+  Trophy,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import * as React from 'react';
 
 // Extended team type for display
 interface DisplayTeam extends Team {
@@ -62,60 +64,102 @@ const getDivisionColor = (division: string) => {
 
 export default function PublicTeamsPage() {
   const [teams, setTeams] = React.useState<DisplayTeam[]>([]);
+  const [events, setEvents] = React.useState<Event[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState('');
   const [divisionFilter, setDivisionFilter] = React.useState('All Divisions');
+  const [selectedEventId, setSelectedEventId] = React.useState<string>('all');
+  const [totalTeams, setTotalTeams] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [offset, setOffset] = React.useState(0);
+
+  // Fetch events for filter
+  React.useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const data = await publicApi.listEvents({ limit: 100 });
+        setEvents(data);
+      } catch (err) {
+        console.error('Failed to fetch events:', err);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   // Fetch teams from API
-  const fetchTeams = React.useCallback(async () => {
-    setLoading(true);
+  const fetchTeams = React.useCallback(async (reset = true) => {
+    if (reset) {
+      setLoading(true);
+      setOffset(0);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
 
     try {
-      const params: ListTeamsParams = {};
+      const currentOffset = reset ? 0 : offset;
+      const params: ListTeamsParams = {
+        limit: 24,
+        offset: currentOffset,
+      };
 
       // Apply search filter
       if (search) {
         params.search = search;
       }
 
-      const data = await publicApi.listTeams(params);
+      // Apply division filter (backend-side)
+      if (divisionFilter !== 'All Divisions') {
+        params.division = divisionFilter;
+      }
 
-      // Transform to display format - use actual API response data
-      const displayTeams: DisplayTeam[] = data.map((team) => ({
+      // Apply event filter
+      if (selectedEventId !== 'all') {
+        params.eventId = selectedEventId;
+      }
+
+      const response = await publicApi.listTeams(params);
+
+      // Transform to display format
+      const displayTeams: DisplayTeam[] = response.data.map((team) => ({
         ...team,
-        // Use actual division name from API response
         division: team.divisionName || undefined,
         location: team.locationName || 'Location TBD',
-        // playersCount is now included in API response
       }));
 
-      setTeams(displayTeams);
+      if (reset) {
+        setTeams(displayTeams);
+      } else {
+        setTeams((prev) => [...prev, ...displayTeams]);
+      }
+
+      setTotalTeams(response.total);
+      setHasMore(response.hasMore);
+      setOffset(currentOffset + response.data.length);
     } catch (err) {
       console.error('Failed to fetch teams:', err);
       setError(err instanceof Error ? err.message : 'Failed to load teams');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [search]);
+  }, [search, divisionFilter, selectedEventId, offset]);
 
-  // Debounced search
+  // Handle search with debounce
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchTeams();
+      fetchTeams(true);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [fetchTeams]);
+  }, [search, divisionFilter, selectedEventId]);
 
-  // Client-side division filtering
-  const filteredTeams = React.useMemo(() => {
-    if (divisionFilter === 'All Divisions') return teams;
-    return teams.filter(
-      (team) => team.division?.toLowerCase() === divisionFilter.toLowerCase()
-    );
-  }, [teams, divisionFilter]);
+  const handleRefresh = () => fetchTeams(true);
+  const handleLoadMore = () => fetchTeams(false);
+
+  const filteredTeams = teams; // Filtering now happens on backend
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -137,7 +181,39 @@ export default function PublicTeamsPage() {
           placeholder="Search teams..."
           className="sm:max-w-md flex-1"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* Event Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[160px] justify-between">
+                <Trophy className="h-4 w-4 mr-2 text-amber-500" />
+                <span className="truncate max-w-[120px]">
+                  {selectedEventId === 'all'
+                    ? 'All Events'
+                    : events.find((e) => e.id === selectedEventId)?.name || 'Select Event'}
+                </span>
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto w-[240px]">
+              <DropdownMenuItem onClick={() => setSelectedEventId('all')}>
+                All Events
+              </DropdownMenuItem>
+              {events.map((event) => (
+                <DropdownMenuItem
+                  key={event.id}
+                  onClick={() => setSelectedEventId(event.id)}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{event.name}</span>
+                    <span className="text-xs text-muted-foreground">{event.year}</span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Division Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="min-w-[140px] justify-between">
@@ -161,7 +237,7 @@ export default function PublicTeamsPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={fetchTeams}
+            onClick={handleRefresh}
             disabled={loading}
             title="Refresh teams"
           >
@@ -177,15 +253,22 @@ export default function PublicTeamsPage() {
           <div className="flex-1">
             <p className="text-sm text-destructive">{error}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchTeams}>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             Retry
           </Button>
         </div>
       )}
 
       {/* Results count */}
-      <div className="text-sm text-muted-foreground mb-4">
-        {filteredTeams.length} team{filteredTeams.length !== 1 ? 's' : ''} found
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {teams.length} of {totalTeams} team{totalTeams !== 1 ? 's' : ''}
+        </div>
+        {selectedEventId !== 'all' && (
+          <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
+            Filtered by Event
+          </Badge>
+        )}
       </div>
 
       {/* Teams Grid */}
@@ -206,84 +289,109 @@ export default function PublicTeamsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredTeams.map((team) => (
-            <Link key={team.id} href={`/teams/${team.id}`}>
-              <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
-                <CardContent className="p-5">
-                  {/* Team Avatar */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div
-                      className="w-14 h-14 rounded-lg flex items-center justify-center text-white text-xl font-bold shrink-0"
-                      style={{ backgroundColor: team.primaryColor || getTeamColor(team.name) }}
-                    >
-                      {team.logoUrl ? (
-                        <img
-                          src={team.logoUrl}
-                          alt={team.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        team.name.charAt(0)
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
-                        {team.name}
-                      </h3>
-                      {team.location && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span className="truncate">{team.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Division Badge */}
-                  {team.division && (
-                    <div className="mb-3">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium ${getDivisionColor(team.division)}`}
+        <div className="space-y-8">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {teams.map((team) => (
+              <Link key={team.id} href={`/teams/${team.id}`}>
+                <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
+                  <CardContent className="p-5">
+                    {/* Team Avatar */}
+                    <div className="flex items-start gap-4 mb-4">
+                      <div
+                        className="w-14 h-14 rounded-lg flex items-center justify-center text-white text-xl font-bold shrink-0"
+                        style={{ backgroundColor: team.primaryColor || getTeamColor(team.name) }}
                       >
-                        {team.division}
-                      </span>
+                        {team.logoUrl ? (
+                          <img
+                            src={team.logoUrl}
+                            alt={team.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          team.name.charAt(0)
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
+                          {team.name}
+                        </h3>
+                        {team.location && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{team.location}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
 
-                  {/* Captains Section */}
-                  {(team.captain || team.spiritCaptain) && (
-                    <div className="space-y-1.5 mb-3">
-                      {team.captain && (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-xs font-medium">
-                            <Crown className="h-3 w-3" />
-                            C
-                          </span>
-                          <span className="text-sm truncate">{team.captain.name}</span>
-                        </div>
-                      )}
-                      {team.spiritCaptain && (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-xs font-medium">
-                            <Heart className="h-3 w-3" />
-                            S
-                          </span>
-                          <span className="text-sm truncate">{team.spiritCaptain.name}</span>
-                        </div>
-                      )}
+                    {/* Division Badge */}
+                    {team.division && (
+                      <div className="mb-3">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${getDivisionColor(team.division)}`}
+                        >
+                          {team.division}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Captains Section */}
+                    {(team.captain || team.spiritCaptain) && (
+                      <div className="space-y-1.5 mb-3">
+                        {team.captain && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-xs font-medium">
+                              <Crown className="h-3 w-3" />
+                              C
+                            </span>
+                            <span className="text-sm truncate font-medium">{team.captain.name}</span>
+                          </div>
+                        )}
+                        {team.spiritCaptain && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-xs font-medium">
+                              <Heart className="h-3 w-3" />
+                              S
+                            </span>
+                            <span className="text-sm truncate font-medium text-muted-foreground italic">
+                              {team.spiritCaptain.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Player Count */}
+                    <div className="flex items-center gap-2 pt-3 border-t text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>{team.playersCount ?? 0} player{team.playersCount !== 1 ? 's' : ''}</span>
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
 
-                  {/* Player Count */}
-                  <div className="flex items-center gap-2 pt-3 border-t text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{team.playersCount ?? 0} players</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {/* Load More */}
+          {hasMore && (
+            <div className="flex justify-center pt-8">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="w-full sm:w-64 rounded-xl h-12 font-semibold"
+              >
+                {loadingMore ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Teams'
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

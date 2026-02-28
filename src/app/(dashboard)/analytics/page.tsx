@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
   // Calculate stats from fetched data
   const stats = React.useMemo(() => {
     const totalPlayers = playerStats.length;
-    const totalTeams = teams.length;
+    const totalTeams = (teams as any)?.total || 0;
     const activeEvents = liveEvents.length;
 
     // Calculate average spirit from spirit stats
@@ -130,7 +130,8 @@ export default function AnalyticsPage() {
   // Division distribution from teams
   const divisionDistribution = React.useMemo(() => {
     const divisionMap = new Map<string, number>();
-    teams.forEach((team) => {
+    const teamsList = (teams as any)?.data || [];
+    teamsList.forEach((team: any) => {
       const division = team.divisionName || 'Unassigned';
       divisionMap.set(division, (divisionMap.get(division) || 0) + 1);
     });

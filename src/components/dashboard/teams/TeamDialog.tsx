@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { geographicApi } from '@/lib/api/geographic';
 import { publicApi } from '@/lib/api/public';
 import { teamsApi, type CreateTeamRequest, type UpdateTeamRequest } from '@/lib/api/teams';
 import { eventKeys } from '@/lib/hooks/useEventsQuery';
@@ -168,6 +169,14 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
         staleTime: 1000 * 60 * 5,
     });
 
+    // Fetch locations for location selector
+    const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
+        queryKey: ['geographic', 'locations'],
+        queryFn: () => geographicApi.listLocations(),
+        enabled: open,
+        staleTime: 1000 * 60 * 10,
+    });
+
     // Fetch teams for search/reuse
     const { data: searchTeams = [], isLoading: isLoadingSearch } = useQuery({
         queryKey: ['teams', 'search', teamSearch],
@@ -295,9 +304,9 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
                                             />
                                             {isLoadingSearch && <Loader2 className="h-3 w-3 animate-spin" />}
                                         </div>
-                                        {searchTeams.length > 0 && (
+                                        {((searchTeams as any)?.data || []).length > 0 && (
                                             <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md overflow-hidden max-h-40 overflow-y-auto">
-                                                {searchTeams.map((t) => (
+                                                {((searchTeams as any)?.data || []).map((t: any) => (
                                                     <div
                                                         key={t.id}
                                                         className="px-3 py-2 text-xs hover:bg-muted cursor-pointer flex items-center justify-between"
@@ -365,11 +374,30 @@ export function TeamDialog({ team, trigger, eventId: initialEventId, open: contr
 
                         <div className="space-y-2">
                             <Label htmlFor="locationName">Location/City</Label>
-                            <Input
-                                id="locationName"
-                                placeholder="e.g., Hong Kong"
-                                {...register('locationName')}
-                            />
+                            {locations.length > 0 ? (
+                                <Select
+                                    value={watch('locationName') || undefined}
+                                    onValueChange={(value) => setValue('locationName', value, { shouldDirty: true })}
+                                    disabled={isLoadingLocations}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={isLoadingLocations ? 'Loading locations...' : 'Select location'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(locations as any[]).map((loc: any) => (
+                                            <SelectItem key={loc.id} value={loc.name}>
+                                                {loc.name}{loc.city ? ` — ${loc.city}` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <Input
+                                    id="locationName"
+                                    placeholder="e.g., Hong Kong"
+                                    {...register('locationName')}
+                                />
+                            )}
                         </div>
                     </div>
 

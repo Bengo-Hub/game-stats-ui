@@ -1,3 +1,4 @@
+import { LocationSelector } from '@/components/features/locations/LocationSelector';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,7 +27,6 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { LocationDialog } from '../locations/LocationDialog';
 
 const fieldSchema = z.object({
     name: z.string().min(1, 'Name required'),
@@ -115,33 +115,11 @@ export function FieldDialog({ trigger, onSuccess, defaultLocationId }: FieldDial
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="locationId">Location *</Label>
-                        <div className="flex items-center gap-2">
-                            <Select
-                                value={watch('locationId')}
-                                onValueChange={(val) => setValue('locationId', val)}
-                            >
-                                <SelectTrigger className="flex-1">
-                                    <SelectValue placeholder="Select location" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {loadingLocations ? (
-                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
-                                    ) : (
-                                        locations.map(l => (
-                                            <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                            <LocationDialog
-                                onSuccess={(l) => setValue('locationId', l.id)}
-                                trigger={
-                                    <Button variant="ghost" size="icon" type="button" className="h-9 w-9">
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                }
-                            />
-                        </div>
+                        <LocationSelector
+                            value={watch('locationId')}
+                            onValueChange={(val) => setValue('locationId', val)}
+                            className={errors.locationId ? 'border-destructive' : ''}
+                        />
                         {errors.locationId && <p className="text-sm text-destructive">{errors.locationId.message}</p>}
                     </div>
 

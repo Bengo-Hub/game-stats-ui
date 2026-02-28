@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { adminApi, type AdminUser } from '@/lib/api/admin';
 import { eventsApi } from '@/lib/api/events';
-import { gamesApi } from '@/lib/api/games';
+import { publicApi } from '@/lib/api/public';
 
 interface AssignScopedRoleModalProps {
     user: AdminUser | null;
@@ -49,7 +49,7 @@ export function AssignScopedRoleModal({ user, isOpen, onClose }: AssignScopedRol
 
     const { data: games, isLoading: isLoadingGames } = useQuery({
         queryKey: ['games', 'list'],
-        queryFn: () => gamesApi.list({}),
+        queryFn: () => publicApi.listGames({}),
         enabled: scopeType === 'game' && isOpen,
     });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuthStore } from '@/stores/auth';
+
 import type { Game, GameEvent } from '@/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -58,6 +58,16 @@ export function useGameStream(
     onError,
   } = options;
 
+  const onEventRef = useRef(onEvent);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => { onEventRef.current = onEvent; }, [onEvent]);
+  useEffect(() => { onConnectRef.current = onConnect; }, [onConnect]);
+  useEffect(() => { onDisconnectRef.current = onDisconnect; }, [onDisconnect]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
   const [state, setState] = useState<GameStreamState>({
     game: null,
     events: [],
@@ -70,7 +80,7 @@ export function useGameStream(
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const accessToken = useAuthStore((state) => state.accessToken);
+
 
   const connect = useCallback(() => {
     if (!gameId) return;
@@ -86,11 +96,8 @@ export function useGameStream(
       error: null,
     }));
 
-    // Build URL with auth token as query param (EventSource doesn't support headers)
-    const url = new URL(`${API_BASE_URL}/games/${gameId}/stream`);
-    if (accessToken) {
-      url.searchParams.set('token', accessToken);
-    }
+    // Use public endpoint — no auth needed for SSE streams
+    const url = new URL(`${API_BASE_URL}/public/games/${gameId}/stream`);
 
     const eventSource = new EventSource(url.toString());
     eventSourceRef.current = eventSource;
@@ -103,7 +110,7 @@ export function useGameStream(
         connectionStatus: 'connected',
         error: null,
       }));
-      onConnect?.();
+      onConnectRef.current?.();
     };
 
     // Handle specific event types
@@ -115,7 +122,7 @@ export function useGameStream(
           game: data.game || prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'connected', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'connected', data, timestamp: new Date().toISOString() });
       },
 
       game_started: (e) => {
@@ -125,7 +132,7 @@ export function useGameStream(
           game: data.game || prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'game_started', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'game_started', data, timestamp: new Date().toISOString() });
       },
 
       game_ended: (e) => {
@@ -135,7 +142,7 @@ export function useGameStream(
           game: data.game || prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'game_ended', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'game_ended', data, timestamp: new Date().toISOString() });
       },
 
       goal_scored: (e) => {
@@ -146,7 +153,7 @@ export function useGameStream(
           events: data.event ? [...prev.events, data.event] : prev.events,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'goal_scored', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'goal_scored', data, timestamp: new Date().toISOString() });
       },
 
       score_updated: (e) => {
@@ -158,7 +165,7 @@ export function useGameStream(
             : prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'score_updated', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'score_updated', data, timestamp: new Date().toISOString() });
       },
 
       timer_update: (e) => {
@@ -167,7 +174,7 @@ export function useGameStream(
           ...prev,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'timer_update', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'timer_update', data, timestamp: new Date().toISOString() });
       },
 
       stoppage_started: (e) => {
@@ -177,7 +184,7 @@ export function useGameStream(
           game: data.game || prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'stoppage_started', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'stoppage_started', data, timestamp: new Date().toISOString() });
       },
 
       stoppage_ended: (e) => {
@@ -187,7 +194,7 @@ export function useGameStream(
           game: data.game || prev.game,
           lastUpdate: new Date(),
         }));
-        onEvent?.({ type: 'stoppage_ended', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'stoppage_ended', data, timestamp: new Date().toISOString() });
       },
     };
 
@@ -201,7 +208,7 @@ export function useGameStream(
       try {
         const data = JSON.parse(e.data);
         setState((prev) => ({ ...prev, lastUpdate: new Date() }));
-        onEvent?.({ type: 'connected', data, timestamp: new Date().toISOString() });
+        onEventRef.current?.({ type: 'connected', data, timestamp: new Date().toISOString() });
       } catch {
         console.warn('Failed to parse SSE message:', e.data);
       }
@@ -219,8 +226,8 @@ export function useGameStream(
         error: 'Connection lost',
       }));
 
-      onDisconnect?.();
-      onError?.(new Error('SSE connection error'));
+      onDisconnectRef.current?.();
+      onErrorRef.current?.(new Error('SSE connection error'));
 
       // Auto-reconnect logic
       if (autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
@@ -232,14 +239,9 @@ export function useGameStream(
     };
   }, [
     gameId,
-    accessToken,
     autoReconnect,
     reconnectInterval,
     maxReconnectAttempts,
-    onConnect,
-    onDisconnect,
-    onError,
-    onEvent,
   ]);
 
   const disconnect = useCallback(() => {

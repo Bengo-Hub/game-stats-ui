@@ -1,6 +1,6 @@
 'use client';
 
-import { GamesBracket } from '@/components/features/brackets';
+import { TournamentBracket } from '@/components/features/brackets';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { eventsApi } from '@/lib/api/events';
-import { gamesApi } from '@/lib/api/games';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, LayoutGrid, RefreshCw } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -36,20 +35,15 @@ export default function EventBracketPage() {
         enabled: !!eventId,
     });
 
-    const { data: games = [], isLoading: isLoadingGames, refetch: refetchGames } = useQuery({
-        queryKey: ['events', eventId, 'bracket-games', selectedRoundId],
-        queryFn: () => gamesApi.list({
-            event_id: eventId,
-            game_round_id: selectedRoundId !== 'all' ? selectedRoundId : undefined,
-        }),
+    const { data: bracket, isLoading: isLoadingBracket, refetch: refetchBracket } = useQuery({
+        queryKey: ['events', eventId, 'bracket-tree', selectedRoundId],
+        queryFn: () => eventsApi.getBracket(eventId, selectedRoundId !== 'all' ? selectedRoundId : ''),
         enabled: !!eventId,
     });
 
-    // Filter only bracket games
-    const bracketGames = games.filter(g => (g.gameRound?.roundType as string) === 'bracket');
-    const bracketRounds = rounds.filter(r => (r.roundType as string) === 'bracket');
+    const bracketRounds = rounds.filter(r => (r.roundType as string) === 'bracket' || (r.roundType as string) === 'semifinal' || (r.roundType as string) === 'final');
 
-    if (isLoadingEvent || isLoadingRounds || isLoadingGames) {
+    if (isLoadingEvent || isLoadingRounds || isLoadingBracket) {
         return (
             <div className="space-y-6 pt-4">
                 <Skeleton className="h-20 w-full rounded-2xl" />
@@ -78,18 +72,17 @@ export default function EventBracketPage() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" size="icon" onClick={() => refetchGames()} className="rounded-xl">
+                    <Button variant="outline" size="icon" onClick={() => refetchBracket()} className="rounded-xl">
                         <RefreshCw className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
-            {bracketGames.length > 0 ? (
+            {bracket && (bracket as any).bracketTree ? (
                 <Card className="rounded-2xl shadow-xl border-none bg-muted/10 overflow-hidden">
                     <CardContent className="p-0 overflow-x-auto min-h-[600px] flex items-center justify-center bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]">
-                        <GamesBracket
-                            games={bracketGames as any}
-                            rounds={bracketRounds as any}
+                        <TournamentBracket
+                            bracket={bracket as any}
                             className="p-10"
                         />
                     </CardContent>

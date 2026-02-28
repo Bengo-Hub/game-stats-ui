@@ -297,11 +297,19 @@ export const adminApi = {
     homeTeamScore: number;
     awayTeamScore: number;
     reason: string;
+    playerScores?: Array<{
+      player_id: string;
+      goals: number;
+      assists: number;
+      blocks: number;
+      turns: number;
+    }>;
   }): Promise<unknown> {
     return apiClient.put(`/admin/games/${gameId}/score`, {
       home_score: data.homeTeamScore,
       away_score: data.awayTeamScore,
       reason: data.reason,
+      player_scores: data.playerScores,
     });
   },
 

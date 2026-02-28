@@ -23,6 +23,7 @@ export interface CreateGameRequest {
   field_location_id?: string;
   division_pool_id: string;
   game_round_id?: string;
+  scorekeeper_id?: string;
 }
 
 export interface UpdateGameRequest {
@@ -61,6 +62,7 @@ export function mapGameResponse(data: any): Game {
     awayTeam: data.away_team ?? data.awayTeam,
     fieldLocation: data.field_location ?? data.fieldLocation,
     gameRound: data.game_round ?? data.gameRound,
+    divisionPool: data.division_pool ?? data.divisionPool,
     scorekeeper: data.scorekeeper,
   } as Game;
 }
@@ -130,10 +132,29 @@ export const gamesApi = {
   },
 
   /**
-   * Record a score
+   * Record a score (single event)
    */
   async recordScore(id: string, data: RecordScoreRequest): Promise<Game> {
     return apiClient.post<Game>(`/games/${id}/score`, data);
+  },
+
+  /**
+   * Update bulk scores (multiple players at once)
+   */
+  async updateBulkScores(id: string, data: {
+    home_score: number;
+    away_score: number;
+    reason: string;
+    player_scores?: Array<{
+      player_id: string;
+      goals: number;
+      assists: number;
+      blocks: number;
+      turns: number;
+    }>;
+  }): Promise<Game> {
+    const response = await apiClient.put<any>(`/games/${id}/score`, data);
+    return mapGameResponse(response);
   },
 
   /**

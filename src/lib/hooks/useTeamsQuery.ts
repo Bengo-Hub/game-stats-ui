@@ -1,7 +1,6 @@
 // Teams hooks using TanStack Query
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { publicApi, type ListTeamsParams } from '@/lib/api/public';
-import type { Team } from '@/types';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Query keys
 export const teamKeys = {
@@ -62,9 +61,10 @@ export function useInfiniteTeamsQuery(params?: Omit<ListTeamsParams, 'limit' | '
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < pageSize) return undefined;
-      return allPages.flat().length;
+    getNextPageParam: (lastPage: any, allPages: any[]) => {
+      const itemsCount = lastPage.data ? lastPage.data.length : (lastPage.length || 0);
+      if (itemsCount < pageSize) return undefined;
+      return allPages.reduce((acc, page) => acc + (page.data ? page.data.length : (page.length || 0)), 0);
     },
     staleTime: 1000 * 60 * 5,
   });

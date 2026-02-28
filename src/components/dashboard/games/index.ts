@@ -1,5 +1,7 @@
 // Games Dashboard Components
-export { ScheduleGameDialog } from './ScheduleGameDialog';
-export { EditGameDialog } from './EditGameDialog';
 export { CancelGameDialog } from './CancelGameDialog';
+export { EditGameDialog } from './EditGameDialog';
+export { GameForm } from './GameForm';
 export { PlayerSelectionDialog } from './PlayerSelectionDialog';
+export { ScheduleGameDialog } from './ScheduleGameDialog';
+

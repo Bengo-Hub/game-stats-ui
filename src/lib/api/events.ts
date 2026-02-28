@@ -319,7 +319,7 @@ export const roundsApi = {
     auto_advance?: boolean;
     top_n_teams?: number;
   }): Promise<GameRound> {
-    return apiClient.post<GameRound>('/rounds', data);
+    return apiClient.post<GameRound>(`/events/${data.event_id}/rounds`, data);
   },
 
   /**
