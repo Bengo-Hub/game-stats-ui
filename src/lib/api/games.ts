@@ -31,6 +31,8 @@ export interface UpdateGameRequest {
   allocated_time_minutes?: number;
   field_location_id?: string;
   scorekeeper_id?: string;
+  home_team_id?: string;
+  away_team_id?: string;
 }
 
 export interface RecordScoreRequest {

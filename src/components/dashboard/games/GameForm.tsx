@@ -46,23 +46,40 @@ const TIME_PRESETS = [
     { value: 120, label: '2 hours' },
 ];
 
-const gameFormSchema = z.object({
-    eventId: z.string().min(1, 'Please select an event'),
-    divisionPoolId: z.string().min(1, 'Please select a division/pool'),
-    gameRoundId: z.string().min(1, 'Please select a game round'),
-    homeTeamId: z.string().min(1, 'Please select home team'),
-    awayTeamId: z.string().min(1, 'Please select away team'),
+const baseGameFormSchema = z.object({
     scheduledDate: z.string().min(1, 'Scheduled date is required'),
     scheduledTime: z.string().min(1, 'Scheduled time is required'),
     allocatedTimeMinutes: z.number().min(10, 'Minimum 10 minutes').max(180, 'Maximum 180 minutes'),
     fieldId: z.string().optional(),
     scorekeeperId: z.string().min(1, 'Please assign a scorekeeper'),
+});
+
+const createGameFormSchema = baseGameFormSchema.extend({
+    eventId: z.string().min(1, 'Please select an event'),
+    divisionPoolId: z.string().min(1, 'Please select a division/pool'),
+    gameRoundId: z.string().min(1, 'Please select a game round'),
+    homeTeamId: z.string().min(1, 'Please select home team'),
+    awayTeamId: z.string().min(1, 'Please select away team'),
 }).refine((data) => data.homeTeamId !== data.awayTeamId, {
     message: 'Home and away teams must be different',
     path: ['awayTeamId'],
 });
 
-type GameFormData = z.infer<typeof gameFormSchema>;
+const editGameFormSchema = baseGameFormSchema.extend({
+    homeTeamId: z.string().min(1, 'Please select home team'),
+    awayTeamId: z.string().min(1, 'Please select away team'),
+}).refine((data) => data.homeTeamId !== data.awayTeamId, {
+    message: 'Home and away teams must be different',
+    path: ['awayTeamId'],
+});
+
+type GameFormData = z.infer<typeof baseGameFormSchema> & {
+    eventId?: string;
+    divisionPoolId?: string;
+    gameRoundId?: string;
+    homeTeamId: string;
+    awayTeamId: string;
+};
 
 interface GameFormProps {
     game?: Game; // If provided, enters edit mode
@@ -114,7 +131,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
         watch,
         formState: { errors },
     } = useForm<GameFormData>({
-        resolver: zodResolver(gameFormSchema),
+        resolver: zodResolver(isEdit ? editGameFormSchema : createGameFormSchema) as any,
         defaultValues,
     });
 
@@ -135,21 +152,22 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
 
     // Fetch selected event details
     const { data: eventDetails } = useQuery({
-        queryKey: eventKeys.detail(selectedEventId),
-        queryFn: () => publicApi.getEvent(selectedEventId),
+        queryKey: eventKeys.detail(selectedEventId as string),
+        queryFn: () => publicApi.getEvent(selectedEventId as string),
         enabled: !!selectedEventId,
         staleTime: 1000 * 60 * 5,
     });
 
     // Fetch game rounds
-    const { data: gameRoundsData = [] } = useRoundsQuery(selectedEventId);
+    const { data: gameRoundsData = [] } = useRoundsQuery(selectedEventId as string);
     const gameRounds = (Array.isArray(gameRoundsData) ? gameRoundsData : (gameRoundsData as any)?.data || []) as GameRound[];
 
-    // Fetch teams (Paginated)
+    // Fetch teams for the entire event to support cross-scheduling
+    const queryEventId = isEdit && game?.eventId ? game.eventId : selectedEventId;
     const { data: teamsResult } = useQuery({
-        queryKey: ['teams', 'divisionPool', selectedDivisionPoolId],
-        queryFn: () => publicApi.listTeams({ divisionPoolId: selectedDivisionPoolId, limit: 100 }),
-        enabled: !!selectedDivisionPoolId,
+        queryKey: ['teams', 'event', queryEventId],
+        queryFn: () => publicApi.listTeams({ eventId: queryEventId, limit: 100 }),
+        enabled: !!queryEventId,
         staleTime: 1000 * 60 * 5,
     });
 
@@ -223,6 +241,8 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                 allocated_time_minutes: data.allocatedTimeMinutes,
                 field_location_id: data.fieldId === '__none__' ? undefined : data.fieldId,
                 scorekeeper_id: data.scorekeeperId === '__none__' ? undefined : data.scorekeeperId,
+                home_team_id: data.homeTeamId,
+                away_team_id: data.awayTeamId,
             };
             updateMutation.mutate(request);
         } else {
@@ -231,7 +251,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                 away_team_id: data.awayTeamId,
                 scheduled_time: scheduledTime,
                 allocated_time_minutes: data.allocatedTimeMinutes,
-                division_pool_id: data.divisionPoolId,
+                division_pool_id: data.divisionPoolId as string,
                 game_round_id: (data.gameRoundId && data.gameRoundId !== '__none__') ? data.gameRoundId : undefined,
                 field_location_id: (data.fieldId && data.fieldId !== '__none__') ? data.fieldId : undefined,
                 scorekeeper_id: (data.scorekeeperId && data.scorekeeperId !== '__none__') ? data.scorekeeperId : undefined,
@@ -359,18 +379,66 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                     </div>
                 </>
             ) : (
-                <div className="p-4 bg-muted/50 rounded-xl border flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Teams:</span>
-                        <span className="font-semibold">{game.homeTeam?.name} vs {game.awayTeam?.name}</span>
+                <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-xl border flex flex-col gap-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Division/Round:</span>
+                            <span>{game?.divisionPool?.name} / {game?.gameRound?.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Status:</span>
+                            <span className="capitalize">{game?.status?.replace('_', ' ')}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Division/Round:</span>
-                        <span>{game.divisionPool?.name} / {game.gameRound?.name}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Status:</span>
-                        <span className="capitalize">{game.status.replace('_', ' ')}</span>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="homeTeamId">Home Team *</Label>
+                            <Select
+                                onValueChange={(value) => setValue('homeTeamId', value)}
+                                disabled={!queryEventId || teams.length === 0}
+                                defaultValue={watch('homeTeamId')}
+                            >
+                                <SelectTrigger className={errors.homeTeamId ? 'border-destructive' : ''}>
+                                    <SelectValue placeholder="Select home team" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teams.map((team: Team) => (
+                                        <SelectItem key={team.id} value={team.id}>
+                                            {team.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.homeTeamId && (
+                                <p className="text-sm text-destructive">{errors.homeTeamId.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="awayTeamId">Away Team *</Label>
+                            <Select
+                                onValueChange={(value) => setValue('awayTeamId', value)}
+                                disabled={!queryEventId || teams.length === 0}
+                                defaultValue={watch('awayTeamId')}
+                            >
+                                <SelectTrigger className={errors.awayTeamId ? 'border-destructive' : ''}>
+                                    <SelectValue placeholder="Select away team" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teams
+                                        .filter((team: Team) => team.id !== homeTeamId)
+                                        .map((team: Team) => (
+                                            <SelectItem key={team.id} value={team.id}>
+                                                {team.name}
+                                            </SelectItem>
+                                        ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.awayTeamId && (
+                                <p className="text-sm text-destructive">{errors.awayTeamId.message}</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

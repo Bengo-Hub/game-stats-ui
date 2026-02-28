@@ -262,8 +262,9 @@ export default function GameDetailPage() {
   // Check event-specific permissions
   const isEventCrewScorekeeper = eventCrew?.scorekeepers?.some((s: any) => s.id === user?.id);
   const isEventCrewAdmin = eventCrew?.admins?.some((a: any) => a.id === user?.id);
+  const isGlobalScorekeeper = user?.role === 'scorekeeper';
 
-  const isScorekeeper = user?.id === game.scorekeeper?.id || isEventCrewScorekeeper;
+  const isScorekeeper = user?.id === game.scorekeeper?.id || isEventCrewScorekeeper || isGlobalScorekeeper;
   const canOverride = isAdmin || isEventCrewAdmin;
   const canRecordDetailed = isScorekeeper || isAdmin || isEventCrewAdmin;
 
