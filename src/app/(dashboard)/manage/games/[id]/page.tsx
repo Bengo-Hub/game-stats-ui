@@ -490,14 +490,16 @@ export default function GameDetailPage() {
             )}
 
             <div className="pt-4 border-t space-y-2">
-              <Button
-                variant="outline"
-                className="w-full h-10 rounded-xl"
-                onClick={() => setShowSpiritDialog(true)}
-              >
-                <Trophy className="h-4 w-4 mr-2 text-amber-500" />
-                Submit Spirit Score
-              </Button>
+              {!isCompleted && !isCancelled && (
+                <Button
+                  variant="outline"
+                  className="w-full h-10 rounded-xl"
+                  onClick={() => setShowSpiritDialog(true)}
+                >
+                  <Trophy className="h-4 w-4 mr-2 text-amber-500" />
+                  Submit Spirit Score
+                </Button>
+              )}
               {(game.status === 'scheduled' || isLive) && (
                 <Button
                   variant="outline"
@@ -523,7 +525,7 @@ export default function GameDetailPage() {
                 <TabsTrigger value="spirit">Spirit Scores</TabsTrigger>
                 <TabsTrigger value="audit">Audit Trail</TabsTrigger>
               </TabsList>
-              {!isLive && (canOverride || canRecordDetailed) && (
+              {isEnded && (canOverride || canRecordDetailed) && (
                 <Button
                   variant="outline"
                   size="sm"
