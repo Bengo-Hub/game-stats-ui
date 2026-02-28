@@ -218,7 +218,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {liveGames.slice(0, 4).map((game) => (
-                  <Link key={game.id} href={`/live/${game.id}`}>
+                  <Link key={game.id} href={`/manage/games/${game.id}`}>
                     <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer">
                       <div className="flex flex-col">
                         <span className="font-medium">
@@ -268,23 +268,24 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {upcomingGames.slice(0, 4).map((game) => (
-                  <div
-                    key={game.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {game.homeTeam?.name || 'TBD'} vs {game.awayTeam?.name || 'TBD'}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {game.fieldLocation?.name || 'Field'} • {formatGameTime(game.scheduledTime)}
-                      </span>
+                  <Link key={game.id} href={`/manage/games/${game.id}`}>
+                    <div
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {game.homeTeam?.name || 'TBD'} vs {game.awayTeam?.name || 'TBD'}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {game.fieldLocation?.name || 'Field'} • {formatGameTime(game.scheduledTime)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>Scheduled</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>Scheduled</span>
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -346,7 +347,7 @@ export default function DashboardPage() {
                 </div>
               </Button>
             </Link>
-            <Link href="/manage/games">
+            <Link href="/manage/games?status=in_progress">
               <Button variant="outline" className="w-full justify-start h-auto py-3">
                 <Trophy className="h-4 w-4 mr-2" />
                 <div className="text-left">

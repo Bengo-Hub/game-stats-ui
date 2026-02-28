@@ -165,7 +165,7 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
                     <div className="min-w-0">
                         <h2 className="text-lg font-black truncate">{game.name || 'Untitled Game'}</h2>
                         <p className="text-xs text-muted-foreground font-medium truncate">
-                            {game.divisionPool?.name || 'No Division'} • Score Override
+                            {game.divisionPool?.name || 'No Division'} • {isAdmin ? 'Score Override' : 'Record Scores'}
                         </p>
                     </div>
                 </div>
@@ -195,29 +195,31 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
                     />
                 </div>
 
-                {/* Override Metadata */}
+                {/* Override Metadata - Only for admin overrides */}
                 <div className="space-y-4">
-                    <div className="bg-muted/30 p-4 sm:p-6 rounded-2xl border space-y-4">
-                        <div className="flex items-center gap-2 font-bold text-lg">
-                            <ShieldCheck className="h-5 w-5 text-primary" />
-                            Administrative Verification
+                    {isAdmin && (
+                        <div className="bg-muted/30 p-4 sm:p-6 rounded-2xl border space-y-4">
+                            <div className="flex items-center gap-2 font-bold text-lg">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                Administrative Verification
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="reason" className="text-sm font-semibold">Reason for Override (Mandatory)</Label>
+                                <Input
+                                    id="reason"
+                                    placeholder="Specify the reason for this manual score override (min. 10 chars)..."
+                                    value={reason}
+                                    onChange={e => setReason(e.target.value)}
+                                    className="bg-background"
+                                    required
+                                />
+                                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-1">
+                                    <Info className="h-3.5 w-3.5" />
+                                    This change will be logged in the system audit trail.
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="reason" className="text-sm font-semibold">Reason for Override (Mandatory)</Label>
-                            <Input
-                                id="reason"
-                                placeholder="Specify the reason for this manual score override (min. 10 chars)..."
-                                value={reason}
-                                onChange={e => setReason(e.target.value)}
-                                className="bg-background"
-                                required
-                            />
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-1">
-                                <Info className="h-3.5 w-3.5" />
-                                This change will be logged in the system audit trail.
-                            </p>
-                        </div>
-                    </div>
+                    )}
 
                     <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t">
                         {onCancel && (
@@ -248,7 +250,7 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
                             ) : (
                                 <Save className="h-4 w-4 mr-2" />
                             )}
-                            Confirm & Save Scores
+                            {isAdmin ? 'Confirm & Save Override' : 'Save Scores'}
                         </Button>
                     </div>
                 </div>

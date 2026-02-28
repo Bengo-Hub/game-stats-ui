@@ -32,7 +32,6 @@ import {
   Loader2,
   MapPin,
   Play,
-  Plus,
   ShieldCheck,
   Square,
   Star,
@@ -195,20 +194,7 @@ export default function GameDetailPage() {
     }
   };
 
-  const handleRecordGoal = async (teamId: string, _isHome: boolean) => {
-    try {
-      // In a real implementation, this would show a dialog to select player
-      await gamesApi.recordScore(gameId, {
-        team_id: teamId,
-        player_id: 'player-id', // Would be selected from dialog
-        goals: 1,
-      });
-      // Refresh game data
-      loadGame();
-    } catch (error) {
-      console.error('Failed to record goal:', error);
-    }
-  };
+
 
   const handleCancelGame = async () => {
     setCancelling(true);
@@ -423,27 +409,16 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Quick Actions for Live/Ended Game */}
-            {(isLive || isEnded) && (
+            {/* Score Game Action */}
+            {(isLive || isEnded) && (canRecordDetailed || canOverride) && (
               <div className="mt-6 pt-6 border-t">
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    variant="outline"
-                    className="h-16 flex-col gap-1"
-                    onClick={() => handleRecordGoal(game.homeTeam?.id || '', true)}
-                  >
-                    <Plus className="h-5 w-5" />
-                    <span className="text-xs">{game.homeTeam?.name} Goal</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-16 flex-col gap-1"
-                    onClick={() => handleRecordGoal(game.awayTeam?.id || '', false)}
-                  >
-                    <Plus className="h-5 w-5" />
-                    <span className="text-xs">{game.awayTeam?.name} Goal</span>
-                  </Button>
-                </div>
+                <Button
+                  className="w-full h-14 text-base font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-xl"
+                  onClick={() => setShowOverrideDialog(true)}
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  Score Game
+                </Button>
               </div>
             )}
           </CardContent>
