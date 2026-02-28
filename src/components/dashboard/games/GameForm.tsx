@@ -159,6 +159,16 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     const { data: fieldsData = [] } = useFields(eventDetails?.location?.id);
     const fields = fieldsData || [];
 
+    // Preselect newly created field if it comes from the dialog
+    React.useEffect(() => {
+        if (selectedFieldId && fields.length > 0) {
+            const exists = fields.find(f => f.id === selectedFieldId);
+            if (!exists) {
+                // Wait for the query to invalidate and refetch
+            }
+        }
+    }, [selectedFieldId, fields]);
+
     // Fetch scorekeepers
     const { data: scorekeepers = [] } = useQuery({
         queryKey: ['admin', 'users', 'scorekeepers'],
@@ -222,9 +232,9 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                 scheduled_time: scheduledTime,
                 allocated_time_minutes: data.allocatedTimeMinutes,
                 division_pool_id: data.divisionPoolId,
-                game_round_id: data.gameRoundId,
-                field_location_id: data.fieldId === '__none__' ? undefined : data.fieldId,
-                scorekeeper_id: data.scorekeeperId === '__none__' ? undefined : data.scorekeeperId,
+                game_round_id: (data.gameRoundId && data.gameRoundId !== '__none__') ? data.gameRoundId : undefined,
+                field_location_id: (data.fieldId && data.fieldId !== '__none__') ? data.fieldId : undefined,
+                scorekeeper_id: (data.scorekeeperId && data.scorekeeperId !== '__none__') ? data.scorekeeperId : undefined,
             };
             createMutation.mutate(request);
         }

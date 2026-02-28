@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Check, Clock, Edit2, Pause, Play, StopCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface GameTimerProps {
   elapsedSeconds: number;
@@ -67,6 +67,13 @@ export function GameTimer({
   const overtimeSeconds = isOvertime ? totalElapsed - allocatedSeconds - stoppageSeconds : 0;
 
   const progressPercent = Math.min(100, (totalElapsed / allocatedSeconds) * 100);
+
+  // Auto-pause when time elapses
+  useEffect(() => {
+    if (isRunning && !isStoppage && totalElapsed >= (allocatedSeconds + stoppageSeconds) && onPause) {
+      onPause();
+    }
+  }, [isRunning, isStoppage, totalElapsed, allocatedSeconds, stoppageSeconds, onPause]);
 
   return (
     <Card className={cn('overflow-hidden', className)}>

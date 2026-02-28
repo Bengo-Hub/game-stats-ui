@@ -65,13 +65,6 @@ class ApiClient {
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    if (response.status === 401) {
-      // Clear token on unauthorized. 
-      // Do not hard-redirect here; let the AuthProvider/stores handle routing
-      // so we don't force users off public pages.
-      this.accessToken = null;
-    }
-
     if (!response.ok) {
       let error: ApiError;
       try {

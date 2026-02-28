@@ -166,6 +166,7 @@ export interface Game {
   actualEndTime?: string;
   allocatedTimeMinutes: number;
   stoppageTimeSeconds: number;
+  elapsedSeconds?: number;
   status: 'scheduled' | 'in_progress' | 'ended' | 'completed' | 'canceled';
   homeTeamScore: number;
   awayTeamScore: number;

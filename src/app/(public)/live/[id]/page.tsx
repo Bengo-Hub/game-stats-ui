@@ -1,5 +1,6 @@
 'use client';
 
+import { CompactTimer } from '@/components/features/games/game-timer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,10 +17,13 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Clock8,
   Disc,
+  Flag,
   Heart,
   Info,
   MapPin,
+  Play,
   RefreshCw,
   RotateCcw,
   Share2,
@@ -572,9 +576,16 @@ export default function LiveGameDetailPage() {
                 </span>
               </div>
               {isLive && (
-                <div className="text-center mt-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3 inline mr-1" />
-                  {getElapsedTime(game)}
+                <div className="flex flex-col items-center mt-2">
+                  <CompactTimer
+                    elapsedSeconds={game.elapsedSeconds || 0}
+                    allocatedMinutes={game.allocatedTimeMinutes || 0}
+                    stoppageSeconds={game.stoppageTimeSeconds || 0}
+                    isRunning={game.status === 'in_progress'}
+                  />
+                  <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider font-semibold">
+                    Live Countdown
+                  </div>
                 </div>
               )}
             </div>
@@ -814,9 +825,13 @@ export default function LiveGameDetailPage() {
                 {timeline?.events && timeline.events.length > 0 ? (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto">
                     {timeline.events.map((event: GameEvent) => {
-                      const isGoal = event.eventType === 'goal' || event.eventType === 'goal_scored' || event.eventType === 'score';
-                      const isAssist = event.eventType === 'assist' || event.eventType === 'assist_recorded';
-                      const isTimeout = event.eventType === 'timeout' || event.eventType === 'stoppage' || event.eventType === 'stoppage_recorded';
+                      const eventType = event.eventType.toLowerCase();
+                      const isGoal = eventType === 'goal' || eventType === 'goal_scored' || eventType === 'score';
+                      const isAssist = eventType === 'assist' || eventType === 'assist_recorded';
+                      const isTimeout = eventType === 'timeout' || eventType === 'stoppage' || eventType === 'stoppage_recorded';
+                      const isStart = eventType === 'game_started' || eventType === 'start';
+                      const isEnd = eventType === 'game_ended' || eventType === 'game_completed' || eventType === 'end' || eventType === 'finish';
+                      const isBulk = eventType === 'bulk_score_update';
 
                       return (
                         <div
@@ -829,7 +844,13 @@ export default function LiveGameDetailPage() {
                                 ? 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/50'
                                 : isTimeout
                                   ? 'bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/50'
-                                  : 'bg-muted/50'
+                                  : isStart
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/50'
+                                    : isEnd
+                                      ? 'bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/50'
+                                      : isBulk
+                                        ? 'bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50'
+                                        : 'bg-muted/50'
                           )}
                         >
                           <div className={cn(
@@ -837,18 +858,25 @@ export default function LiveGameDetailPage() {
                             isGoal ? 'bg-green-500 text-white' :
                               isAssist ? 'bg-blue-500 text-white' :
                                 isTimeout ? 'bg-amber-500 text-white' :
-                                  'bg-muted text-muted-foreground'
+                                  isStart ? 'bg-emerald-500 text-white' :
+                                    isEnd ? 'bg-red-500 text-white' :
+                                      isBulk ? 'bg-slate-500 text-white' :
+                                        'bg-muted text-muted-foreground'
                           )}>
                             {isGoal ? <Disc className="h-4 w-4" /> :
                               isAssist ? <Target className="h-4 w-4" /> :
                                 isTimeout ? <Clock className="h-4 w-4" /> :
-                                  <Activity className="h-4 w-4" />}
+                                  isStart ? <Play className="h-4 w-4 fill-current ml-0.5" /> :
+                                    isEnd ? <Flag className="h-4 w-4" /> :
+                                      isBulk ? <RefreshCw className="h-4 w-4" /> :
+                                        <Activity className="h-4 w-4" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium">
+                            <div className="font-semibold text-foreground">
                               {event.description || event.eventType.replace(/_/g, ' ')}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
+                            <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+                              <Clock8 className="w-3 h-3" />
                               {event.minute}:{String(event.second).padStart(2, '0')}
                             </div>
                           </div>

@@ -335,7 +335,6 @@ export default function GameDetailPage() {
         </div>
       )}
 
-      {/* Game Timer - Show for live or finished games */}
       {isLiveOrEnded && (
         <GameTimer
           elapsedSeconds={timer.elapsedSeconds}
@@ -348,6 +347,7 @@ export default function GameDetailPage() {
           onEnd={handleFinishGame}
           onStoppage={handleStoppage}
           onEditTime={handleEditTime}
+          showControls={isLive}
         />
       )}
 
@@ -410,15 +410,18 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Score Game Action */}
+            {/* Score Game Action - For live or ended (override) */}
             {(isLive || isEnded) && (canRecordDetailed || canOverride) && (
               <div className="mt-6 pt-6 border-t">
                 <Button
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-xl"
+                  className={cn(
+                    "w-full h-14 text-base font-semibold rounded-xl",
+                    isEnded ? "bg-amber-600 hover:bg-amber-700" : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700"
+                  )}
                   onClick={() => setShowOverrideDialog(true)}
                 >
                   <Trophy className="h-5 w-5 mr-2" />
-                  Score Game
+                  {isEnded ? 'Override Scores' : 'Score Game'}
                 </Button>
               </div>
             )}
@@ -482,7 +485,7 @@ export default function GameDetailPage() {
                 <Trophy className="h-4 w-4 mr-2 text-amber-500" />
                 Submit Spirit Score
               </Button>
-              {!isCancelled && !isCompleted && (
+              {(game.status === 'scheduled' || isLive) && (
                 <Button
                   variant="outline"
                   className="w-full h-10 rounded-xl text-rose-600 border-rose-100 hover:bg-rose-50"
@@ -507,7 +510,7 @@ export default function GameDetailPage() {
                 <TabsTrigger value="spirit">Spirit Scores</TabsTrigger>
                 <TabsTrigger value="audit">Audit Trail</TabsTrigger>
               </TabsList>
-              {(canOverride || canRecordDetailed) && (
+              {!isLive && (canOverride || canRecordDetailed) && (
                 <Button
                   variant="outline"
                   size="sm"

@@ -82,7 +82,8 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
     }, [existingScores, game.homeTeam?.id, game.awayTeam?.id]);
 
     const updateScoreMutation = useMutation({
-        mutationFn: (data: any) => gamesApi.updateBulkScores(game.id, data),
+        mutationFn: (data: Parameters<typeof gamesApi.updateBulkScores>[1]) =>
+            gamesApi.updateBulkScores(game.id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: gameKeys.all });
             queryClient.invalidateQueries({ queryKey: gameKeys.detail(game.id) || [] });
@@ -114,8 +115,10 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (isAdmin && !reason) {
-            toast.error('Please provide a reason for the override');
+        const isOverride = isAdmin && (game.status === 'ended' || game.status === 'completed');
+
+        if (isOverride && reason.trim().length < 10) {
+            toast.error('Please provide a detailed reason for the score override (minimum 10 characters)');
             return;
         }
 
@@ -136,10 +139,10 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
         });
 
         updateScoreMutation.mutate({
-            homeTeamScore: calculateTotalGoals(homeStats),
-            awayTeamScore: calculateTotalGoals(awayStats),
-            reason: isAdmin ? reason : 'Manual score adjustment',
-            playerScores,
+            home_score: calculateTotalGoals(homeStats),
+            away_score: calculateTotalGoals(awayStats),
+            reason: isOverride ? reason : 'Manual score adjustment',
+            player_scores: playerScores,
         });
     };
 
@@ -197,9 +200,9 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
                     />
                 </div>
 
-                {/* Override Metadata - Only for admin overrides */}
+                {/* Override Metadata - Only for admin overrides when NOT in progress */}
                 <div className="space-y-4">
-                    {isAdmin && (
+                    {isAdmin && game.status !== 'in_progress' && (
                         <div className="bg-muted/30 p-4 sm:p-6 rounded-2xl border space-y-4">
                             <div className="flex items-center gap-2 font-bold text-lg">
                                 <ShieldCheck className="h-5 w-5 text-primary" />
@@ -245,14 +248,14 @@ export function UnifiedScoreForm({ game, onSuccess, onCancel, isAdmin = false }:
                         <Button
                             type="submit"
                             className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20"
-                            disabled={updateScoreMutation.isPending || (isAdmin && reason.length < 10)}
+                            disabled={updateScoreMutation.isPending || (isAdmin && game.status !== 'in_progress' && reason.length < 10)}
                         >
                             {updateScoreMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : (
                                 <Save className="h-4 w-4 mr-2" />
                             )}
-                            {isAdmin ? 'Confirm & Save Override' : 'Save Scores'}
+                            {isAdmin && game.status !== 'in_progress' ? 'Confirm & Save Override' : 'Save Scores'}
                         </Button>
                     </div>
                 </div>
