@@ -1,7 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,16 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuthStore, useUser } from '@/stores/auth';
-import { Moon, Sun, User, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore, useUser } from '@/stores/auth';
+import { LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   className?: string;
   sidebarCollapsed?: boolean;
+  onMenuClick?: () => void;
 }
 
-export function Header({ className, sidebarCollapsed }: HeaderProps) {
+export function Header({ className, sidebarCollapsed, onMenuClick }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const user = useUser();
@@ -41,8 +42,16 @@ export function Header({ className, sidebarCollapsed }: HeaderProps) {
         className
       )}
     >
-      {/* Spacer for mobile menu button */}
-      <div className="w-10 md:hidden" />
+      {/* Mobile menu button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden mr-2"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle menu</span>
+      </Button>
 
       {/* Page title area - can be customized per page */}
       <div className="flex-1" />

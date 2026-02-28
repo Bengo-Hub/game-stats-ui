@@ -12,13 +12,11 @@ import {
   CircleDot,
   Layers,
   LayoutDashboard,
-  Menu,
   Settings,
   Shield,
   Trophy,
   UserCircle,
-  Users,
-  X,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -49,12 +47,13 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   className?: string;
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: (open: boolean) => void;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { can, isAdmin } = usePermissions();
 
   // Filter nav items based on user permissions
@@ -75,21 +74,12 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-      >
-        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
 
       {/* Mobile overlay */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setIsMobileOpen(false)}
+          onClick={() => setIsMobileOpen?.(false)}
         />
       )}
 
@@ -127,7 +117,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
+                  onClick={() => setIsMobileOpen?.(false)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
                     isActive

@@ -105,9 +105,9 @@ export function PublicHeader() {
             <Link href="/login" className="hidden sm:block">
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-200"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-0.5"
               >
-                <Sparkles className="h-4 w-4 mr-1.5" />
+                <Sparkles className="h-4 w-4 mr-1.5 animate-pulse" />
                 Get Started
               </Button>
             </Link>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Sidebar } from './sidebar';
-import { Header } from './header';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Header } from './header';
+import { Sidebar } from './sidebar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,11 +11,15 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <Header sidebarCollapsed={sidebarCollapsed} />
+      <Sidebar isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        onMenuClick={() => setIsMobileOpen(!isMobileOpen)}
+      />
       <main
         className={cn(
           "min-h-[calc(100vh-4rem)] p-4 md:p-6 transition-[margin] duration-300",
