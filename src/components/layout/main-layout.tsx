@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { Footer } from './footer';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 
@@ -14,7 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Sidebar isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
       <Header
         sidebarCollapsed={sidebarCollapsed}
@@ -22,12 +23,18 @@ export function MainLayout({ children }: MainLayoutProps) {
       />
       <main
         className={cn(
-          "min-h-[calc(100vh-4rem)] p-4 md:p-6 transition-[margin] duration-300",
+          "flex-1 p-4 md:p-6 transition-[margin] duration-300",
           sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         )}
       >
         {children}
       </main>
+      <Footer
+        className={cn(
+          "transition-[margin] duration-300",
+          sidebarCollapsed ? "md:ml-16" : "md:ml-64"
+        )}
+      />
     </div>
   );
 }
