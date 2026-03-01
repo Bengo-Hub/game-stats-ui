@@ -1,5 +1,5 @@
-// Teams hooks using TanStack Query
 import { publicApi, type ListTeamsParams } from '@/lib/api/public';
+import type { PaginatedResponse, Team } from '@/types';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Query keys
@@ -61,10 +61,10 @@ export function useInfiniteTeamsQuery(params?: Omit<ListTeamsParams, 'limit' | '
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage: any, allPages: any[]) => {
-      const itemsCount = lastPage.data ? lastPage.data.length : (lastPage.length || 0);
+    getNextPageParam: (lastPage: PaginatedResponse<Team>) => {
+      const itemsCount = lastPage.data.length;
       if (itemsCount < pageSize) return undefined;
-      return allPages.reduce((acc, page) => acc + (page.data ? page.data.length : (page.length || 0)), 0);
+      return lastPage.offset + itemsCount;
     },
     staleTime: 1000 * 60 * 5,
   });

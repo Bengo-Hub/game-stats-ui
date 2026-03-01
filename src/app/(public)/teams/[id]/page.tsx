@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
@@ -37,18 +38,30 @@ function useTeamDetail(teamId: string | undefined) {
   });
 }
 
-function useTeamGames(teamId: string | undefined) {
+function useTeamGames(teamId: string | undefined, page = 1, limit = 10) {
   return useQuery({
-    queryKey: ['teams', teamId, 'games'],
-    queryFn: () => publicApi.listGames({ limit: 100 }),
+    queryKey: ['teams', teamId, 'games', page, limit],
+    queryFn: () => publicApi.listGames({
+      teamId,
+      limit,
+      offset: (page - 1) * limit
+    }),
     enabled: !!teamId,
     staleTime: 1000 * 60 * 2,
-    select: (games) => {
-      // Filter games where this team is home or away
-      return ((games as any)?.data || (Array.isArray(games) ? games : [])).filter((g: any) =>
-        g.homeTeam?.id === teamId || g.awayTeam?.id === teamId
-      ) as Game[];
-    },
+  });
+}
+
+// For stats, we still want a larger set of games without pagination
+function useTeamStatsGames(teamId: string | undefined) {
+  return useQuery({
+    queryKey: ['teams', teamId, 'games', 'stats'],
+    queryFn: () => publicApi.listGames({
+      teamId,
+      limit: 100 // Reasonable limit for stats calculation
+    }),
+    enabled: !!teamId,
+    staleTime: 1000 * 60 * 5,
+    select: (response) => (response as any)?.data || [],
   });
 }
 
@@ -104,13 +117,22 @@ export default function TeamDetailPage() {
   const teamId = params?.id as string;
 
   const { data: team, isLoading, isError } = useTeamDetail(teamId);
-  const { data: games = [] as Game[] } = useTeamGames(teamId);
+
+  // Pagination state for games tab
+  const [gamesPage, setGamesPage] = React.useState(1);
+  const gamesLimit = 10;
+
+  const { data: gamesResponse, isLoading: isLoadingGames } = useTeamGames(teamId, gamesPage, gamesLimit);
+  const { data: allGames = [] as Game[] } = useTeamStatsGames(teamId);
   const { data: spiritAverage } = useTeamSpiritAverage(teamId);
 
+  const games = (gamesResponse as any)?.data || [];
+  const totalGames = (gamesResponse as any)?.total || 0;
+
   const teamStats = React.useMemo(() => {
-    if (!teamId) return null;
-    return calculateTeamStats(games, teamId);
-  }, [games, teamId]);
+    if (!teamId || !allGames.length) return null;
+    return calculateTeamStats(allGames, teamId);
+  }, [allGames, teamId]);
 
   if (isLoading) {
     return (
@@ -372,101 +394,118 @@ export default function TeamDetailPage() {
               <CardTitle className="text-lg flex items-center justify-between">
                 <span>Match History</span>
                 <span className="text-sm font-normal text-muted-foreground">
-                  {games.length} games
+                  {totalGames} games
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {games.length > 0 ? (
+              {isLoadingGames ? (
                 <div className="space-y-3">
-                  {games.map((game: any) => {
-                    const isHome = game.homeTeam?.id === teamId;
-                    const teamScore = isHome ? game.homeTeamScore : game.awayTeamScore;
-                    const opponentScore = isHome ? game.awayTeamScore : game.homeTeamScore;
-                    const opponent = isHome ? game.awayTeam : game.homeTeam;
-                    const isWin = teamScore > opponentScore;
-                    const isLoss = teamScore < opponentScore;
-                    const isFinished = game.status === 'ended' || game.status === 'completed';
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : games.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    {games.map((game: any) => {
+                      const isHome = game.homeTeam?.id === teamId;
+                      const teamScore = isHome ? game.homeTeamScore : game.awayTeamScore;
+                      const opponentScore = isHome ? game.awayTeamScore : game.homeTeamScore;
+                      const opponent = isHome ? game.awayTeam : game.homeTeam;
+                      const isWin = teamScore > opponentScore;
+                      const isLoss = teamScore < opponentScore;
+                      const isFinished = game.status === 'ended' || game.status === 'completed';
 
-                    return (
-                      <Link
-                        key={game.id}
-                        href={`/games/${game.id}`}
-                        className="block"
-                      >
-                        <div className={cn(
-                          "flex items-center gap-4 p-4 rounded-lg border hover:border-primary/50 transition-colors",
-                          isFinished && isWin && "border-l-4 border-l-emerald-500",
-                          isFinished && isLoss && "border-l-4 border-l-red-500"
-                        )}>
-                          {/* Game Result Badge */}
-                          {isFinished && (
-                            <div className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
-                              isWin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                                isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                                  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                            )}>
-                              {isWin ? 'W' : isLoss ? 'L' : 'D'}
-                            </div>
-                          )}
-
-                          {/* Game Details */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              {/* Home/Away Badge */}
-                              <span className={cn(
-                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
-                                isHome
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                  : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                      return (
+                        <Link
+                          key={game.id}
+                          href={`/games/${game.id}`}
+                          className="block"
+                        >
+                          <div className={cn(
+                            "flex items-center gap-4 p-4 rounded-lg border hover:border-primary/50 transition-colors",
+                            isFinished && isWin && "border-l-4 border-l-emerald-500",
+                            isFinished && isLoss && "border-l-4 border-l-red-500"
+                          )}>
+                            {/* Game Result Badge */}
+                            {isFinished && (
+                              <div className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
+                                isWin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                                  isLoss ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                                    "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                               )}>
-                                {isHome ? <Home className="h-3 w-3" /> : <Plane className="h-3 w-3" />}
-                                {isHome ? 'Home' : 'Away'}
-                              </span>
-                              <span className="text-muted-foreground">vs</span>
-                              <span className="font-medium truncate">
-                                {opponent?.name || 'TBD'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                              {game.gameRound?.name && (
-                                <span className="px-1.5 py-0.5 bg-muted rounded">
-                                  {game.gameRound.name}
+                                {isWin ? 'W' : isLoss ? 'L' : 'D'}
+                              </div>
+                            )}
+
+                            {/* Game Details */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                {/* Home/Away Badge */}
+                                <span className={cn(
+                                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
+                                  isHome
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                )}>
+                                  {isHome ? <Home className="h-3 w-3" /> : <Plane className="h-3 w-3" />}
+                                  {isHome ? 'Home' : 'Away'}
                                 </span>
-                              )}
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(game.scheduledTime).toLocaleDateString()}
-                              </span>
+                                <span className="text-muted-foreground">vs</span>
+                                <span className="font-medium truncate">
+                                  {opponent?.name || 'TBD'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                {game.gameRound?.name && (
+                                  <span className="px-1.5 py-0.5 bg-muted rounded">
+                                    {game.gameRound.name}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(game.scheduledTime).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
+
+                            {/* Score */}
+                            {isFinished && (
+                              <div className="text-right">
+                                <p className="font-bold text-lg">
+                                  {teamScore} - {opponentScore}
+                                </p>
+                              </div>
+                            )}
+
+                            {!isFinished && (
+                              <div className="text-right">
+                                <span className={cn(
+                                  "text-xs px-2 py-1 rounded-full",
+                                  game.status === 'in_progress'
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                                )}>
+                                  {game.status === 'in_progress' ? 'LIVE' : game.status}
+                                </span>
+                              </div>
+                            )}
                           </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
 
-                          {/* Score */}
-                          {isFinished && (
-                            <div className="text-right">
-                              <p className="font-bold text-lg">
-                                {teamScore} - {opponentScore}
-                              </p>
-                            </div>
-                          )}
-
-                          {!isFinished && (
-                            <div className="text-right">
-                              <span className={cn(
-                                "text-xs px-2 py-1 rounded-full",
-                                game.status === 'in_progress'
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                              )}>
-                                {game.status === 'in_progress' ? 'LIVE' : game.status}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
+                  <div className="pt-4 border-t">
+                    <Pagination
+                      total={totalGames}
+                      limit={gamesLimit}
+                      offset={(gamesPage - 1) * gamesLimit}
+                      onPageChange={(newOffset) => setGamesPage(Math.floor(newOffset / gamesLimit) + 1)}
+                    />
+                  </div>
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">

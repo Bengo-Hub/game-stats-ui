@@ -1,25 +1,24 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import { Footer, PublicHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PublicHeader } from '@/components/layout/public';
-import { Logo } from '@/components/brand/Logo';
 import {
-  CalendarDays,
-  Users,
-  BarChart3,
-  Radio,
-  Zap,
-  Globe,
-  Shield,
-  Trophy,
   ArrowRight,
+  BarChart3,
+  CalendarDays,
+  Clock,
+  Globe,
+  MapPin,
   Play,
+  Radio,
+  Shield,
   Star,
   TrendingUp,
-  MapPin,
-  Clock,
+  Trophy,
+  Users,
+  Zap,
 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const features = [
   {
@@ -400,64 +399,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-muted/30">
-        <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <Logo size="sm" showText variant="full" className="mb-4" />
-              <p className="text-sm text-muted-foreground">
-                The ultimate stats platform for Ultimate Frisbee.
-              </p>
-            </div>
-
-            {/* Links */}
-            <div>
-              <h3 className="font-semibold text-sm mb-4">Platform</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/discover" className="hover:text-foreground transition-colors">Events</Link></li>
-                <li><Link href="/live" className="hover:text-foreground transition-colors">Live Scores</Link></li>
-                <li><Link href="/directory" className="hover:text-foreground transition-colors">Teams</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm mb-4">Features</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/leaderboards" className="hover:text-foreground transition-colors">Leaderboards</Link></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Analytics</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Spirit Scores</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm mb-4">Resources</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Support</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm mb-4">Account</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/login" className="hover:text-foreground transition-colors">Sign In</Link></li>
-                <li><Link href="/login" className="hover:text-foreground transition-colors">Register</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} UltimateStats. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer variant="full" />
     </div>
   );
 }

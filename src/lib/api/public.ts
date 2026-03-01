@@ -36,7 +36,7 @@ interface RequestOptions {
 }
 
 // Default pagination
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 10;
 
 // Helper to convert snake_case to camelCase
 function snakeToCamel(str: string): string {
@@ -220,6 +220,7 @@ export interface ListGamesParams extends PaginationParams {
   startDate?: string;
   endDate?: string;
   gameStage?: string;
+  teamId?: string;
 }
 
 export async function listGames(params?: ListGamesParams): Promise<PaginatedResponse<Game>> {
@@ -232,18 +233,19 @@ export async function listGames(params?: ListGamesParams): Promise<PaginatedResp
       start_date: params?.startDate,
       end_date: params?.endDate,
       game_stage: params?.gameStage,
+      team_id: params?.teamId,
       limit: params?.limit ?? DEFAULT_LIMIT,
       offset: params?.offset ?? 0,
     } as QueryParams,
   });
 }
 
-export async function getLiveGames(params?: { eventId?: string; divisionPoolId?: string }): Promise<PaginatedResponse<Game>> {
-  return listGames({ status: 'in_progress', ...params, limit: DEFAULT_LIMIT });
+export async function getLiveGames(params?: { eventId?: string; divisionPoolId?: string } & PaginationParams): Promise<PaginatedResponse<Game>> {
+  return listGames({ status: 'in_progress', ...params, limit: params?.limit ?? DEFAULT_LIMIT });
 }
 
-export async function getUpcomingGames(limit: number = 50, params?: { eventId?: string; divisionPoolId?: string }): Promise<PaginatedResponse<Game>> {
-  return listGames({ status: 'scheduled', ...params, limit });
+export async function getUpcomingGames(limit: number = 10, params?: { eventId?: string; divisionPoolId?: string } & PaginationParams): Promise<PaginatedResponse<Game>> {
+  return listGames({ status: 'scheduled', ...params, limit: params?.limit ?? limit });
 }
 
 export async function getGame(gameId: string): Promise<Game> {

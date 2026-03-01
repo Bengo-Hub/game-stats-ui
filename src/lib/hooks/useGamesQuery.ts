@@ -1,5 +1,5 @@
-// Games hooks using TanStack Query
 import { publicApi, type ListGamesParams } from '@/lib/api/public';
+import type { Game, PaginatedResponse } from '@/types';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Query keys
@@ -104,10 +104,10 @@ export function useInfiniteGamesQuery(params?: Omit<ListGamesParams, 'limit' | '
         offset: pageParam,
       }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage: any, allPages) => {
-      const itemsCount = lastPage?.data ? lastPage.data.length : (lastPage?.length || 0);
+    getNextPageParam: (lastPage: PaginatedResponse<Game>) => {
+      const itemsCount = lastPage.data.length;
       if (itemsCount < pageSize) return undefined;
-      return allPages.flat().length;
+      return lastPage.offset + itemsCount;
     },
     staleTime: 1000 * 60 * 2,
   });

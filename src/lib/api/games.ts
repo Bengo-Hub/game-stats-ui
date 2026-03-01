@@ -106,6 +106,13 @@ export const gamesApi = {
    * Cancel a game
    */
   async cancel(id: string): Promise<void> {
+    return apiClient.delete(`/games/${id}/cancel`);
+  },
+
+  /**
+   * Delete a game permanently
+   */
+  async delete(id: string): Promise<void> {
     return apiClient.delete(`/games/${id}`);
   },
 

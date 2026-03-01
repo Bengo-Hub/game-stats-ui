@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { publicApi, type ListTeamsParams } from '@/lib/api';
@@ -72,7 +73,6 @@ export default function PublicTeamsPage() {
   const [divisionFilter, setDivisionFilter] = React.useState('All Divisions');
   const [selectedEventId, setSelectedEventId] = React.useState<string>('all');
   const [totalTeams, setTotalTeams] = React.useState(0);
-  const [hasMore, setHasMore] = React.useState(false);
   const [offset, setOffset] = React.useState(0);
 
   // Fetch events for filter
@@ -90,18 +90,13 @@ export default function PublicTeamsPage() {
 
   // Fetch teams from API
   const fetchTeams = React.useCallback(async (reset = true) => {
-    if (reset) {
-      setLoading(true);
-      setOffset(0);
-    } else {
-      setLoadingMore(true);
-    }
+    setLoading(true);
     setError(null);
 
     try {
       const currentOffset = reset ? 0 : offset;
       const params: ListTeamsParams = {
-        limit: 24,
+        limit: 10,
         offset: currentOffset,
       };
 
@@ -129,21 +124,16 @@ export default function PublicTeamsPage() {
         location: team.locationName || 'Location TBD',
       }));
 
-      if (reset) {
-        setTeams(displayTeams);
-      } else {
-        setTeams((prev) => [...prev, ...displayTeams]);
-      }
-
+      setTeams(displayTeams);
       setTotalTeams(response.total);
-      setHasMore(response.hasMore);
-      setOffset(currentOffset + response.data.length);
+      if (reset) {
+        setOffset(0);
+      }
     } catch (err) {
       console.error('Failed to fetch teams:', err);
       setError(err instanceof Error ? err.message : 'Failed to load teams');
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, [search, divisionFilter, selectedEventId, offset]);
 
@@ -156,8 +146,16 @@ export default function PublicTeamsPage() {
     return () => clearTimeout(timeoutId);
   }, [search, divisionFilter, selectedEventId]);
 
+  // Handle page change
+  React.useEffect(() => {
+    fetchTeams(false);
+  }, [offset]);
+
   const handleRefresh = () => fetchTeams(true);
-  const handleLoadMore = () => fetchTeams(false);
+  const handlePageChange = (newOffset: number) => {
+    setOffset(newOffset);
+    // fetchTeams will be triggered by useEffect
+  };
 
   const filteredTeams = teams; // Filtering now happens on backend
 
@@ -372,26 +370,14 @@ export default function PublicTeamsPage() {
             ))}
           </div>
 
-          {/* Load More */}
-          {hasMore && (
-            <div className="flex justify-center pt-8">
-              <Button
-                variant="outline"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="w-full sm:w-64 rounded-xl h-12 font-semibold"
-              >
-                {loadingMore ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Load More Teams'
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Pagination */}
+          <Pagination
+            total={totalTeams}
+            limit={10}
+            offset={offset}
+            onPageChange={handlePageChange}
+            className="mt-8"
+          />
         </div>
       )}
     </div>

@@ -65,7 +65,8 @@ export default function DivisionsPage() {
     const [isDeleting, setIsDeleting] = React.useState(false);
 
     // Fetch all events for the filter
-    const { data: events = [], isLoading: loadingEvents } = useEventsQuery();
+    const { data: eventsResponse, isLoading: loadingEvents } = useEventsQuery();
+    const events = (eventsResponse as any)?.data || [];
 
     // Set default event if none selected and events are loaded
     React.useEffect(() => {
@@ -76,13 +77,14 @@ export default function DivisionsPage() {
 
     // Fetch divisions for selected event
     const {
-        data: divisions = [],
+        data: divisionsResponse,
         isLoading: loadingDivisions,
         isError,
         error,
         isFetching,
         refetch,
     } = useDivisionsQuery(eventFilter);
+    const divisions = (divisionsResponse as any)?.data || (Array.isArray(divisionsResponse) ? divisionsResponse : []);
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => eventsApi.deleteDivision(eventFilter, id),
@@ -147,7 +149,7 @@ export default function DivisionsPage() {
                         <SelectValue placeholder="Select an event" />
                     </SelectTrigger>
                     <SelectContent>
-                        {events.map((ev) => (
+                        {events.map((ev: any) => (
                             <SelectItem key={ev.id} value={ev.id}>{ev.name} ({new Date(ev.startDate).getFullYear()})</SelectItem>
                         ))}
                     </SelectContent>
@@ -215,7 +217,7 @@ export default function DivisionsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {divisions.map((div) => (
+                            {divisions.map((div: any) => (
                                 <TableRow key={div.id} className="group hover:bg-muted/30 transition-colors">
                                     <TableCell className="font-medium">{div.name}</TableCell>
                                     <TableCell>

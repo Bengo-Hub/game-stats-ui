@@ -1,3 +1,4 @@
+import type { PaginatedResponse } from '@/types';
 import { apiClient } from './client';
 
 export interface Discipline {
@@ -26,8 +27,8 @@ export interface UpdateDisciplineRequest {
 }
 
 export const disciplinesApi = {
-  list: async (): Promise<Discipline[]> => {
-    return apiClient.get<Discipline[]>('/disciplines');
+  list: async (): Promise<PaginatedResponse<Discipline>> => {
+    return apiClient.get<PaginatedResponse<Discipline>>('/disciplines');
   },
   get: async (id: string): Promise<Discipline> => {
     return apiClient.get<Discipline>(`/disciplines/${id}`);

@@ -35,7 +35,7 @@ const navigation = {
 export function Footer({ className, variant = 'compact' }: FooterProps) {
     if (variant === 'full') {
         return (
-            <footer className={cn("border-t bg-background/50 pt-16 pb-8", className)}>
+            <footer className={cn("w-full border-t bg-background/50 pt-16 pb-8", className)}>
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-2 md:grid-cols-12 gap-8 pb-12">
                         {/* Column 1: Brand */}
@@ -130,7 +130,7 @@ export function Footer({ className, variant = 'compact' }: FooterProps) {
     }
 
     return (
-        <footer className={cn("py-6 md:py-8 border-t bg-background w-full", className)}>
+        <footer className={cn("py-6 md:py-8 border-t bg-background", className)}>
             <div className="container mx-auto px-2 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground text-center md:text-left">
                 <p>&copy; {new Date().getFullYear()} UltimateStats. All rights reserved.</p>
                 <div className="flex items-center gap-4 flex-wrap justify-center">

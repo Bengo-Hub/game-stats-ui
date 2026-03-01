@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import {
   Select,
@@ -45,7 +46,6 @@ const getRankIcon = (rank: number) => {
     case 3:
       return <Medal className="h-5 w-5 text-amber-600" />;
     default:
-      return <span className="w-5 text-center text-muted-foreground">{rank}</span>;
   }
 };
 
@@ -54,20 +54,22 @@ export default function LeaderboardsPage() {
   const [selectedGender, setSelectedGender] = React.useState<string>('all');
   const [selectedTeam, setSelectedTeam] = React.useState<string>('all');
   const [search, setSearch] = React.useState('');
+  const [offset, setOffset] = React.useState(0);
 
   // Fetch teams for filter
-  const { data: teamsData = [] } = useQuery({
+  const { data: teamsResponse } = useQuery({
     queryKey: ['teams', 'list'],
     queryFn: () => publicApi.listTeams(),
     staleTime: 1000 * 60 * 5,
   });
-  const teams = teamsData;
+  const teams = teamsResponse?.data || [];
 
   const params = React.useMemo(() => ({
-    limit: 50,
+    limit: 10,
+    offset: offset,
     gender: selectedGender !== 'all' ? selectedGender : undefined,
     teamId: selectedTeam !== 'all' ? selectedTeam : undefined,
-  }), [selectedGender, selectedTeam]);
+  }), [selectedGender, selectedTeam, offset]);
 
   // Fetch all leaderboards in parallel
   const results = useQueries({
@@ -83,8 +85,8 @@ export default function LeaderboardsPage() {
         staleTime: 1000 * 60 * 2,
       },
       {
-        queryKey: ['leaderboards', 'spirit'],
-        queryFn: () => publicApi.getSpiritLeaderboard({ limit: 50 }),
+        queryKey: ['leaderboards', 'spirit', offset],
+        queryFn: () => publicApi.getSpiritLeaderboard({ limit: 10, offset: offset }),
         staleTime: 1000 * 60 * 5,
       }
     ]
@@ -100,35 +102,35 @@ export default function LeaderboardsPage() {
 
   // Transform data with ranks
   const topScorers: DisplayPlayerStat[] = React.useMemo(() => {
-    const data = (results[0].data as any)?.data || (Array.isArray(results[0].data) ? results[0].data : []);
+    const data = (results[0].data as any)?.data || [];
     return data.map((player: PlayerStat, index: number) => ({
       ...player,
-      rank: index + 1,
+      rank: offset + index + 1,
     }));
-  }, [results[0].data]);
+  }, [results[0].data, offset]);
 
   const topAssists: DisplayPlayerStat[] = React.useMemo(() => {
-    const data = (results[1].data as any)?.data || (Array.isArray(results[1].data) ? results[1].data : []);
+    const data = (results[1].data as any)?.data || [];
     return data.map((player: PlayerStat, index: number) => ({
       ...player,
-      rank: index + 1,
+      rank: offset + index + 1,
     }));
-  }, [results[1].data]);
+  }, [results[1].data, offset]);
 
   const spiritLeaders: DisplaySpiritStat[] = React.useMemo(() => {
-    const data = (results[2].data as any)?.data || (Array.isArray(results[2].data) ? results[2].data : []);
+    const data = (results[2].data as any)?.data || [];
     return data.map((team: TeamSpiritAverage, index: number) => ({
       ...team,
-      rank: index + 1,
+      rank: offset + index + 1,
     }));
-  }, [results[2].data]);
+  }, [results[2].data, offset]);
 
   // Client-side search filtering
   const filteredScorers = React.useMemo(() => {
     if (!search) return topScorers;
     const searchLower = search.toLowerCase();
     return topScorers.filter(
-      (player) =>
+      (player: any) =>
         player.playerName?.toLowerCase().includes(searchLower) ||
         player.teamName?.toLowerCase().includes(searchLower)
     );
@@ -138,7 +140,7 @@ export default function LeaderboardsPage() {
     if (!search) return topAssists;
     const searchLower = search.toLowerCase();
     return topAssists.filter(
-      (player) =>
+      (player: any) =>
         player.playerName?.toLowerCase().includes(searchLower) ||
         player.teamName?.toLowerCase().includes(searchLower)
     );
@@ -147,7 +149,7 @@ export default function LeaderboardsPage() {
   const filteredSpirit = React.useMemo(() => {
     if (!search) return spiritLeaders;
     const searchLower = search.toLowerCase();
-    return spiritLeaders.filter((team) =>
+    return spiritLeaders.filter((team: any) =>
       team.teamName?.toLowerCase().includes(searchLower)
     );
   }, [spiritLeaders, search]);
@@ -195,7 +197,7 @@ export default function LeaderboardsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {((teams as any)?.data || []).map((team: Team) => (
+                {(teams || []).map((team: Team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
                   </SelectItem>
@@ -288,6 +290,17 @@ export default function LeaderboardsPage() {
                       ))}
                     </div>
                   )}
+
+                  <Pagination
+                    total={(results[0].data as any)?.total || 0}
+                    limit={10}
+                    offset={offset}
+                    onPageChange={(newOffset) => {
+                      setOffset(newOffset);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="mt-6"
+                  />
                 </CardContent>
               </Card>
 
@@ -335,6 +348,17 @@ export default function LeaderboardsPage() {
                       ))}
                     </div>
                   )}
+
+                  <Pagination
+                    total={(results[1].data as any)?.total || 0}
+                    limit={10}
+                    offset={offset}
+                    onPageChange={(newOffset) => {
+                      setOffset(newOffset);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="mt-6"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -405,6 +429,17 @@ export default function LeaderboardsPage() {
                       ))}
                     </div>
                   )}
+
+                  <Pagination
+                    total={(results[2].data as any)?.total || 0}
+                    limit={10}
+                    offset={offset}
+                    onPageChange={(newOffset) => {
+                      setOffset(newOffset);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="mt-6"
+                  />
                 </CardContent>
               </Card>
             </div>

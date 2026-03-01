@@ -481,9 +481,10 @@ export default function PlayersPage() {
           {players.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4 border-t">
               <Pagination
-                currentPage={pagination.page}
-                totalPages={totalPages}
-                onPageChange={pagination.setPage}
+                total={totalCount}
+                limit={pagination.pageSize}
+                offset={pagination.offset}
+                onPageChange={(newOffset) => pagination.setPage(Math.floor(newOffset / pagination.pageSize) + 1)}
               />
             </div>
           )}

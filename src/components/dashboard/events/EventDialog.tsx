@@ -129,9 +129,13 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
     const isEdit = !!event;
     const queryClient = useQueryClient();
 
-    const { data: disciplines = [], isLoading: loadingDisciplines } = useDisciplines();
-    const { data: categories = [], isLoading: loadingCategories } = useCategories();
-    const { data: locations = [], isLoading: loadingLocations } = useLocations();
+    const { data: disciplinesResponse, isLoading: loadingDisciplines } = useDisciplines();
+    const { data: categoriesResponse, isLoading: loadingCategories } = useCategories();
+    const { data: locationsResponse, isLoading: loadingLocations } = useLocations();
+
+    const disciplines = (disciplinesResponse as any)?.data || [];
+    const categories = (categoriesResponse as any)?.data || [];
+    const locations = (locationsResponse as any)?.data || [];
 
     const { data: allDivisions = [] } = useQuery({
         queryKey: ['divisions', 'all'],
@@ -364,7 +368,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                                             {loadingDisciplines ? (
                                                 <SelectItem value="loading" disabled>Loading...</SelectItem>
                                             ) : (
-                                                disciplines.map((d) => (
+                                                disciplines.map((d: any) => (
                                                     <SelectItem key={d.id} value={d.id}>
                                                         {d.name}
                                                     </SelectItem>
@@ -397,7 +401,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {statusOptions.map(opt => (
+                                        {statusOptions.map((opt: any) => (
                                             <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -475,7 +479,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                             {loadingCategories ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
-                                categories.map(cat => (
+                                categories.map((cat: any) => (
                                     <button
                                         key={cat.id}
                                         type="button"
@@ -545,7 +549,7 @@ export function EventDialog({ event, trigger, open: controlledOpen, onOpenChange
                         </div>
 
                         <div className="space-y-3">
-                            {nestedDivisions.map((div, index) => (
+                            {nestedDivisions.map((div: any, index: number) => (
                                 <div key={index} className="flex gap-3 items-start bg-muted/30 p-3 rounded-xl border group hover:border-primary/30 transition-colors">
                                     <div className="flex-1 space-y-2">
                                         <Input

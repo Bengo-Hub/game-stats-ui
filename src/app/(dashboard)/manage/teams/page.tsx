@@ -122,7 +122,7 @@ export default function TeamsPage() {
   }, [search, pagination]);
 
   const { data: eventsResponse } = useEventsQuery();
-  const events = eventsResponse || [];
+  const events = eventsResponse?.data || [];
 
   // Reset pagination when filters change
   React.useEffect(() => {
@@ -618,9 +618,10 @@ export default function TeamsPage() {
             </Select>
           </div>
           <Pagination
-            currentPage={pagination.page}
-            totalPages={totalPages}
-            onPageChange={pagination.setPage}
+            total={totalCount}
+            limit={pagination.pageSize}
+            offset={pagination.offset}
+            onPageChange={(newOffset) => pagination.setPage(Math.floor(newOffset / pagination.pageSize) + 1)}
           />
         </div>
       )}

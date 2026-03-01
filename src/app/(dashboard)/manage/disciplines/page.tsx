@@ -61,7 +61,8 @@ export default function DisciplinesPage() {
     }
   }, [can, router]);
 
-  const { data: disciplines = [], isLoading, isFetching, refetch } = useDisciplines();
+  const { data: disciplinesResponse, isLoading, isFetching, refetch } = useDisciplines();
+  const disciplines = (disciplinesResponse as any)?.data || [];
   const { data: countries = [] } = useCountries();
 
   const [editingDiscipline, setEditingDiscipline] = React.useState<any>(null);
@@ -155,7 +156,7 @@ export default function DisciplinesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {disciplines.map((discipline) => (
+              {disciplines.map((discipline: any) => (
                 <TableRow key={discipline.id} className="group hover:bg-muted/30 transition-colors">
                   <TableCell className="font-medium">{discipline.name}</TableCell>
                   <TableCell className="font-mono text-xs">{discipline.slug}</TableCell>

@@ -10,6 +10,7 @@ import {
   EmptyStateCalendar
 } from '@/components/illustrations';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { EventSortField, ListEventsParams, SortOrder, TemporalFilter } from '@/lib/api/public';
 import { useEventsQuery, useLiveEvents } from '@/lib/hooks';
@@ -49,6 +50,7 @@ function DiscoverContent() {
   const [sortOrder, setSortOrder] = React.useState<SortOrder>(
     (searchParams.get('sortOrder') as SortOrder) || (tab === 'past' ? 'desc' : 'asc')
   );
+  const [offset, setOffset] = React.useState(Number(searchParams.get('offset')) || 0);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   // Map tab to temporal filter
@@ -69,27 +71,31 @@ function DiscoverContent() {
     temporal: getTemporalFilter(tab),
     sortBy,
     sortOrder,
-    limit: 50,
+    limit: 10,
+    offset,
     ...(search && { search }),
     ...(selectedCategories.length > 0 && { category: selectedCategories as EventCategory[] }),
     ...(countryCode && { country: countryCode }),
-  }), [tab, sortBy, sortOrder, search, selectedCategories, countryCode]);
+  }), [tab, sortBy, sortOrder, search, selectedCategories, countryCode, offset]);
 
   // TanStack Query for events
   const {
-    data: eventsData = [],
+    data: eventsData,
     isLoading,
     isError,
     error,
     refetch,
     isFetching,
   } = useEventsQuery(queryParams);
-  const events = Array.isArray(eventsData) ? eventsData : [];
+  const events = eventsData?.data || [];
+  const total = eventsData?.total || 0;
 
   // Get live count for badge
-  const { data: liveEventsData = [] } = useLiveEvents();
-  const liveEvents = Array.isArray(liveEventsData) ? liveEventsData : [];
-  const liveCount = tab !== 'live' ? liveEvents.length : 0;
+  const { data: liveEventsData } = useLiveEvents();
+  const liveEvents = liveEventsData?.data || [];
+  // Note: Backend returns total in PaginatedResponse
+  const liveCountResult = liveEventsData?.total || 0;
+  const liveCount = tab !== 'live' ? liveCountResult : 0;
 
   // Fetch ALL events for calendar view (not filtered by temporal)
   const { data: allEventsData = [] } = useEventsQuery({
@@ -112,6 +118,7 @@ function DiscoverContent() {
     if (selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
     if (continentId) params.set('continent', continentId);
     if (countryCode) params.set('country', countryCode);
+    setOffset(0);
 
     const queryString = params.toString();
     router.replace(`/discover${queryString ? `?${queryString}` : ''}`, { scroll: false });
@@ -138,7 +145,20 @@ function DiscoverContent() {
   const handleSortChange = React.useCallback((newSortBy: EventSortField, newSortOrder: SortOrder) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
+    setOffset(0);
   }, []);
+
+  const handlePageChange = (newOffset: number) => {
+    setOffset(newOffset);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newOffset === 0) {
+      params.delete('offset');
+    } else {
+      params.set('offset', String(newOffset));
+    }
+    router.replace(`/discover?${params.toString()}`, { scroll: false }); // Use replace and no scroll for smooth paginated browsing or per preference
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -329,6 +349,14 @@ function DiscoverContent() {
               </div>
             </div>
             <EventGrid events={events} />
+
+            <Pagination
+              total={total}
+              limit={queryParams.limit || 10}
+              offset={offset}
+              onPageChange={handlePageChange}
+              className="mt-8"
+            />
           </>
         )}
       </div>

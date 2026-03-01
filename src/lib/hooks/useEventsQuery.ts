@@ -24,10 +24,7 @@ export function useEventsQuery(options?: UseEventsQueryOptions) {
 
   return useQuery({
     queryKey: eventKeys.list(params),
-    queryFn: async () => {
-      const response = await publicApi.listEvents(params);
-      return response.data || [];
-    },
+    queryFn: () => publicApi.listEvents(params),
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -38,10 +35,7 @@ export function useEventsQuery(options?: UseEventsQueryOptions) {
 export function useUpcomingEvents(limit = 10) {
   return useQuery({
     queryKey: eventKeys.upcoming(),
-    queryFn: async () => {
-      const response = await publicApi.getUpcomingEvents(limit);
-      return response.data || [];
-    },
+    queryFn: () => publicApi.getUpcomingEvents(limit),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
   });
@@ -50,10 +44,7 @@ export function useUpcomingEvents(limit = 10) {
 export function usePastEvents(limit = 10) {
   return useQuery({
     queryKey: eventKeys.past(),
-    queryFn: async () => {
-      const response = await publicApi.getPastEvents(limit);
-      return response.data || [];
-    },
+    queryFn: () => publicApi.getPastEvents(limit),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
   });
@@ -62,10 +53,7 @@ export function usePastEvents(limit = 10) {
 export function useLiveEvents() {
   return useQuery({
     queryKey: eventKeys.live(),
-    queryFn: async () => {
-      const response = await publicApi.getLiveEvents();
-      return response.data || [];
-    },
+    queryFn: () => publicApi.getLiveEvents(),
     staleTime: 1000 * 60, // 1 minute for live data
     gcTime: 1000 * 60, // 1 minute for live data
     refetchInterval: 1000 * 60, // Refetch every minute

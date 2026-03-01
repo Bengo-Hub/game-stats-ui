@@ -68,7 +68,8 @@ export default function RoundsPage() {
     const [isDeleting, setIsDeleting] = React.useState(false);
 
     // Fetch all events for the filter
-    const { data: events = [], isLoading: loadingEvents } = useEventsQuery();
+    const { data: eventsData, isLoading: loadingEvents } = useEventsQuery();
+    const events = (eventsData as any)?.data || [];
 
     // Set default event if none selected
     React.useEffect(() => {
@@ -180,7 +181,7 @@ export default function RoundsPage() {
                         <SelectValue placeholder="Select an event" />
                     </SelectTrigger>
                     <SelectContent>
-                        {events.map((ev) => (
+                        {events.map((ev: any) => (
                             <SelectItem key={ev.id} value={ev.id}>{ev.name} ({new Date(ev.startDate).getFullYear()})</SelectItem>
                         ))}
                     </SelectContent>
@@ -259,7 +260,7 @@ export default function RoundsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {rounds.map((round) => (
+                            {rounds.map((round: any) => (
                                 <TableRow key={round.id} className="group hover:bg-muted/30 transition-colors">
                                     <TableCell className="text-center text-muted-foreground font-mono">
                                         {round.roundNumber || '-'}

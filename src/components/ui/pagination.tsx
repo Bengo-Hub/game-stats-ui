@@ -1,115 +1,110 @@
-'use client';
-
-import * as React from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { Button } from './button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 
 interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  className?: string;
-  showPageNumbers?: boolean;
-  siblingCount?: number;
+  total: number
+  limit: number
+  offset: number
+  onPageChange: (newOffset: number) => void
+  className?: string
 }
 
 export function Pagination({
-  currentPage,
-  totalPages,
+  total,
+  limit,
+  offset,
   onPageChange,
   className,
-  showPageNumbers = true,
-  siblingCount = 1,
 }: PaginationProps) {
-  const range = React.useMemo(() => {
-    const totalPageNumbers = siblingCount * 2 + 3;
+  const currentPage = Math.floor(offset / limit) + 1
+  const totalPages = Math.ceil(total / limit)
 
-    if (totalPages <= totalPageNumbers) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+  if (totalPages <= 1) return null
+
+  const getPageNumbers = () => {
+    const pages = []
+    const showMax = 5
+
+    if (totalPages <= showMax) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    } else {
+      let start = Math.max(1, currentPage - 2)
+      let end = Math.min(totalPages, start + showMax - 1)
+
+      if (end === totalPages) {
+        start = Math.max(1, end - showMax + 1)
+      }
+
+      for (let i = start; i <= end; i++) pages.push(i)
     }
-
-    const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
-    const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages);
-
-    const shouldShowLeftDots = leftSiblingIndex > 2;
-    const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
-
-    if (!shouldShowLeftDots && shouldShowRightDots) {
-      const leftItemCount = 3 + 2 * siblingCount;
-      const leftRange = Array.from({ length: leftItemCount }, (_, i) => i + 1);
-      return [...leftRange, 'dots', totalPages];
-    }
-
-    if (shouldShowLeftDots && !shouldShowRightDots) {
-      const rightItemCount = 3 + 2 * siblingCount;
-      const rightRange = Array.from(
-        { length: rightItemCount },
-        (_, i) => totalPages - rightItemCount + i + 1
-      );
-      return [1, 'dots', ...rightRange];
-    }
-
-    const middleRange = Array.from(
-      { length: rightSiblingIndex - leftSiblingIndex + 1 },
-      (_, i) => leftSiblingIndex + i
-    );
-    return [1, 'dots', ...middleRange, 'dots', totalPages];
-  }, [currentPage, totalPages, siblingCount]);
-
-  if (totalPages <= 1) return null;
+    return pages
+  }
 
   return (
-    <nav
-      className={cn('flex items-center justify-center gap-1', className)}
-      aria-label="Pagination"
-    >
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+    <div className={cn("flex flex-wrap items-center justify-center gap-2 py-4", className)}>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onPageChange(0)}
+          disabled={currentPage === 1}
+          title="First Page"
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onPageChange(Math.max(0, offset - limit))}
+          disabled={currentPage === 1}
+          title="Previous Page"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      </div>
 
-      {showPageNumbers &&
-        range.map((pageNumber, index) => {
-          if (pageNumber === 'dots') {
-            return (
-              <span
-                key={`dots-${index}`}
-                className="flex h-8 w-8 items-center justify-center"
-              >
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </span>
-            );
-          }
+      <div className="flex items-center gap-1">
+        {getPageNumbers().map((page) => (
+          <Button
+            key={page}
+            variant={currentPage === page ? "default" : "outline"}
+            size="icon-sm"
+            onClick={() => onPageChange((page - 1) * limit)}
+            className={cn(
+              "w-8 h-8",
+              currentPage === page && "pointer-events-none"
+            )}
+          >
+            {page}
+          </Button>
+        ))}
+      </div>
 
-          return (
-            <Button
-              key={pageNumber}
-              variant={currentPage === pageNumber ? 'default' : 'outline'}
-              size="icon-sm"
-              onClick={() => onPageChange(pageNumber as number)}
-              aria-label={`Page ${pageNumber}`}
-              aria-current={currentPage === pageNumber ? 'page' : undefined}
-            >
-              {pageNumber}
-            </Button>
-          );
-        })}
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onPageChange(offset + limit)}
+          disabled={currentPage === totalPages}
+          title="Next Page"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onPageChange((totalPages - 1) * limit)}
+          disabled={currentPage === totalPages}
+          title="Last Page"
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
 
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        aria-label="Next page"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </nav>
-  );
+      <div className="text-xs text-muted-foreground ml-2">
+        Page {currentPage} of {totalPages} ({total} total)
+      </div>
+    </div>
+  )
 }

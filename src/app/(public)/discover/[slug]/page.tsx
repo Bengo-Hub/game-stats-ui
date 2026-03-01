@@ -11,12 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicApi } from '@/lib/api/public';
 import { cn } from '@/lib/utils';
-import type { DivisionPool, Event, EventCategory, Game, PaginatedResponse, PlayerStat, Team, TeamSpiritAverage } from '@/types';
+import type { DivisionPool, Event, EventCategory, Game, PlayerStat } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -60,28 +61,42 @@ function useEventDetail(idOrSlug: string | undefined) {
   });
 }
 
-function useEventGames(eventId: string | undefined) {
+function useEventGames(eventId: string | undefined, page = 1, limit = 10, filters: any = {}) {
   return useQuery({
-    queryKey: ['events', eventId, 'games'],
-    queryFn: () => publicApi.listGames({ eventId, limit: 200 }), // Get all games for this event
+    queryKey: ['events', eventId, 'games', page, limit, filters],
+    queryFn: () => publicApi.listGames({
+      eventId,
+      limit,
+      offset: (page - 1) * limit,
+      ...filters
+    }),
     enabled: !!eventId,
     staleTime: 1000 * 60 * 2,
   });
 }
 
-function useEventTeams(eventId: string | undefined) {
+function useEventTeams(eventId: string | undefined, page = 1, limit = 10, filters: any = {}) {
   return useQuery({
-    queryKey: ['events', eventId, 'teams'],
-    queryFn: () => publicApi.listTeams({ eventId }),
+    queryKey: ['events', eventId, 'teams', page, limit, filters],
+    queryFn: () => publicApi.listTeams({
+      eventId,
+      limit,
+      offset: (page - 1) * limit,
+      ...filters
+    }),
     enabled: !!eventId,
     staleTime: 1000 * 60 * 5,
   });
 }
 
-function useEventSpirit(eventId: string | undefined) {
+function useEventSpirit(eventId: string | undefined, page = 1, limit = 10) {
   return useQuery({
-    queryKey: ['events', eventId, 'spirit'],
-    queryFn: () => publicApi.getSpiritLeaderboard({ eventId }),
+    queryKey: ['events', eventId, 'spirit', page, limit],
+    queryFn: () => publicApi.getSpiritLeaderboard({
+      eventId,
+      limit,
+      offset: (page - 1) * limit
+    }),
     enabled: !!eventId,
     staleTime: 1000 * 60 * 5,
   });
@@ -114,10 +129,15 @@ function useEventBracket(eventId: string | undefined, roundId: string | undefine
   });
 }
 
-function usePlayerLeaderboard(eventId: string | undefined) {
+function usePlayerLeaderboard(eventId: string | undefined, page = 1, limit = 10, category?: any) {
   return useQuery({
-    queryKey: ['events', eventId, 'players'],
-    queryFn: () => publicApi.getPlayerLeaderboard({ eventId, limit: 50 }),
+    queryKey: ['events', eventId, 'players', page, limit, category],
+    queryFn: () => publicApi.getPlayerLeaderboard({
+      eventId,
+      limit,
+      offset: (page - 1) * limit,
+      category
+    }),
     enabled: !!eventId,
     staleTime: 1000 * 60 * 5,
   });
@@ -386,7 +406,7 @@ function TimetableModal({
                   >
                     All
                   </button>
-                  {divisions.map(d => (
+                  {divisions.map((d: any) => (
                     <button
                       key={d.id}
                       onClick={() => setSelectedDivision(d.divisionType)}
@@ -408,7 +428,7 @@ function TimetableModal({
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</span>
               <div className="flex gap-1 flex-wrap">
-                {dates.map(date => (
+                {dates.map((date: any) => (
                   <button
                     key={date}
                     onClick={() => setSelectedDate(date)}
@@ -441,7 +461,7 @@ function TimetableModal({
                   <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide border-r w-20 bg-muted">
                     Time
                   </th>
-                  {fields.map(f => (
+                  {fields.map((f: any) => (
                     <th key={f.id} className="p-3 text-center text-xs font-semibold uppercase tracking-wide border-r last:border-r-0 bg-muted min-w-[180px] lg:min-w-[220px]">
                       {f.name}
                     </th>
@@ -449,12 +469,12 @@ function TimetableModal({
                 </tr>
               </thead>
               <tbody>
-                {timetable.map((row, idx) => (
+                {timetable.map((row: any, idx: number) => (
                   <tr key={idx} className="border-t hover:bg-muted/20">
                     <td className="p-3 text-sm font-bold border-r bg-muted/50 align-middle text-center">
                       {row.time}
                     </td>
-                    {fields.map(f => {
+                    {fields.map((f: any) => {
                       const game = row.games[f.id];
                       const isLive = game?.status === 'in_progress';
                       const isFinished = game?.status === 'ended' || game?.status === 'completed';
@@ -557,39 +577,105 @@ export default function EventDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  // Query hooks
-  const { data: event, isLoading, isError, error } = useEventDetail(slug);
-  const { data: gamesData = [] } = useEventGames(event?.id);
-  const games = (Array.isArray(gamesData) ? gamesData : []) as Game[];
-  const { data: teamsResult } = useEventTeams(event?.id);
-  const teams = (teamsResult as PaginatedResponse<Team>)?.data || [];
-  const { data: spiritScoresData = [] } = useEventSpirit(event?.id);
-  const spiritScores = (Array.isArray(spiritScoresData) ? spiritScoresData : []) as TeamSpiritAverage[];
-  const { data: standings } = useEventStandings(event?.id);
-  const { data: roundsData = [] } = useEventRounds(event?.id);
-  const rounds = (Array.isArray(roundsData) ? roundsData : []) as DivisionPool[];
-  const { data: playerStatsData = [] } = usePlayerLeaderboard(event?.id);
-  const playerStats = (Array.isArray(playerStatsData) ? playerStatsData : []) as PlayerStat[];
-  const divisions = event?.divisions || [];
-
   // Local state
   const [selectedDivision, setSelectedDivision] = React.useState<string>('all');
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
   const [selectedStage, setSelectedStage] = React.useState<string>('all');
   const [timetableOpen, setTimetableOpen] = React.useState(false);
-  // Note: selectedPool state removed - not currently used for filtering
   const [statFilter, setStatFilter] = React.useState<'total' | 'goals' | 'assists'>('total');
   const [expandedSpiritRows, setExpandedSpiritRows] = React.useState<string[]>([]);
   const [selectedBracketRound, setSelectedBracketRound] = React.useState<string | undefined>(undefined);
   const [teamSearchQuery, setTeamSearchQuery] = React.useState<string>('');
   const [selectedTeamDivision, setSelectedTeamDivision] = React.useState<string>('all');
 
+  // Pagination state
+  const [gamesPage, setGamesPage] = React.useState(1);
+  const [teamsPage, setTeamsPage] = React.useState(1);
+  const [playersPage, setPlayersPage] = React.useState(1);
+  const [spiritPage, setSpiritPage] = React.useState(1);
+  const pageSize = 10;
+
   // Schedule view state
   const [scheduleView, setScheduleView] = React.useState<'list' | 'group'>('list');
   const [scheduleSortOrder, setScheduleSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [selectedRoundId, setSelectedRoundId] = React.useState<string>('all');
 
-  // Crew filtering logic (moved here to avoid ReferenceError)
+  // Query hooks
+  const { data: event, isLoading, isError, error } = useEventDetail(slug);
+
+  // Get unique dates from event for filter
+  const { data: allGamesData } = useQuery({
+    queryKey: ['events', event?.id, 'games', 'all-dates'],
+    queryFn: () => publicApi.listGames({ eventId: event?.id, limit: 500 }),
+    enabled: !!event?.id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { gameDates, games } = React.useMemo(() => {
+    const games = (allGamesData as any)?.data || [];
+    const dateSet = new Set<string>();
+    games.forEach((g: any) => {
+      const date = g.scheduledTime?.split('T')[0];
+      if (date) dateSet.add(date);
+    });
+    return { gameDates: Array.from(dateSet).sort(), games };
+  }, [allGamesData]);
+
+  // Sync filters to API params
+  const gamesFilters = React.useMemo(() => ({
+    game_round_id: selectedRoundId !== 'all' ? selectedRoundId : undefined,
+    start_date: selectedDate ? `${selectedDate}T00:00:00Z` : undefined,
+    end_date: selectedDate ? `${selectedDate}T23:59:59Z` : undefined,
+    game_stage: selectedStage !== 'all' ? (selectedStage as any) : undefined,
+  }), [selectedRoundId, selectedDate, selectedStage]);
+
+  const { data: paginatedGamesResponse, isLoading: isLoadingGames } = useEventGames(
+    event?.id,
+    gamesPage,
+    pageSize,
+    gamesFilters
+  );
+
+  const filteredGames = (paginatedGamesResponse as any)?.data || [];
+  const totalGames = (paginatedGamesResponse as any)?.total || 0;
+
+  // Teams pagination
+  const { data: paginatedTeamsResponse, isLoading: isLoadingTeams } = useEventTeams(
+    event?.id,
+    teamsPage,
+    pageSize,
+    { search: teamSearchQuery, division_pool_id: selectedTeamDivision !== 'all' ? selectedTeamDivision : undefined }
+  );
+
+  const filteredTeams = (paginatedTeamsResponse as any)?.data || [];
+  const totalTeams = (paginatedTeamsResponse as any)?.total || 0;
+
+  // Spirit pagination
+  const { data: paginatedSpiritResponse, isLoading: isLoadingSpirit } = useEventSpirit(
+    event?.id,
+    spiritPage,
+    pageSize
+  );
+
+  const spiritScores = (paginatedSpiritResponse as any)?.data || [];
+  const totalSpiritItems = (paginatedSpiritResponse as any)?.total || 0;
+
+  // Stats pagination
+  const { data: paginatedStatsResponse, isLoading: isLoadingStats } = usePlayerLeaderboard(
+    event?.id,
+    playersPage,
+    pageSize,
+    statFilter !== 'total' ? statFilter : undefined
+  );
+
+  const playerStats = (paginatedStatsResponse as any)?.data || [];
+  const totalPlayerStats = (paginatedStatsResponse as any)?.total || 0;
+  const { data: standings } = useEventStandings(event?.id);
+  const { data: roundsData = [] } = useEventRounds(event?.id);
+  const rounds = (Array.isArray(roundsData) ? roundsData : []) as DivisionPool[];
+  const divisions = event?.divisions || [];
+
+  // Crew filtering logic 
   const crewFilterId = selectedRoundId !== 'all' ? selectedRoundId : (selectedDivision !== 'all' ? selectedDivision : undefined);
   const { data: crew } = useEventCrew(event?.id, crewFilterId);
 
@@ -613,104 +699,7 @@ export default function EventDetailPage() {
   // Now fetch the bracket with the selected round
   const { data: bracket } = useEventBracket(event?.id, selectedBracketRound);
 
-  // Get unique dates from games
-  const gameDates = React.useMemo(() => {
-    const dateSet = new Set<string>();
-    games.forEach(g => {
-      const date = g.scheduledTime?.split('T')[0];
-      if (date) dateSet.add(date);
-    });
-    return Array.from(dateSet).sort();
-  }, [games]);
-
-  // Filter games
-  const filteredGames = React.useMemo(() => {
-    let result = games.filter(g => {
-      // Round filter
-      if (selectedRoundId !== 'all' && g.gameRound?.id !== selectedRoundId) return false;
-
-      // Filter by division if we have division info
-      if (selectedDivision !== 'all') {
-        const divName = divisions.find(d => d.id === selectedDivision)?.name;
-        if (divName && g.name && !g.name.includes(divName)) {
-          // Basic heuristic for division filtering on games without direct division linking
-        }
-      }
-      // Filter by date
-      if (selectedDate && !g.scheduledTime?.startsWith(selectedDate)) return false;
-      // Filter by stage/round type (historical/fallback)
-      if (selectedStage !== 'all') {
-        const roundType = g.gameRound?.roundType?.toLowerCase() || '';
-        // Handle different stage filters
-        if (selectedStage === 'pool' && roundType !== 'pool' && roundType !== 'group') return false;
-        if (selectedStage === 'crossover' && roundType !== 'crossover') return false;
-        if (selectedStage === 'bracket' && !['bracket', 'quarter', 'semi', 'quarterfinal', 'semifinal'].includes(roundType)) return false;
-        if (selectedStage === 'final' && !['final', 'finals', 'third_place', 'third place'].includes(roundType)) return false;
-      }
-      return true;
-    });
-
-    // Sort the filtered results based on round priority
-    // Lower rounds (pool, crossover, bracket) -> Finals
-    // Ascending: Pool (lowest priority) -> Final (highest priority)
-    const roundPriority: Record<string, number> = {
-      'final': 8,
-      'third_place': 7,
-      'semi': 6,
-      'quarter': 5,
-      'bracket': 4,
-      'crossover': 3,
-      'pool': 2,
-      'other': 1
-    };
-
-    result.sort((a, b) => {
-      const typeA = a.gameRound?.roundType?.toLowerCase() || 'other';
-      const typeB = b.gameRound?.roundType?.toLowerCase() || 'other';
-
-      const pA = roundPriority[typeA] || 1;
-      const pB = roundPriority[typeB] || 1;
-
-      // Primary sort: by bracket priority
-      if (pA !== pB) {
-        return scheduleSortOrder === 'asc' ? pA - pB : pB - pA;
-      }
-
-      // Secondary sort: by absolute scheduled time
-      const timeA = new Date(a.scheduledTime).getTime();
-      const timeB = new Date(b.scheduledTime).getTime();
-      if (timeA !== timeB) return timeA - timeB; // always chronological within round
-
-      return 0;
-    });
-
-    return result;
-  }, [games, selectedDivision, selectedDate, selectedStage, selectedRoundId, scheduleSortOrder]);
-
-  // Filter teams by search and division
-  const filteredTeams = React.useMemo(() => {
-    return teams.filter(team => {
-      // Filter by search query
-      if (teamSearchQuery) {
-        const query = teamSearchQuery.toLowerCase();
-        const matchesName = team.name.toLowerCase().includes(query);
-        const matchesCaptain = team.captain?.name?.toLowerCase().includes(query);
-        const matchesSpiritCaptain = team.spiritCaptain?.name?.toLowerCase().includes(query);
-        if (!matchesName && !matchesCaptain && !matchesSpiritCaptain) return false;
-      }
-      // Filter by division
-      if (selectedTeamDivision !== 'all' && team.divisionPoolId !== selectedTeamDivision) {
-        return false;
-      }
-      return true;
-    });
-  }, [teams, teamSearchQuery, selectedTeamDivision]);
-
-  // Don't set initial date - let user see all games by default
-  React.useEffect(() => {
-    // Intentionally empty - we want to show all dates by default
-  }, [gameDates]);
-
+  // Share handler
   const handleShare = async () => {
     if (typeof window === 'undefined' || !event) return;
 
@@ -1028,7 +1017,7 @@ export default function EventDetailPage() {
 
             {filteredTeams.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredTeams.map((team) => (
+                {filteredTeams.map((team: any) => (
                   <Link
                     key={team.id}
                     href={`/discover/${slug}/teams/${team.id}`}
@@ -1109,6 +1098,18 @@ export default function EventDetailPage() {
                   {teamSearchQuery ? 'No teams match your search criteria.' : 'Teams will appear here once they are registered.'}
                 </p>
               </Card>
+            )}
+
+            {/* Pagination for Teams */}
+            {totalTeams > pageSize && (
+              <div className="mt-6 pt-6 border-t">
+                <Pagination
+                  total={totalTeams}
+                  limit={pageSize}
+                  offset={(teamsPage - 1) * pageSize}
+                  onPageChange={(newOffset) => setTeamsPage(Math.floor(newOffset / pageSize) + 1)}
+                />
+              </div>
             )}
           </TabsContent>
 
@@ -1285,7 +1286,7 @@ export default function EventDetailPage() {
                 </Card>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredGames.map(game => (
+                  {filteredGames.map((game: any) => (
                     <Link key={game.id} href={`/live/${game.id}`}>
                       <GameCard game={game} />
                     </Link>
@@ -1297,7 +1298,7 @@ export default function EventDetailPage() {
             {/* Grouped View */}
             {scheduleView === 'group' && (() => {
               // Group games by round
-              const gamesByRound = filteredGames.reduce((acc, game) => {
+              const gamesByRound = filteredGames.reduce((acc: any, game: any) => {
                 const roundName = game.gameRound?.name || 'Other Games';
                 const roundType = game.gameRound?.roundType || 'other';
                 const key = `${roundName}-${roundType}`;
@@ -1310,7 +1311,7 @@ export default function EventDetailPage() {
                 }
                 acc[key].games.push(game);
                 return acc;
-              }, {} as Record<string, { roundName: string; roundType: string; games: Game[] }>);
+              }, {} as Record<string, { roundName: string; roundType: string; games: any[] }>);
 
               // Sort rounds by priority (finals first, then semis, etc.)
               const roundPriority: Record<string, number> = {
@@ -1324,7 +1325,7 @@ export default function EventDetailPage() {
                 'other': 8
               };
 
-              const sortedRounds = Object.values(gamesByRound).sort((a, b) => {
+              const sortedRounds = Object.values(gamesByRound).sort((a: any, b: any) => {
                 const priorityA = roundPriority[a.roundType] || 8;
                 const priorityB = roundPriority[b.roundType] || 8;
                 return priorityA - priorityB;
@@ -1346,7 +1347,7 @@ export default function EventDetailPage() {
 
               return (
                 <div className="space-y-6">
-                  {sortedRounds.map(({ roundName, roundType, games: roundGames }) => (
+                  {sortedRounds.map(({ roundName, roundType, games: roundGames }: any) => (
                     <div key={`${roundName}-${roundType}`}>
                       {/* Round Header */}
                       <div className="flex items-center gap-3 mb-4">
@@ -1365,7 +1366,7 @@ export default function EventDetailPage() {
 
                       {/* Games in 2-column grid */}
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {roundGames.map((game) => (
+                        {roundGames.map((game: any) => (
                           <Link key={game.id} href={`/live/${game.id}`}>
                             <Card className={cn(
                               'hover:border-primary/50 hover:shadow-md transition-all cursor-pointer h-full',
@@ -1481,6 +1482,18 @@ export default function EventDetailPage() {
                 </div>
               );
             })()}
+
+            {/* Pagination for Games */}
+            {totalGames > pageSize && (
+              <div className="mt-6 pt-6 border-t">
+                <Pagination
+                  total={totalGames}
+                  limit={pageSize}
+                  offset={(gamesPage - 1) * pageSize}
+                  onPageChange={(newOffset) => setGamesPage(Math.floor(newOffset / pageSize) + 1)}
+                />
+              </div>
+            )}
           </TabsContent>
 
           {/* Spirit Tab */}
@@ -1538,7 +1551,7 @@ export default function EventDetailPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {spiritScores.map((score, idx) => {
+                        {spiritScores.map((score: any, idx: number) => {
                           const isExpanded = expandedSpiritRows.includes(score.teamId);
                           const ratedPercent = score.gamesPlayed > 0
                             ? Math.round((score.gamesRated || score.gamesPlayed) / score.gamesPlayed * 100)
@@ -1651,6 +1664,17 @@ export default function EventDetailPage() {
                     </table>
                   </div>
                 </CardContent>
+                {/* Pagination for Spirit */}
+                {totalSpiritItems > pageSize && (
+                  <div className="mt-4 pt-4 border-t p-4">
+                    <Pagination
+                      total={totalSpiritItems}
+                      limit={pageSize}
+                      offset={(spiritPage - 1) * pageSize}
+                      onPageChange={(newOffset) => setSpiritPage(Math.floor(newOffset / pageSize) + 1)}
+                    />
+                  </div>
+                )}
               </Card>
             ) : (
               <Card className="p-8 text-center">
@@ -1773,7 +1797,7 @@ export default function EventDetailPage() {
             {selectedStage === 'crossover' && (
               <>
                 {(() => {
-                  const crossoverGames = games.filter(g =>
+                  const crossoverGames = (games as any[]).filter((g: any) =>
                     g.gameRound?.roundType?.toLowerCase() === 'crossover' ||
                     g.gameRound?.name?.toLowerCase().includes('crossover') ||
                     g.gameRound?.name?.toLowerCase().includes('cross over')
@@ -1822,7 +1846,7 @@ export default function EventDetailPage() {
 
                       {filteredCrossoverGames.length > 0 ? (
                         <div className="grid gap-4 sm:grid-cols-2">
-                          {filteredCrossoverGames.map(game => (
+                          {filteredCrossoverGames.map((game: any) => (
                             <Link key={game.id} href={`/live/${game.id}`}>
                               <Card className={cn(
                                 'hover:border-primary/50 hover:shadow-md transition-all cursor-pointer h-full',
@@ -1936,7 +1960,7 @@ export default function EventDetailPage() {
           <TabsContent value="bracket" className="space-y-4">
             {(() => {
               // Filter games by bracket/playoff round types
-              const bracketGames = games.filter(g => {
+              const bracketGames = (games as any[]).filter((g: any) => {
                 const roundType = g.gameRound?.roundType?.toLowerCase() || '';
                 const roundName = g.gameRound?.name?.toLowerCase() || '';
                 return (
@@ -2274,7 +2298,7 @@ export default function EventDetailPage() {
                   <CardContent>
                     {crew.admins.length > 0 ? (
                       <div className="grid gap-3">
-                        {crew.admins.map((admin) => (
+                        {crew.admins.map((admin: any) => (
                           <div
                             key={admin.id}
                             className="flex items-center gap-4 p-4 rounded-xl border bg-muted/10 hover:bg-muted/30 transition-colors group"
@@ -2327,7 +2351,7 @@ export default function EventDetailPage() {
                       crew.scorekeepers.forEach(sk => skMap.set(sk.id, { ...sk, games: [] }));
 
                       // Add games they are scoring in the current filtered view
-                      filteredGames.forEach(game => {
+                      filteredGames.forEach((game: any) => {
                         if (game.scorekeeper) {
                           const sk = skMap.get(game.scorekeeper.id) || { ...game.scorekeeper, games: [] };
                           sk.games.push(game);
@@ -2343,7 +2367,7 @@ export default function EventDetailPage() {
 
                       return (
                         <div className="grid gap-3">
-                          {sortedSk.map((sk) => (
+                          {sortedSk.map((sk: any) => (
                             <div
                               key={sk.id}
                               className={cn(
@@ -2408,7 +2432,7 @@ export default function EventDetailPage() {
         open={timetableOpen}
         onOpenChange={setTimetableOpen}
         event={event}
-        games={games}
+        games={games as any[]}
       />
     </div >
   );

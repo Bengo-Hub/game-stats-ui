@@ -1,6 +1,6 @@
 'use client';
 
-import { CancelGameDialog, EditGameDialog, ScheduleGameDialog } from '@/components/dashboard/games';
+import { CancelGameDialog, DeleteGameDialog, EditGameDialog, ScheduleGameDialog } from '@/components/dashboard/games';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -93,6 +93,12 @@ export default function GamesPage() {
   const [dateFilter, setDateFilter] = React.useState<'today' | 'week' | 'all'>('all');
   const [editingGame, setEditingGame] = React.useState<Game | null>(null);
   const [cancelingGame, setCancelingGame] = React.useState<Game | null>(null);
+  const [deletingGame, setDeletingGame] = React.useState<Game | null>(null);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Debounce search input
   React.useEffect(() => {
@@ -145,30 +151,31 @@ export default function GamesPage() {
   }, [status, dateFilter, selectedEventId, selectedDivisionId, selectedRoundId, pagination.pageSize, pagination.offset]);
 
   // Fetch events for filters
-  const { data: events = [] } = useEventsQuery();
-  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const { data: eventsResponse } = useEventsQuery();
+  const events = (eventsResponse as any)?.data || [];
+  const selectedEvent = events.find((e: any) => e.id === selectedEventId);
   const eventDivisions = selectedEvent?.divisions || [];
 
   // Fetch rounds for the selected event
   const { data: roundsData = [] } = useRoundsQuery(selectedEventId !== 'all' ? selectedEventId : '');
   const rounds = (Array.isArray(roundsData) ? roundsData : []) as unknown as GameRound[];
 
-  // Fetch games using TanStack Query
   const {
-    data: allGamesData = [],
+    data: allGamesResponse,
     isLoading,
     isError,
     error,
     isFetching,
   } = useGamesQuery(queryParams);
-  const allGames = (Array.isArray(allGamesData) ? allGamesData : []) as Game[];
+  const allGames = (allGamesResponse as any)?.data || [];
+  const totalGames = (allGamesResponse as any)?.total || 0;
 
   // Client-side search filter (since API might not support search)
   const games = React.useMemo(() => {
     if (!debouncedSearch) return allGames;
     const searchLower = debouncedSearch.toLowerCase();
     return allGames.filter(
-      (game) =>
+      (game: any) =>
         game.homeTeam?.name?.toLowerCase().includes(searchLower) ||
         game.awayTeam?.name?.toLowerCase().includes(searchLower) ||
         game.fieldLocation?.name?.toLowerCase().includes(searchLower)
@@ -176,11 +183,10 @@ export default function GamesPage() {
   }, [allGames, debouncedSearch]);
 
   // Calculate total pages
-  const hasMorePages = allGames.length === pagination.pageSize;
-  const totalPages = hasMorePages ? pagination.page + 1 : pagination.page;
+  const totalPages = Math.ceil(totalGames / pagination.pageSize);
 
   // Live games count
-  const liveCount = allGames.filter(g => g.status === 'in_progress').length;
+  const liveCount = allGames.filter((g: any) => g.status === 'in_progress').length;
 
   // Refresh games
   const handleRefresh = () => {
@@ -189,6 +195,7 @@ export default function GamesPage() {
 
   // Format time
   const formatTime = (dateStr: string) => {
+    if (!isMounted) return '...';
     try {
       return format(parseISO(dateStr), 'MMM d, h:mm a');
     } catch {
@@ -338,7 +345,7 @@ export default function GamesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Events</SelectItem>
-              {events.map(event => (
+              {events.map((event: any) => (
                 <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
               ))}
             </SelectContent>
@@ -352,7 +359,7 @@ export default function GamesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Divisions</SelectItem>
-                {eventDivisions.map(div => (
+                {eventDivisions.map((div: any) => (
                   <SelectItem key={div.id} value={div.id}>{div.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -455,7 +462,7 @@ export default function GamesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {games.map((game) => (
+              {games.map((game: any) => (
                 <TableRow key={game.id} className="group">
                   <TableCell>
                     <div className="font-medium">
@@ -523,10 +530,19 @@ export default function GamesPage() {
                               className="text-destructive focus:text-destructive"
                               onClick={() => handleCancelGame(game)}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
+                              <XCircle className="h-4 w-4 mr-2" />
                               Cancel Game
                             </DropdownMenuItem>
                           </>
+                        )}
+                        {canEditGames && game.status === 'canceled' && (
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeletingGame(game)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Game
+                          </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -539,7 +555,7 @@ export default function GamesPage() {
       ) : (
         /* Card View */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {games.map((game) => (
+          {games.map((game: any) => (
             <GameCard
               key={game.id}
               game={game}
@@ -548,6 +564,7 @@ export default function GamesPage() {
               canCancel={canCancelGames}
               onCancel={handleCancelGame}
               onEdit={(game) => setEditingGame(game)}
+              onDelete={(game) => setDeletingGame(game)}
             />
           ))}
         </div>
@@ -573,9 +590,10 @@ export default function GamesPage() {
             </Select>
           </div>
           <Pagination
-            currentPage={pagination.page}
-            totalPages={totalPages}
-            onPageChange={pagination.setPage}
+            total={totalGames}
+            limit={pagination.pageSize}
+            offset={pagination.offset}
+            onPageChange={(newOffset) => pagination.setPage(Math.floor(newOffset / pagination.pageSize) + 1)}
           />
         </div>
       )}
@@ -596,6 +614,15 @@ export default function GamesPage() {
           onSuccess={handleRefresh}
         />
       )}
+
+      {deletingGame && (
+        <DeleteGameDialog
+          game={deletingGame}
+          open={!!deletingGame}
+          onOpenChange={(open: boolean) => !open && setDeletingGame(null)}
+          onSuccess={handleRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -608,9 +635,10 @@ interface GameCardProps {
   canCancel: boolean;
   onCancel: (game: Game) => void;
   onEdit: (game: Game) => void;
+  onDelete: (game: Game) => void;
 }
 
-function GameCard({ game, formatTime, canEdit, canCancel, onCancel, onEdit }: GameCardProps) {
+function GameCard({ game, formatTime, canEdit, canCancel, onCancel, onEdit, onDelete }: GameCardProps) {
   const isLive = game.status === 'in_progress';
 
   return (
@@ -651,10 +679,19 @@ function GameCard({ game, formatTime, canEdit, canCancel, onCancel, onEdit }: Ga
                     className="text-destructive focus:text-destructive"
                     onClick={() => onCancel(game)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <XCircle className="h-4 w-4 mr-2" />
                     Cancel Game
                   </DropdownMenuItem>
                 </>
+              )}
+              {canEdit && game.status === 'canceled' && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(game)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Game
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

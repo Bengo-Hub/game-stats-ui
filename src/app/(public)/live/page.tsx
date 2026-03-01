@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { publicApi } from '@/lib/api';
 import type { Game } from '@/types';
@@ -25,6 +26,19 @@ interface DisplayGame extends Game {
   lastUpdate?: string;
 }
 
+
+// Calculate time elapsed since game start
+const calculateTimeElapsed = (startTime?: string): string => {
+  if (!startTime) return '--:--';
+  const start = new Date(startTime);
+  const now = new Date();
+  const diffMs = now.getTime() - start.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  const seconds = Math.floor((diffMs % 60000) / 1000);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+
 export default function LiveGamesPage() {
   const [liveGames, setLiveGames] = React.useState<DisplayGame[]>([]);
   const [upcomingGames, setUpcomingGames] = React.useState<DisplayGame[]>([]);
@@ -32,6 +46,9 @@ export default function LiveGamesPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = React.useState(new Date());
   const [autoRefresh, setAutoRefresh] = React.useState(true);
+  const [liveOffset, setLiveOffset] = React.useState(0);
+  const [totalLive, setTotalLive] = React.useState(0);
+  const pageSize = 10;
 
   // Fetch live and upcoming games
   const fetchGames = React.useCallback(async () => {
@@ -41,8 +58,8 @@ export default function LiveGamesPage() {
     try {
       // Fetch live and upcoming games in parallel
       const [liveData, upcomingData] = await Promise.all([
-        publicApi.getLiveGames(),
-        publicApi.getUpcomingGames(5),
+        publicApi.getLiveGames({ offset: liveOffset, limit: pageSize }),
+        publicApi.getUpcomingGames(10),
       ]);
 
       // Transform live games for display
@@ -63,6 +80,7 @@ export default function LiveGamesPage() {
 
       setLiveGames(transformedLive);
       setUpcomingGames(transformedUpcoming);
+      setTotalLive((liveData as any)?.total || 0);
       setLastRefresh(new Date());
     } catch (err) {
       console.error('Failed to fetch games:', err);
@@ -70,23 +88,12 @@ export default function LiveGamesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Calculate time elapsed since game start
-  const calculateTimeElapsed = (startTime?: string): string => {
-    if (!startTime) return '--:--';
-    const start = new Date(startTime);
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const minutes = Math.floor(diffMs / 60000);
-    const seconds = Math.floor((diffMs % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, [liveOffset]);
 
   // Initial load
   React.useEffect(() => {
     fetchGames();
-  }, [fetchGames]);
+  }, [fetchGames, liveOffset]);
 
   // Auto-refresh every 30 seconds when enabled
   React.useEffect(() => {
@@ -188,78 +195,91 @@ export default function LiveGamesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {liveGames.map((game, index) => (
-              <Link key={game.id} href={`/live/${game.id}`}>
-                <Card className="h-full hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer overflow-hidden">
-                  {/* Live indicator bar */}
-                  <div className="h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {liveGames.map((game, index) => (
+                <Link key={game.id} href={`/live/${game.id}`}>
+                  <Card className="h-full hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer overflow-hidden">
+                    {/* Live indicator bar */}
+                    <div className="h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
 
-                  <CardContent className="p-4">
-                    {/* Event and field info */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                      <span className="truncate max-w-[60%]">{game.eventName || 'Event'}</span>
-                      <span>
-                        {game.fieldLocation?.name || `Field ${index + 1}`}
-                      </span>
-                    </div>
-
-                    {/* Teams and scores */}
-                    <div className="space-y-3">
-                      {/* Home team */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: game.homeTeam?.primaryColor || getTeamColor(index * 2) }}
-                          />
-                          <span
-                            className={`font-medium ${game.homeTeamScore > game.awayTeamScore ? '' : 'text-muted-foreground'}`}
-                          >
-                            {game.homeTeam?.name || 'Home Team'}
-                          </span>
-                        </div>
-                        <span
-                          className={`text-2xl font-bold ${game.homeTeamScore > game.awayTeamScore ? 'text-primary' : ''}`}
-                        >
-                          {game.homeTeamScore}
+                    <CardContent className="p-4">
+                      {/* Event and field info */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                        <span className="truncate max-w-[60%]">{game.eventName || 'Event'}</span>
+                        <span>
+                          {game.fieldLocation?.name || `Field ${index + 1}`}
                         </span>
                       </div>
 
-                      {/* Away team */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: game.awayTeam?.primaryColor || getTeamColor(index * 2 + 1) }}
-                          />
+                      {/* Teams and scores */}
+                      <div className="space-y-3">
+                        {/* Home team */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: game.homeTeam?.primaryColor || getTeamColor(index * 2) }}
+                            />
+                            <span
+                              className={`font-medium ${game.homeTeamScore > game.awayTeamScore ? '' : 'text-muted-foreground'}`}
+                            >
+                              {game.homeTeam?.name || 'Home Team'}
+                            </span>
+                          </div>
                           <span
-                            className={`font-medium ${game.awayTeamScore > game.homeTeamScore ? '' : 'text-muted-foreground'}`}
+                            className={`text-2xl font-bold ${game.homeTeamScore > game.awayTeamScore ? 'text-primary' : ''}`}
                           >
-                            {game.awayTeam?.name || 'Away Team'}
+                            {game.homeTeamScore}
                           </span>
                         </div>
-                        <span
-                          className={`text-2xl font-bold ${game.awayTeamScore > game.homeTeamScore ? 'text-primary' : ''}`}
-                        >
-                          {game.awayTeamScore}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Time and last update */}
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{game.timeElapsed || '--:--'}</span>
+                        {/* Away team */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: game.awayTeam?.primaryColor || getTeamColor(index * 2 + 1) }}
+                            />
+                            <span
+                              className={`font-medium ${game.awayTeamScore > game.homeTeamScore ? '' : 'text-muted-foreground'}`}
+                            >
+                              {game.awayTeam?.name || 'Away Team'}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-2xl font-bold ${game.awayTeamScore > game.homeTeamScore ? 'text-primary' : ''}`}
+                          >
+                            {game.awayTeamScore}
+                          </span>
+                        </div>
                       </div>
-                      <span>Updated {game.lastUpdate || 'recently'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+
+                      {/* Time and last update */}
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{game.timeElapsed || '--:--'}</span>
+                        </div>
+                        <span>Updated {game.lastUpdate || 'recently'}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            <Pagination
+              total={totalLive}
+              limit={pageSize}
+              offset={liveOffset}
+              onPageChange={(newOffset) => {
+                setLiveOffset(newOffset);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="mt-8"
+            />
+          </>
         )}
       </section>
 

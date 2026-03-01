@@ -147,11 +147,11 @@ export default function EventsPage() {
     isFetching,
   } = useEventsQuery(queryParams);
 
-  const events = Array.isArray(eventsResponse) ? eventsResponse : [];
+  const events = eventsResponse?.data || [];
+  const totalEvents = eventsResponse?.total || 0;
 
   // Calculate total pages
-  const total = events.length || 0;
-  const totalPages = Math.ceil(total / pagination.pageSize) || 1;
+  const totalPages = Math.ceil(totalEvents / pagination.pageSize) || 1;
 
   // Refresh events
   const handleRefresh = () => {
@@ -396,7 +396,7 @@ export default function EventsPage() {
       {!isLoading && events.length > 0 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Showing <span className="font-medium text-foreground">{events.length}</span> events
+            Showing <span className="font-medium text-foreground">{events.length}</span> events of <span className="font-medium text-foreground">{totalEvents}</span>
             {pagination.page > 1 && ` (Page ${pagination.page})`}
           </span>
           {isFetching && <span className="text-xs">Updating...</span>}
@@ -483,9 +483,10 @@ export default function EventsPage() {
             </Select>
           </div>
           <Pagination
-            currentPage={pagination.page}
-            totalPages={totalPages}
-            onPageChange={pagination.setPage}
+            total={totalEvents}
+            limit={pagination.pageSize}
+            offset={pagination.offset}
+            onPageChange={(newOffset) => pagination.setPage(Math.floor(newOffset / pagination.pageSize) + 1)}
           />
         </div>
       )}
