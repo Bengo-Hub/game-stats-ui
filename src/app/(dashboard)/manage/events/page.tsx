@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { eventsApi } from '@/lib/api/events';
 import type { EventSortField, SortOrder, TemporalFilter } from '@/lib/api/public';
 import { eventKeys, useEventsQuery } from '@/lib/hooks/useEventsQuery';
 import { DEFAULT_PAGE_SIZE, usePaginationState } from '@/lib/hooks/usePagination';
@@ -203,12 +204,12 @@ export default function EventsPage() {
 
     setIsDeleting(true);
     try {
-      // TODO: Implement with authenticated API
-      console.log('Delete event:', eventIdToDelete);
-      toast.success('Event deleted successfully');
+      await eventsApi.delete(eventIdToDelete);
+      toast.success('Event deleted successfully. Related data (games, rounds, divisions) has been soft-deleted.');
+      queryClient.invalidateQueries({ queryKey: eventKeys.all });
       handleRefresh();
     } catch (error) {
-      toast.error('Failed to delete event');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete event');
     } finally {
       setIsDeleting(false);
       setDeleteConfirmOpen(false);
@@ -219,7 +220,7 @@ export default function EventsPage() {
   // Permission checks
   const canCreateEvents = can('manage_events');
   const canEditEvents = can('manage_events');
-  const canDeleteEvents = can('manage_events');
+  const canDeleteEvents = can('delete_events');
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -508,8 +509,8 @@ export default function EventsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the event
-              and all associated data (games, teams, scores) from our servers.
+              This will soft-delete the event and cascade to related data (participations,
+              games, rounds, division pools). Data can be recovered by an administrator if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

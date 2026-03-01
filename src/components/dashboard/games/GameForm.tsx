@@ -47,6 +47,7 @@ const TIME_PRESETS = [
 ];
 
 const baseGameFormSchema = z.object({
+    name: z.string().min(3, 'Game name is required'),
     scheduledDate: z.string().min(1, 'Scheduled date is required'),
     scheduledTime: z.string().min(1, 'Scheduled time is required'),
     allocatedTimeMinutes: z.number().min(10, 'Minimum 10 minutes').max(180, 'Maximum 180 minutes'),
@@ -91,12 +92,14 @@ interface GameFormProps {
 export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameFormProps) {
     const isEdit = !!game;
     const queryClient = useQueryClient();
+    const [isNameManuallyEdited, setIsNameManuallyEdited] = React.useState(false);
 
     // Initialize form with existing game data if in edit mode
     const defaultValues = React.useMemo(() => {
         if (game) {
             const date = new Date(game.scheduledTime);
             return {
+                name: game.name,
                 eventId: game.divisionPool?.id || '', // Note: game might need expanded relation
                 divisionPoolId: game.divisionPool?.id || '',
                 gameRoundId: game.gameRound?.id || '',
@@ -110,6 +113,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
             };
         }
         return {
+            name: '',
             eventId: initialEventId || '',
             divisionPoolId: '',
             gameRoundId: '',
@@ -138,6 +142,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     const selectedEventId = watch('eventId');
     const selectedDivisionPoolId = watch('divisionPoolId');
     const homeTeamId = watch('homeTeamId');
+    const awayTeamId = watch('awayTeamId');
     const selectedFieldId = watch('fieldId');
     const selectedScorekeeperId = watch('scorekeeperId');
 
@@ -162,7 +167,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
     const { data: gameRoundsData = [] } = useRoundsQuery(selectedEventId as string);
     const gameRounds = (Array.isArray(gameRoundsData) ? gameRoundsData : (gameRoundsData as any)?.data || []) as GameRound[];
 
-    // Fetch teams for the entire event to support cross-scheduling
+    // Fetch teams for the entire event to support cross-scheduling (must be before useEffect that uses teams)
     const queryEventId = isEdit && game?.eventId ? game.eventId : selectedEventId;
     const { data: teamsResult } = useQuery({
         queryKey: ['teams', 'event', queryEventId],
@@ -170,8 +175,24 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
         enabled: !!queryEventId,
         staleTime: 1000 * 60 * 5,
     });
-
     const teams = (teamsResult as PaginatedResponse<Team>)?.data || [];
+
+    // Auto-generate game name from teams + date/time for uniqueness when not manually edited
+    const scheduledDate = watch('scheduledDate');
+    const scheduledTime = watch('scheduledTime');
+    React.useEffect(() => {
+        if (isEdit || isNameManuallyEdited) return;
+        const home = teams.find((t: Team) => t.id === homeTeamId);
+        const away = teams.find((t: Team) => t.id === awayTeamId);
+        if (home && away) {
+            const base = `${home.name} vs ${away.name}`;
+            const dateTimePart =
+                scheduledDate && scheduledTime
+                    ? ` — ${format(parseISO(scheduledDate), 'd MMM yyyy')}, ${scheduledTime}`
+                    : '';
+            setValue('name', `${base}${dateTimePart}`);
+        }
+    }, [homeTeamId, awayTeamId, scheduledDate, scheduledTime, teams, isNameManuallyEdited, isEdit, setValue]);
 
     // Fetch fields
     const { data: fieldsData = [] } = useFields(eventDetails?.location?.id);
@@ -237,6 +258,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
 
         if (isEdit) {
             const request: UpdateGameRequest = {
+                name: data.name?.trim() || undefined,
                 scheduled_time: scheduledTime,
                 allocated_time_minutes: data.allocatedTimeMinutes,
                 field_location_id: data.fieldId === '__none__' ? undefined : data.fieldId,
@@ -247,6 +269,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
             updateMutation.mutate(request);
         } else {
             const request: CreateGameRequest = {
+                name: data.name?.trim() || undefined,
                 home_team_id: data.homeTeamId,
                 away_team_id: data.awayTeamId,
                 scheduled_time: scheduledTime,
@@ -297,6 +320,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                                 <p className="text-sm text-destructive">{errors.eventId.message}</p>
                             )}
                         </div>
+
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -410,6 +434,19 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                         </div>
                     </div>
 
+                    <div className="space-y-2">
+                        <Label htmlFor="name-edit">Game Name</Label>
+                        <Input
+                            id="name-edit"
+                            {...register('name')}
+                            placeholder="e.g. Team A vs Team B"
+                            className={errors.name ? 'border-destructive' : ''}
+                        />
+                        {errors.name && (
+                            <p className="text-sm text-destructive">{errors.name.message}</p>
+                        )}
+                    </div>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="homeTeamId">Home Team *</Label>
@@ -461,6 +498,7 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                     </div>
                 </div>
             )}
+        
 
             <div className="space-y-4">
                 <h3 className="text-sm font-medium flex items-center gap-2">
@@ -490,6 +528,23 @@ export function GameForm({ game, initialEventId, onSuccess, onCancel }: GameForm
                         />
                     </div>
                 </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="name">Game Name *</Label>
+                <Input
+                    id="name"
+                    {...register('name')}
+                    onChange={(e) => {
+                        setIsNameManuallyEdited(true);
+                        setValue('name', e.target.value);
+                    }}
+                    placeholder="Auto-generated from teams"
+                    className={errors.name ? 'border-destructive' : ''}
+                />
+                {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
+            </div>
 
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2 text-xs text-muted-foreground">

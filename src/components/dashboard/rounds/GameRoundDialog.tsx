@@ -32,14 +32,15 @@ import { z } from 'zod';
 const gameRoundSchema = z.object({
     name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
     round_type: z.enum(['pool', 'crossover', 'bracket', 'semifinal', 'final']),
-    round_number: z.number().min(1).optional(),
+    round_number: z.union([z.string(), z.number()]).optional().transform((v) => (v === '' || v === undefined) ? undefined : Number(v)).pipe(z.number().min(1).optional()),
     start_date: z.string().optional().or(z.literal('')),
     end_date: z.string().optional().or(z.literal('')),
     auto_advance: z.boolean(),
-    top_n_teams: z.number().min(1).optional(),
+    top_n_teams: z.union([z.string(), z.number()]).optional().transform((v) => (v === '' || v === undefined) ? undefined : Number(v)).pipe(z.number().min(1).optional()),
 });
 
-type GameRoundForm = z.infer<typeof gameRoundSchema>;
+type GameRoundFormInput = z.input<typeof gameRoundSchema>;
+type GameRoundFormOutput = z.output<typeof gameRoundSchema>;
 
 interface GameRoundDialogProps {
     eventId: string;
@@ -65,7 +66,7 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
         setValue,
         watch,
         formState: { errors, isSubmitting, isDirty },
-    } = useForm<GameRoundForm>({
+    } = useForm<GameRoundFormInput>({
         resolver: zodResolver(gameRoundSchema),
         defaultValues: {
             name: '',
@@ -100,7 +101,19 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
     }, [round, open, reset]);
 
     const createMutation = useMutation({
-        mutationFn: (data: GameRoundForm) => roundsApi.create({ ...data, event_id: eventId }),
+        mutationFn: (data: GameRoundFormOutput) => {
+            const payload: Parameters<typeof roundsApi.create>[0] = {
+                event_id: eventId,
+                name: data.name,
+                round_type: data.round_type,
+                round_number: data.round_number,
+                auto_advance: data.auto_advance,
+                top_n_teams: data.top_n_teams,
+            };
+            if (data.start_date?.trim()) payload.start_date = new Date(data.start_date).toISOString();
+            if (data.end_date?.trim()) payload.end_date = new Date(data.end_date).toISOString();
+            return roundsApi.create(payload);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rounds', 'list', eventId] });
             toast.success('Game round created successfully');
@@ -112,7 +125,7 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
     });
 
     const updateMutation = useMutation({
-        mutationFn: (data: GameRoundForm) => {
+        mutationFn: (data: GameRoundFormOutput) => {
             // Map frontend naming back to backend partial update if necessary
             // In events.ts update, I used: name, roundType, roundNumber, startDate, endDate, autoAdvance, topNTeams
             const updateData = {
@@ -135,11 +148,13 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
         onError: (error: Error) => toast.error(error.message || 'Failed to update game round'),
     });
 
-    const onSubmit = (data: GameRoundForm) => {
+    const onSubmit = (data: GameRoundFormInput) => {
+        // zodResolver runs schema parse/transform before calling this; runtime data is GameRoundFormOutput
+        const payload = data as unknown as GameRoundFormOutput;
         if (isEdit) {
-            updateMutation.mutate(data);
+            updateMutation.mutate(payload);
         } else {
-            createMutation.mutate(data);
+            createMutation.mutate(payload);
         }
     };
 
@@ -197,27 +212,30 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
                             <Input
                                 id="round-number"
                                 type="number"
-                                {...register('round_number')}
+                                min={1}
+                                {...register('round_number', { setValueAs: (v) => (v === '' || v === undefined) ? undefined : Number(v) })}
                             />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="start-date">Start Time</Label>
+                            <Label htmlFor="start-date">Round window start (optional)</Label>
                             <Input
                                 id="start-date"
                                 type="datetime-local"
                                 {...register('start_date')}
                             />
+                            <p className="text-xs text-muted-foreground">For display only. Actual game times are set per game in the schedule.</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="end-date">End Time</Label>
+                            <Label htmlFor="end-date">Round window end (optional)</Label>
                             <Input
                                 id="end-date"
                                 type="datetime-local"
                                 {...register('end_date')}
                             />
+                            <p className="text-xs text-muted-foreground">For display only. Actual game times are set per game in the schedule.</p>
                         </div>
                     </div>
 
@@ -241,7 +259,8 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
                                     id="top-n"
                                     type="number"
                                     placeholder="2"
-                                    {...register('top_n_teams')}
+                                    min={1}
+                                    {...register('top_n_teams', { setValueAs: (v) => (v === '' || v === undefined) ? undefined : Number(v) })}
                                 />
                             </div>
                         )}
@@ -259,6 +278,7 @@ export function GameRoundDialog({ eventId, round, trigger, open: controlledOpen,
                         <Button
                             type="submit"
                             disabled={isLoading || (isEdit && !isDirty)}
+                            title={isEdit && !isDirty ? 'Change at least one field to save' : undefined}
                         >
                             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                             {isEdit ? 'Save Changes' : 'Create Round'}

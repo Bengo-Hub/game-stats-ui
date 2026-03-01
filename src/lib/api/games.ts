@@ -16,6 +16,7 @@ export interface ListGamesParams {
 }
 
 export interface CreateGameRequest {
+  name?: string;
   home_team_id: string;
   away_team_id: string;
   scheduled_time: string;
@@ -27,6 +28,7 @@ export interface CreateGameRequest {
 }
 
 export interface UpdateGameRequest {
+  name?: string;
   scheduled_time?: string;
   allocated_time_minutes?: number;
   field_location_id?: string;
