@@ -23,6 +23,7 @@ import {
   Star,
   Target,
   TrendingUp,
+  Trophy,
   Users
 } from 'lucide-react';
 import * as React from 'react';
@@ -53,8 +54,17 @@ export default function LeaderboardsPage() {
   // Filtering state
   const [selectedGender, setSelectedGender] = React.useState<string>('all');
   const [selectedTeam, setSelectedTeam] = React.useState<string>('all');
+  const [selectedEvent, setSelectedEvent] = React.useState<string>('all');
   const [search, setSearch] = React.useState('');
   const [offset, setOffset] = React.useState(0);
+
+  // Fetch events for filter
+  const { data: eventsResponse } = useQuery({
+    queryKey: ['events', 'list', 'published'],
+    queryFn: () => publicApi.listEvents({ status: 'published', limit: 100 }),
+    staleTime: 1000 * 60 * 5,
+  });
+  const events = eventsResponse?.data || [];
 
   // Fetch teams for filter
   const { data: teamsResponse } = useQuery({
@@ -67,9 +77,10 @@ export default function LeaderboardsPage() {
   const params = React.useMemo(() => ({
     limit: 10,
     offset: offset,
+    eventId: selectedEvent !== 'all' ? selectedEvent : undefined,
     gender: selectedGender !== 'all' ? selectedGender : undefined,
     teamId: selectedTeam !== 'all' ? selectedTeam : undefined,
-  }), [selectedGender, selectedTeam, offset]);
+  }), [selectedEvent, selectedGender, selectedTeam, offset]);
 
   // Fetch all leaderboards in parallel
   const results = useQueries({
@@ -85,8 +96,12 @@ export default function LeaderboardsPage() {
         staleTime: 1000 * 60 * 2,
       },
       {
-        queryKey: ['leaderboards', 'spirit', offset],
-        queryFn: () => publicApi.getSpiritLeaderboard({ limit: 10, offset: offset }),
+        queryKey: ['leaderboards', 'spirit', { eventId: params.eventId, offset }],
+        queryFn: () => publicApi.getSpiritLeaderboard({
+          limit: 10,
+          offset: offset,
+          eventId: params.eventId
+        }),
         staleTime: 1000 * 60 * 5,
       }
     ]
@@ -192,7 +207,7 @@ export default function LeaderboardsPage() {
             </Select>
 
             <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[150px]">
                 <SelectValue placeholder="Team" />
               </SelectTrigger>
               <SelectContent>
@@ -200,6 +215,21 @@ export default function LeaderboardsPage() {
                 {(teams || []).map((team: Team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <Trophy className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Event" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Events</SelectItem>
+                {(events || []).map((event: any) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.name}
                   </SelectItem>
                 ))}
               </SelectContent>
