@@ -52,9 +52,6 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Enable pnpm in runtime image
-RUN corepack enable
-
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -74,4 +71,7 @@ USER nextjs
 
 EXPOSE 3000
 
-CMD ["pnpm", "start"]
+# Run the Next.js standalone server directly with node.
+# Avoids invoking pnpm/corepack at runtime, which fails on Node 20.20.0
+# (ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING when corepack downloads pnpm).
+CMD ["node", "server.js"]
